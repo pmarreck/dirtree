@@ -1,0 +1,47 @@
+ver=1.1
+depth=3
+
+close=[
+	/^(.*/)?_build$/
+	/^(.*/)?\.cache$/
+	/^(.*/)?\.cargo$/
+	/^(.*/)?\.claude$/
+	/^(.*/)?\.codegpt$/
+	/^(.*/)?\.codeium$/
+	/^(.*/)?\.codex$/
+	/^(.*/)?\.compose-cache$/
+	/^(.*/)?\.config$/
+	/^(.*/)?\.cursor$/
+	/^(.*/)?\.direnv$/
+	/^(.*/)?\.dotnet$/
+	/^(.*/)?\.gemini$/
+	/^(.*/)?\.git$/
+	/^(.*/)?\.gnupg$/
+	/^(.*/)?\.java$/
+	/^(.*/)?\.jj$/
+	/^(.*/)?\.links$/
+	/^(.*/)?\.local$/
+	/^(.*/)?\.mozilla$/
+	/^(.*/)?\.nix-defexpr$/
+	/^(.*/)?\.nix-profile$/
+	/^(.*/)?node_modules$/
+	/^(.*/)?\.npm$/
+	/^(.*/)?\.ollama$/
+	/^(.*/)?\.pki$/
+	/^(.*/)?\.rustup$/
+	/^(.*/)?\.rye$/
+	/^(.*/)?\.ssh$/
+	/^(.*/)?\.steam$/
+	/^(.*/)?\.supermaven$/
+	/^(.*/)?\.venv$/
+	Videos
+	/^(.*/)?\.vscode[^/]*$/
+	/^(.*/)?\.vscode$/
+	/^(.*/)?\.wasmer$/
+	/^(.*/)?\.windsurf$/
+	/^(.*/)?\.wine$/
+]
+
+hide=[
+	.gitignore
+]
