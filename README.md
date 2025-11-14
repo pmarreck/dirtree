@@ -65,6 +65,11 @@ State lives in `.dirtree-state` at the root of whatever directory you run `dirtr
 
 The repo includes `dirtree-state.suggested-default-home-dir`, a sample config you can copy to `$HOME/.dirtree-state` if you want global defaults that apply to every subdirectory beneath your home directory. Feel free to tweak it to match your own “baseline” structure before adopting it.
 
+### Sorting and depth (persistent)
+
+- `-d/--depth N` changes how deep the tree is rendered and writes that depth into `.dirtree-state`, so future runs inherit the same cutoff unless you override it again.
+- `--sort MODE` accepts `modified` (default, newest-first) or `alpha` (lexicographic). Pair it with `--asc` or `--desc` to flip the direction. Both the mode and direction are persisted per directory so you only have to set them once.
+
 ## Tests
 
 The repository includes bash-based integration tests under `test/dirtree_test`. Run them via:
