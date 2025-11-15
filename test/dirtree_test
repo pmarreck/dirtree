@@ -5,6 +5,11 @@
 # Ensure mktemp uses RAM-backed /tmp unless caller already chose TMPDIR
 export TMPDIR="${TMPDIR:-/tmp}"
 
+# Source shared output helpers
+DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=lib/dirtree_output.sh
+source "$DIRTREE_ROOT/lib/dirtree_output.sh"
+
 test_count=0
 failed_count=0
 
@@ -39,14 +44,6 @@ test_function() {
 	
 	echo "✓ Test passed"
 	return 0
-}
-
-strip_tree_icons() {
-	sed -E 's/([├└]──)[[:space:]]+[^[:space:]]+[[:space:]]+/\1 /g'
-}
-
-strip_osc8_links() {
-	python3 -c 'import re, sys; osc=re.compile(r"\x1b]8;;.*?\x1b\\", re.DOTALL); sys.stdout.write(osc.sub("", sys.stdin.read()))'
 }
 
 # Create a temporary test directory structure
@@ -90,6 +87,26 @@ test_function "dotfiles visibility" \
 test_function "depth limiting" \
 	"dirtree -d 1 '$tmpdir/testdir'" \
 	"subdir"
+
+# Default depth should cap traversal at 4 levels
+tmpdir_default_depth=$(mktemp -d)
+mkdir -p "$tmpdir_default_depth/proj/l1/l2/l3/l4/l5"
+
+test_function "default depth limits to 4 levels" \
+	"(\
+		cd '$tmpdir_default_depth/proj' && \
+		out=\"\$(dirtree | strip_ansi)\" && \
+		if printf '%s\n' \"\$out\" | grep -Fq 'l5/'; then \
+			echo BAD; \
+		elif printf '%s\n' \"\$out\" | grep -Fq 'l4/'; then \
+			echo OK; \
+		else \
+			echo BAD; \
+		fi \
+	)" \
+	"OK"
+
+rm -rf "$tmpdir_default_depth"
 
 # Test that subdirectory contents are not shown with depth 1
 test_function "depth limiting effectiveness" \
@@ -633,6 +650,36 @@ dirtree --simple --default opened -c src "$basedir" >/dev/null
 test_function "auto simple via DIRTREE_AUTO_SIMPLE when not TTY" \
 	"DIRTREE_AUTO_SIMPLE=1 dirtree $basedir_q | grep -q 'src/\*' && echo OK" \
 	"OK"
+
+tmpdir_env_modes=$(mktemp -d)
+mkdir -p "$tmpdir_env_modes/modeproj/src"
+touch "$tmpdir_env_modes/modeproj/src/app.txt"
+
+test_function "DIRTREE_SIMPLE mirrors --simple output" \
+	"(\
+		cd \"$tmpdir_env_modes/modeproj\" && \
+		ref=\"\$(dirtree --simple | strip_ansi)\" && \
+		env_out=\"\$(DIRTREE_SIMPLE=1 dirtree | strip_ansi)\" && \
+		if [[ \"\$ref\" == \"\$env_out\" ]]; then \
+			echo OK; \
+		else \
+			echo BAD; \
+		fi \
+	)" \
+	"OK"
+
+test_function "DIRTREE_DECORATED forces decorated output when piped" \
+	"(\
+		cd \"$tmpdir_env_modes/modeproj\" && \
+		if DIRTREE_DECORATED=1 dirtree | grep -q ']8;;'; then \
+			echo OK; \
+		else \
+			echo BAD; \
+		fi \
+	)" \
+	"OK"
+
+rm -rf "$tmpdir_env_modes"
 
 rm -rf "$tmpdir"
 

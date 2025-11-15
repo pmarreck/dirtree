@@ -22,9 +22,10 @@
   - `--show-hidden` temporarily reveals everything hidden by config.
   - Hidden directories/files are counted and summarized after each run (decorated mode uses dim italics; simple mode prints plain text).
 - **Decorated vs simple output**
-  - Decorated mode keeps eza’s colors, icons, and OSC8 hyperlinks; even when stdout is piped (non-TTY) it now emits monochrome Nerd Font icons unless you opt out with `--no-icons`.
-  - Simple mode removes ASCII art connectors so LLMs or diff tools can ingest the tree without glyph noise, but still includes the same monochrome icons to hint at file types (toggleable via `--no-icons`).
+  - Decorated mode keeps eza’s colors, glyph icons, and OSC8 hyperlinks; even when stdout is piped (non-TTY) it still emits those glyphs unless you opt out with `--no-icons`.
+  - Simple mode keeps the same tree connectors and monochrome icons but strips ANSI color/hyperlink sequences so LLMs or diff tools get a stable, plaintext-friendly listing (toggle glyphs with `--no-icons`).
   - Auto-simple mode can kick in for non-TTY outputs via `DIRTREE_AUTO_SIMPLE`.
+  - Prefer decorating or simplifying via environment? Set `DIRTREE_SIMPLE=1` or `DIRTREE_DECORATED=1` to force either mode without changing scripts.
 - **SCM awareness**
   - When a Git or Jujutsu repo is detected, paths reported as modified/untracked are forced visible and opened even if state rules would hide them. Set `DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED=1` to opt out.
 - **CLI conveniences**
@@ -67,8 +68,14 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 
 ### Sorting and depth (persistent)
 
-- `-d/--depth N` changes how deep the tree is rendered and writes that depth into `.dirtree-state`, so future runs inherit the same cutoff unless you override it again.
+- `-d/--depth N` changes how deep the tree is rendered (default depth is 4) and writes that depth into `.dirtree-state`, so future runs inherit the same cutoff unless you override it again.
 - `--sort MODE` accepts `modified` (default, newest-first) or `alpha` (lexicographic). Pair it with `--asc` or `--desc` to flip the direction. Both the mode and direction are persisted per directory so you only have to set them once.
+
+### Mode environment variables
+
+- `DIRTREE_SIMPLE=1` forces simple mode without passing `--simple`.
+- `DIRTREE_DECORATED=1` behaves like `--decorated`, keeping colors, hyperlinks, and glyphs even when piping dirtree’s output.
+- `DIRTREE_AUTO_SIMPLE=1` automatically switches to simple mode whenever stdout isn’t a TTY.
 
 ## Tests
 

@@ -2,6 +2,10 @@
 
 # dirtree: A simple wrapper around eza for directory trees
 
+DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=lib/dirtree_output.sh
+source "$DIRTREE_ROOT/lib/dirtree_output.sh"
+
 # Ensure mktemp outputs land on RAM-backed /tmp unless caller already set TMPDIR
 export TMPDIR="${TMPDIR:-/tmp}"
 
@@ -13,9 +17,8 @@ show_help() {
 	echo "Options:"
 	echo "  -h, --help         Show this help message"
 	echo "  -a, --about        Show detailed description"
-	echo "  -d, --depth N      Set maximum depth (default: 2)"
+	echo "  -d, --depth N      Set maximum depth (default: 4)"
 	echo "  --simple           Output a simple, LLM-friendly stateful tree"
-	echo "  --llm              Alias for --simple"
 	echo "  --decorated        Force decorated eza output (even when piped)"
 	echo "  --no-icons         Disable icons (simple mode + decorated header)"
 	echo "  --default X        Persist default state: opened|closed"
@@ -42,7 +45,7 @@ show_help() {
 }
 
 # Default values
-depth=10 # keep it deep but sane
+depth=4 # default depth aligns with docs/tests
 dir="."
 simple_mode=false
 force_decorated=false
@@ -121,6 +124,13 @@ effective_default_visibility="shown"
 effective_depth=""
 effective_sort_mode=""
 effective_sort_direction=""
+declare -a open_regex_tests
+declare -a close_regex_tests
+declare -a show_regex_tests
+declare -a hide_regex_tests
+declare -A dir_children_cache
+REGEX_SPEC_SEP=$'\x1f'
+variadic_arg_count=0
 
 # Normalize path to a relative, trimmed form
 normalize_rel() {
@@ -290,6 +300,53 @@ glob_to_regex() {
 	done
 	regex+="$"
 	printf '%s' "$regex"
+}
+
+collect_variadic_args() {
+	local -n _target=$1
+	local allow_raw="$2"
+	shift 2
+	local allow_list=""
+	if [[ -n "$allow_raw" ]]; then
+		allow_list=" $allow_raw "
+	fi
+	_target=()
+	variadic_arg_count=0
+	while [[ $# -gt 0 ]]; do
+		local token="$1"
+		if [[ "$token" == --* || "$token" == -* ]]; then
+			break
+		fi
+		if [[ "$dir_pending" == true && $# -eq 1 && ${#_target[@]} -gt 0 ]]; then
+			if [[ -z "$allow_list" ]]; then
+				break
+			fi
+			local token_lc="${token,,}"
+			if [[ "$allow_list" != *" $token_lc "* ]]; then
+				break
+			fi
+		fi
+		_target+=("$token")
+		shift
+		((variadic_arg_count++))
+	done
+}
+
+build_regex_tests() {
+	local -n _source=$1
+	local -n _dest=$2
+	_dest=()
+	local token pattern neg
+	for token in "${_source[@]}"; do
+		[[ -z "$token" ]] && continue
+		pattern="$token"
+		neg=0
+		if [[ "$pattern" == \!* ]]; then
+			neg=1
+			pattern="${pattern:1}"
+		fi
+		_dest+=("$neg$REGEX_SPEC_SEP$pattern")
+	done
 }
 
 clear_priority_maps() {
@@ -1339,6 +1396,11 @@ fi
 	if (( ${#hide_map[@]} > 0 )); then
 		mapfile -t effective_hide_regexes < <(printf '%s\n' "${!hide_map[@]}" | sort)
 	fi
+
+	build_regex_tests effective_open_regexes open_regex_tests
+	build_regex_tests effective_close_regexes close_regex_tests
+	build_regex_tests effective_show_regexes show_regex_tests
+	build_regex_tests effective_hide_regexes hide_regex_tests
 }
 
 persist_state() {
@@ -1524,7 +1586,39 @@ persist_state() {
 
 dir_has_children() {
 	local d=${1:-.}
-	find "$d" -mindepth 1 -maxdepth 1 -print -quit >/dev/null 2>&1
+	if [[ -n "${dir_children_cache[$d]:-}" ]]; then
+		[[ "${dir_children_cache[$d]}" -eq 1 ]]
+		return
+	fi
+	local reset_nullglob=0
+	local reset_dotglob=0
+	if ! shopt -q nullglob; then
+		shopt -s nullglob
+		reset_nullglob=1
+	fi
+	if ! shopt -q dotglob; then
+		shopt -s dotglob
+		reset_dotglob=1
+	fi
+	local entries=("$d"/* "$d"/.[!.]* "$d"/..?*)
+	if (( reset_nullglob == 1 )); then
+		shopt -u nullglob
+	fi
+	if (( reset_dotglob == 1 )); then
+		shopt -u dotglob
+	fi
+	local has_child=0
+	for entry in "${entries[@]}"; do
+		if [[ -e "$entry" ]]; then
+			has_child=1
+			break
+		fi
+	done
+	dir_children_cache["$d"]=$has_child
+	if (( has_child )); then
+		return 0
+	fi
+	return 1
 }
 
 path_state() {
@@ -1542,12 +1636,22 @@ path_state() {
 		open_match_type="literal"
 		open_match_pattern="$rel"
 	else
-		for pattern in "${effective_open_regexes[@]}"; do
+		for spec in "${open_regex_tests[@]}"; do
+			[[ -z "$spec" ]] && continue
+			IFS=$REGEX_SPEC_SEP read -r neg pattern <<<"$spec"
 			[[ -z "$pattern" ]] && continue
-			if regex_token_matches "$pattern" "$rel"; then
-				open_match_type="regex"
-				open_match_pattern="$pattern"
-				break
+			if (( neg == 0 )); then
+				if [[ "$rel" =~ $pattern ]]; then
+					open_match_type="regex"
+					open_match_pattern="$pattern"
+					break
+				fi
+			else
+				if [[ ! "$rel" =~ $pattern ]]; then
+					open_match_type="regex"
+					open_match_pattern="!$pattern"
+					break
+				fi
 			fi
 		done
 	fi
@@ -1556,12 +1660,22 @@ path_state() {
 		close_match_type="literal"
 		close_match_pattern="$rel"
 	else
-		for pattern in "${effective_close_regexes[@]}"; do
+		for spec in "${close_regex_tests[@]}"; do
+			[[ -z "$spec" ]] && continue
+			IFS=$REGEX_SPEC_SEP read -r neg pattern <<<"$spec"
 			[[ -z "$pattern" ]] && continue
-			if regex_token_matches "$pattern" "$rel"; then
-				close_match_type="regex"
-				close_match_pattern="$pattern"
-				break
+			if (( neg == 0 )); then
+				if [[ "$rel" =~ $pattern ]]; then
+					close_match_type="regex"
+					close_match_pattern="$pattern"
+					break
+				fi
+			else
+				if [[ ! "$rel" =~ $pattern ]]; then
+					close_match_type="regex"
+					close_match_pattern="!$pattern"
+					break
+				fi
 			fi
 		done
 	fi
@@ -1570,12 +1684,22 @@ path_state() {
 		show_match_type="literal"
 		show_match_pattern="$rel"
 	else
-		for pattern in "${effective_show_regexes[@]}"; do
+		for spec in "${show_regex_tests[@]}"; do
+			[[ -z "$spec" ]] && continue
+			IFS=$REGEX_SPEC_SEP read -r neg pattern <<<"$spec"
 			[[ -z "$pattern" ]] && continue
-			if regex_token_matches "$pattern" "$rel"; then
-				show_match_type="regex"
-				show_match_pattern="$pattern"
-				break
+			if (( neg == 0 )); then
+				if [[ "$rel" =~ $pattern ]]; then
+					show_match_type="regex"
+					show_match_pattern="$pattern"
+					break
+				fi
+			else
+				if [[ ! "$rel" =~ $pattern ]]; then
+					show_match_type="regex"
+					show_match_pattern="!$pattern"
+					break
+				fi
 			fi
 		done
 	fi
@@ -1584,12 +1708,22 @@ path_state() {
 		hide_match_type="literal"
 		hide_match_pattern="$rel"
 	else
-		for pattern in "${effective_hide_regexes[@]}"; do
+		for spec in "${hide_regex_tests[@]}"; do
+			[[ -z "$spec" ]] && continue
+			IFS=$REGEX_SPEC_SEP read -r neg pattern <<<"$spec"
 			[[ -z "$pattern" ]] && continue
-			if regex_token_matches "$pattern" "$rel"; then
-				hide_match_type="regex"
-				hide_match_pattern="$pattern"
-				break
+			if (( neg == 0 )); then
+				if [[ "$rel" =~ $pattern ]]; then
+					hide_match_type="regex"
+					hide_match_pattern="$pattern"
+					break
+				fi
+			else
+				if [[ ! "$rel" =~ $pattern ]]; then
+					hide_match_type="regex"
+					hide_match_pattern="!$pattern"
+					break
+				fi
 			fi
 		done
 	fi
@@ -1851,75 +1985,62 @@ while [[ $# -gt 0 ]]; do
 		--simple)
 			simple_mode=true
 			;;
-		--llm)
-			simple_mode=true
-			;;
 		--decorated)
 			force_decorated=true
 			;;
 		--no-icons)
 			user_disabled_icons=true
 			;;
-			--default)
-				shift
-				collected=()
-				while [[ $# -gt 0 && "$1" != --* && "$1" != -* ]]; do
-					if [[ "$dir_pending" == true && $# -eq 1 && ${#collected[@]} -gt 0 ]]; then
-						local_candidate="${1,,}"
-						case "$local_candidate" in
-							open|opened|close|closed|show|shown|hide|hidden) ;;
-							*) break ;;
-						esac
-					fi
-					collected+=("$1")
-					shift
-				done
-				if [[ ${#collected[@]} -eq 0 ]]; then
-					echo "Error: --default requires at least one value" >&2
-					exit 1
-				fi
-				for token in "${collected[@]}"; do
-					local_token="${token,,}"
-					case "$local_token" in
-						open|opened)
-							if [[ -n "$cli_default_state" && "$cli_default_state" != "opened" ]]; then
-								echo "Error: --default state conflict between '$cli_default_state' and '$token'" >&2
-								exit 1
-							fi
-							cli_default_state="opened"
-							;;
-						close|closed)
-							if [[ -n "$cli_default_state" && "$cli_default_state" != "closed" ]]; then
-								echo "Error: --default state conflict between '$cli_default_state' and '$token'" >&2
-								exit 1
-							fi
-							cli_default_state="closed"
-							;;
-						show|shown)
-							if [[ -n "$cli_default_visibility" && "$cli_default_visibility" != "shown" ]]; then
-								echo "Error: --default visibility conflict between '$cli_default_visibility' and '$token'" >&2
-								exit 1
-							fi
-							cli_default_visibility="shown"
-							;;
-						hide|hidden)
-							if [[ -n "$cli_default_visibility" && "$cli_default_visibility" != "hidden" ]]; then
-								echo "Error: --default visibility conflict between '$cli_default_visibility' and '$token'" >&2
-								exit 1
-							fi
-							cli_default_visibility="hidden"
-							;;
-						*)
-							echo "Error: --default accepts opened/closed/shown/hidden" >&2
+		--default)
+			shift
+			collect_variadic_args collected "open opened close closed show shown hide hidden" "$@"
+			if (( variadic_arg_count == 0 )); then
+				echo "Error: --default requires at least one value" >&2
+				exit 1
+			fi
+			for token in "${collected[@]}"; do
+				local_token="${token,,}"
+				case "$local_token" in
+					open|opened)
+						if [[ -n "$cli_default_state" && "$cli_default_state" != "opened" ]]; then
+							echo "Error: --default state conflict between '$cli_default_state' and '$token'" >&2
 							exit 1
-							;;
-						esac
-					done
-				state_modified=true
-				unset collected
-				continue
-				;;
-			--sort)
+						fi
+						cli_default_state="opened"
+						;;
+					close|closed)
+						if [[ -n "$cli_default_state" && "$cli_default_state" != "closed" ]]; then
+							echo "Error: --default state conflict between '$cli_default_state' and '$token'" >&2
+							exit 1
+						fi
+						cli_default_state="closed"
+						;;
+					show|shown)
+						if [[ -n "$cli_default_visibility" && "$cli_default_visibility" != "shown" ]]; then
+							echo "Error: --default visibility conflict between '$cli_default_visibility' and '$token'" >&2
+							exit 1
+						fi
+						cli_default_visibility="shown"
+						;;
+					hide|hidden)
+						if [[ -n "$cli_default_visibility" && "$cli_default_visibility" != "hidden" ]]; then
+							echo "Error: --default visibility conflict between '$cli_default_visibility' and '$token'" >&2
+							exit 1
+						fi
+						cli_default_visibility="hidden"
+						;;
+					*)
+						echo "Error: --default accepts opened/closed/shown/hidden" >&2
+						exit 1
+						;;
+				esac
+			done
+			shift "$variadic_arg_count"
+			state_modified=true
+			unset collected
+			continue
+			;;
+		--sort)
 				shift
 				case "$1" in
 					alpha|modified)
@@ -1943,22 +2064,15 @@ while [[ $# -gt 0 ]]; do
 			--show-hidden)
 				show_hidden=true
 				;;
-			-o|--open)
-				shift
-				collected=()
-				while [[ $# -gt 0 && "$1" != --* && "$1" != -* ]]; do
-					if [[ "$dir_pending" == true && $# -eq 1 && ${#collected[@]} -gt 0 ]]; then
-						break
-					fi
-					collected+=("$1")
-					shift
-				done
-				if [[ ${#collected[@]} -eq 0 ]]; then
-					echo "Error: --open requires at least one directory" >&2
-					exit 1
-				fi
-				for entry in "${collected[@]}"; do
-					pattern_val=""
+		-o|--open)
+			shift
+			collect_variadic_args collected "" "$@"
+			if (( variadic_arg_count == 0 )); then
+				echo "Error: --open requires at least one directory" >&2
+				exit 1
+			fi
+			for entry in "${collected[@]}"; do
+				pattern_val=""
 					parse_wrapped_regex_token "$entry" pattern_val
 					case $? in
 						0)
@@ -1976,28 +2090,22 @@ while [[ $# -gt 0 ]]; do
 								open_args+=("$entry")
 							fi
 							;;
-					esac
-				done
-				state_modified=true
-				unset collected
-				continue
-				;;
-			-c|--close)
-				shift
-				collected=()
-				while [[ $# -gt 0 && "$1" != --* && "$1" != -* ]]; do
-					if [[ "$dir_pending" == true && $# -eq 1 && ${#collected[@]} -gt 0 ]]; then
-						break
-					fi
-					collected+=("$1")
-					shift
-				done
-				if [[ ${#collected[@]} -eq 0 ]]; then
-					echo "Error: --close requires at least one directory" >&2
-					exit 1
-				fi
-				for entry in "${collected[@]}"; do
-					pattern_val=""
+				esac
+			done
+			shift "$variadic_arg_count"
+			state_modified=true
+			unset collected
+			continue
+			;;
+		-c|--close)
+			shift
+			collect_variadic_args collected "" "$@"
+			if (( variadic_arg_count == 0 )); then
+				echo "Error: --close requires at least one directory" >&2
+				exit 1
+			fi
+			for entry in "${collected[@]}"; do
+				pattern_val=""
 					parse_wrapped_regex_token "$entry" pattern_val
 					case $? in
 						0)
@@ -2015,28 +2123,22 @@ while [[ $# -gt 0 ]]; do
 								close_args+=("$entry")
 							fi
 							;;
-					esac
-				done
-				state_modified=true
-				unset collected
-				continue
-				;;
-			--show)
-				shift
-				collected=()
-				while [[ $# -gt 0 && "$1" != --* && "$1" != -* ]]; do
-					if [[ "$dir_pending" == true && $# -eq 1 && ${#collected[@]} -gt 0 ]]; then
-						break
-					fi
-					collected+=("$1")
-					shift
-					done
-				if [[ ${#collected[@]} -eq 0 ]]; then
-					echo "Error: --show requires at least one path" >&2
-					exit 1
-				fi
-				for entry in "${collected[@]}"; do
-					pattern_val=""
+				esac
+			done
+			shift "$variadic_arg_count"
+			state_modified=true
+			unset collected
+			continue
+			;;
+		--show)
+			shift
+			collect_variadic_args collected "" "$@"
+			if (( variadic_arg_count == 0 )); then
+				echo "Error: --show requires at least one path" >&2
+				exit 1
+			fi
+			for entry in "${collected[@]}"; do
+				pattern_val=""
 					parse_wrapped_regex_token "$entry" pattern_val
 					case $? in
 						0)
@@ -2058,28 +2160,22 @@ while [[ $# -gt 0 ]]; do
 								show_args+=("$entry")
 							fi
 							;;
-					esac
-				done
-				state_modified=true
-				unset collected
-				continue
-				;;
-			--hide)
-				shift
-				collected=()
-				while [[ $# -gt 0 && "$1" != --* && "$1" != -* ]]; do
-					if [[ "$dir_pending" == true && $# -eq 1 && ${#collected[@]} -gt 0 ]]; then
-						break
-					fi
-					collected+=("$1")
-					shift
-				done
-				if [[ ${#collected[@]} -eq 0 ]]; then
-					echo "Error: --hide requires at least one path" >&2
-					exit 1
-				fi
-				for entry in "${collected[@]}"; do
-					pattern_val=""
+				esac
+			done
+			shift "$variadic_arg_count"
+			state_modified=true
+			unset collected
+			continue
+			;;
+		--hide)
+			shift
+			collect_variadic_args collected "" "$@"
+			if (( variadic_arg_count == 0 )); then
+				echo "Error: --hide requires at least one path" >&2
+				exit 1
+			fi
+			for entry in "${collected[@]}"; do
+				pattern_val=""
 					parse_wrapped_regex_token "$entry" pattern_val
 					case $? in
 						0)
@@ -2101,12 +2197,13 @@ while [[ $# -gt 0 ]]; do
 								hide_args+=("$entry")
 							fi
 							;;
-					esac
-				done
-				state_modified=true
-				unset collected
-				continue
-				;;
+				esac
+			done
+			shift "$variadic_arg_count"
+			state_modified=true
+			unset collected
+			continue
+			;;
 		--test)
 			if [[ -x "$(dirname "$0")/test/dirtree_test" ]]; then
 				"$(dirname "$0")/test/dirtree_test" >/dev/null
@@ -2268,6 +2365,7 @@ if [[ "$force_decorated" == false ]]; then
 			simple_mode=true
 		elif [[ -n "${DIRTREE_DECORATED:-}" ]]; then
 			simple_mode=false
+			force_decorated=true
 		elif [[ -n "${DIRTREE_AUTO_SIMPLE:-}" ]]; then
 			# Auto: enable simple when stdout is not a TTY
 			if [[ ! -t 1 ]]; then
@@ -2314,11 +2412,10 @@ status=0
 if $strip_osc8; then
 	(
 		set -o pipefail
-		ESC=$'\e'
 		{
 			print_decorated_root_header
 			render_dir "" "$depth" 0 ""
-		} | sed -E "s/${ESC}]8;;[^${ESC}]*${ESC}\\\\//g"
+		} | strip_osc8_links
 	) || status=$?
 else
 	if ! print_decorated_root_header; then
