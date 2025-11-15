@@ -76,6 +76,7 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 - `DIRTREE_SIMPLE=1` forces simple mode without passing `--simple`.
 - `DIRTREE_DECORATED=1` behaves like `--decorated`, keeping colors, hyperlinks, and glyphs even when piping dirtree’s output.
 - `DIRTREE_AUTO_SIMPLE=1` automatically switches to simple mode whenever stdout isn’t a TTY.
+- `PIPED_STDOUT=0|1` lets you override dirtree’s TTY detection in non-interactive contexts (e.g., `PIPED_STDOUT=0` treats a pipe as if it were an interactive terminal, restoring hyperlinks and color for tests or automated runs).
 
 ## Tests
 

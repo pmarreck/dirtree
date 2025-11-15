@@ -132,6 +132,21 @@ declare -A dir_children_cache
 REGEX_SPEC_SEP=$'\x1f'
 variadic_arg_count=0
 
+stdout_is_tty() {
+	if [[ -n "${PIPED_STDOUT:-}" ]]; then
+		local flag="${PIPED_STDOUT,,}"
+		case "$flag" in
+			0|false|no|off)
+				return 0
+				;;
+			1|true|yes|on)
+				return 1
+				;;
+		esac
+	fi
+	[[ -t 1 ]]
+}
+
 # Normalize path to a relative, trimmed form
 normalize_rel() {
 	local base="$1" p="$2"
@@ -1991,6 +2006,9 @@ while [[ $# -gt 0 ]]; do
 		--no-icons)
 			user_disabled_icons=true
 			;;
+		--no-hyperlinks)
+			force_strip_hyperlinks=true
+			;;
 		--default)
 			shift
 			collect_variadic_args collected "open opened close closed show shown hide hidden" "$@"
@@ -2368,7 +2386,7 @@ if [[ "$force_decorated" == false ]]; then
 			force_decorated=true
 		elif [[ -n "${DIRTREE_AUTO_SIMPLE:-}" ]]; then
 			# Auto: enable simple when stdout is not a TTY
-			if [[ ! -t 1 ]]; then
+			if ! stdout_is_tty; then
 				simple_mode=true
 			fi
 		fi
@@ -2398,7 +2416,9 @@ if [[ "$simple_mode" == true ]]; then
 		eza_icons="never"
 	fi
 else
-	if [[ ! -t 1 && "$force_decorated" == false ]]; then
+	if [[ "$force_strip_hyperlinks" == true ]]; then
+		strip_osc8=true
+	elif ! stdout_is_tty && [[ "$force_decorated" == false ]]; then
 		eza_color="never"
 		strip_osc8=true
 	fi

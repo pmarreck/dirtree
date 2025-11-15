@@ -143,6 +143,14 @@ test_function "hyperlinks present when forced with --decorated" \
 	"dirtree --decorated '$tmpdir/testdir' | grep -q ']8;;' && echo OK" \
 	"OK"
 
+test_function "PIPED_STDOUT=0 treats pipe as TTY for hyperlinks" \
+	"PIPED_STDOUT=0 dirtree '$tmpdir/testdir' | grep -q ']8;;' && echo OK" \
+	"OK"
+
+test_function "--no-hyperlinks suppresses OSC8 sequences" \
+	"PIPED_STDOUT=0 dirtree --decorated --no-hyperlinks '$tmpdir/testdir' | grep -q ']8;;' && echo BAD || echo OK" \
+	"OK"
+
 # Test that eza is available
 test_function "eza availability" \
 	"command -v eza >/dev/null && echo 'EZA_FOUND'" \
