@@ -1,0 +1,5 @@
+# Next Steps
+
+1. **Finish printable_binary coverage for the remaining TODOs.** The suite still needs encoded tests for the simple-mode behaviors, inline/legacy INI-MA parsing, decorated color toggles (no ANSI vs forced color), git/decorated interactions, and the `DIRTREE_*` environment shortcuts. Each scenario should have a dedicated helper/test similar to the existing ones so the checklist at the top of `test/dirtree_test` can be fully checked off.
+2. **Silence stdout/stderr noise in the remaining tests.** The new `run_quiet`/`run_and_capture` helpers should be used everywhere; sweep the rest of the file (including future tests) to ensure no direct `"$DIRTREE_BIN" … >/dev/null` calls remain, and encode any expected stderr (hidden counts, validation errors) instead of letting them leak.
+3. **Retire `lib/dirtree_output.sh`.** Once every test compares raw output (decorated or simple) without helper stripping, remove the `source` line from `dirtree`, inline any minimal ANSI/OSC utilities the CLI still needs, and delete `lib/dirtree_output.sh` so the project no longer depends on it.

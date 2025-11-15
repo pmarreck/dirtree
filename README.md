@@ -22,17 +22,19 @@
   - `--show-hidden` temporarily reveals everything hidden by config.
   - Hidden directories/files are counted and summarized after each run (decorated mode uses dim italics; simple mode prints plain text).
 - **Decorated vs simple output**
-  - Decorated mode keeps eza’s colors, glyph icons, and OSC8 hyperlinks; even when stdout is piped (non-TTY) it still emits those glyphs unless you opt out with `--no-icons`.
+  - Decorated mode keeps eza’s colors, glyph icons, and OSC8 hyperlinks whenever stdout is a TTY or you force it with `--decorated`. When dirtree detects a pipe, it automatically falls back to monochrome icons and no hyperlinks for log-friendly output unless you opt in via `--decorated` or `PIPED_STDOUT=0`.
   - Simple mode keeps the same tree connectors and monochrome icons but strips ANSI color/hyperlink sequences so LLMs or diff tools get a stable, plaintext-friendly listing (toggle glyphs with `--no-icons`).
   - Auto-simple mode can kick in for non-TTY outputs via `DIRTREE_AUTO_SIMPLE`.
   - Prefer decorating or simplifying via environment? Set `DIRTREE_SIMPLE=1` or `DIRTREE_DECORATED=1` to force either mode without changing scripts.
+- **Deterministic decoration toggles**
+  - `--no-icons`, `--no-color`, and `--no-hyperlinks` disable icons, ANSI colors, or OSC8 hyperlinks and persist those preferences (`icon=false`, `color=false`, `hyperlink=false`) in `.dirtree-state` so future runs inherit the same style. Use them when you need diff-friendly logs or reproducible CI artifacts; delete the key or override with `--decorated`/`PIPED_STDOUT=0` when you want rich output again.
 - **SCM awareness**
   - When a Git or Jujutsu repo is detected, paths reported as modified/untracked are forced visible and opened even if state rules would hide them. Set `DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED=1` to opt out.
 - **CLI conveniences**
   - `--open`, `--close`, `--show`, `--hide` accept multiple values and regexes using the `/pattern/` form.
   - `--default` and `--sort` options to tune depth and ordering.
   - `--test` hook to run the bash test suite.
-  - `--no-icons` disables icon rendering for both decorated and simple output when you truly need plain text.
+  - `--no-icons`, `--no-color`, and `--no-hyperlinks` disable individual decorations (and persist that choice) when you truly need plain text.
 - **Safety niceties**
   - Number of hidden directories/files logged to stderr so you know what’s filtered out.
   - Conflicting rules (e.g., same path in open/close) surface as errors.

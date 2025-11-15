@@ -21,6 +21,8 @@ show_help() {
 	echo "  --simple           Output a simple, LLM-friendly stateful tree"
 	echo "  --decorated        Force decorated eza output (even when piped)"
 	echo "  --no-icons         Disable icons (simple mode + decorated header)"
+	echo "  --no-color        Disable ANSI colors and persist preference"
+	echo "  --no-hyperlinks   Disable OSC8 hyperlinks and persist preference"
 	echo "  --default X        Persist default state: opened|closed"
 	echo "  -o, --open DIR...  Open one or more subdirs (repeat flag to add more)"
 	echo "  -c, --close DIR... Close one or more subdirs (repeat flag to add more)"
@@ -50,6 +52,12 @@ dir="."
 simple_mode=false
 force_decorated=false
 user_disabled_icons=false
+cli_color_override=false
+cli_color_value=""
+cli_hyperlink_override=false
+cli_hyperlink_value=""
+color_pref_override=""
+hyperlink_pref_override=""
 default_state=""
 default_state_set=false
 default_visibility="shown"
@@ -93,6 +101,10 @@ persisted_sort_mode=""
 persisted_sort_mode_set=false
 persisted_sort_direction=""
 persisted_sort_direction_set=false
+persisted_color_preference=""
+persisted_color_preference_set=false
+persisted_hyperlink_preference=""
+persisted_hyperlink_preference_set=false
 inherited_default_state=""
 inherited_default_state_set=false
 inherited_default_visibility="shown"
@@ -103,6 +115,10 @@ inherited_sort_mode=""
 inherited_sort_mode_set=false
 inherited_sort_direction=""
 inherited_sort_direction_set=false
+inherited_color_preference=""
+inherited_color_preference_set=false
+inherited_hyperlink_preference=""
+inherited_hyperlink_preference_set=false
 declare -A inherited_open_literals
 declare -A inherited_close_literals
 declare -A inherited_show_literals
@@ -124,6 +140,8 @@ effective_default_visibility="shown"
 effective_depth=""
 effective_sort_mode=""
 effective_sort_direction=""
+effective_color_preference=""
+effective_hyperlink_preference=""
 declare -a open_regex_tests
 declare -a close_regex_tests
 declare -a show_regex_tests
@@ -845,6 +863,10 @@ read_state() {
 	persisted_sort_mode_set=false
 	persisted_sort_direction=""
 	persisted_sort_direction_set=false
+	persisted_color_preference=""
+	persisted_color_preference_set=false
+	persisted_hyperlink_preference=""
+	persisted_hyperlink_preference_set=false
 	[[ ! -f "$state_file" ]] && return
 
 	local -a __state_lines=()
@@ -1091,6 +1113,30 @@ read_state() {
 							;;
 					esac
 					;;
+				color)
+					value=$(strip_trailing_space_tabs "$(strip_leading_space_tabs "$value")")
+					case "$value" in
+						true|false)
+							persisted_color_preference="$value"
+							persisted_color_preference_set=true
+							;;
+						*)
+							state_passthrough_lines+=("$raw")
+							;;
+					esac
+					;;
+				hyperlink)
+					value=$(strip_trailing_space_tabs "$(strip_leading_space_tabs "$value")")
+					case "$value" in
+						true|false)
+							persisted_hyperlink_preference="$value"
+							persisted_hyperlink_preference_set=true
+							;;
+						*)
+							state_passthrough_lines+=("$raw")
+							;;
+					esac
+					;;
 				open|close|show|hide)
 					value=$(strip_trailing_space_tabs "$(strip_leading_space_tabs "$value")")
 					if [[ "$compact" == "[" ]]; then
@@ -1144,6 +1190,10 @@ reset_inherited_state() {
 	inherited_sort_mode_set=false
 	inherited_sort_direction=""
 	inherited_sort_direction_set=false
+	inherited_color_preference=""
+	inherited_color_preference_set=false
+	inherited_hyperlink_preference=""
+	inherited_hyperlink_preference_set=false
 	inherited_open_literals=()
 	inherited_close_literals=()
 	inherited_show_literals=()
@@ -1174,6 +1224,14 @@ merge_inherited_from_current() {
 	if [[ "$persisted_sort_direction_set" == true && -n "$persisted_sort_direction" ]]; then
 		inherited_sort_direction="$persisted_sort_direction"
 		inherited_sort_direction_set=true
+	fi
+	if [[ "$persisted_color_preference_set" == true && -n "$persisted_color_preference" ]]; then
+		inherited_color_preference="$persisted_color_preference"
+		inherited_color_preference_set=true
+	fi
+	if [[ "$persisted_hyperlink_preference_set" == true && -n "$persisted_hyperlink_preference" ]]; then
+		inherited_hyperlink_preference="$persisted_hyperlink_preference"
+		inherited_hyperlink_preference_set=true
 	fi
 
 	local key
@@ -1287,6 +1345,20 @@ rebuild_effective_state() {
 		effective_sort_direction="$persisted_sort_direction"
 	elif [[ "$inherited_sort_direction_set" == true ]]; then
 		effective_sort_direction="$inherited_sort_direction"
+	fi
+
+	effective_color_preference=""
+	if [[ "$persisted_color_preference_set" == true && -n "$persisted_color_preference" ]]; then
+		effective_color_preference="$persisted_color_preference"
+	elif [[ "$inherited_color_preference_set" == true && -n "$inherited_color_preference" ]]; then
+		effective_color_preference="$inherited_color_preference"
+	fi
+
+	effective_hyperlink_preference=""
+	if [[ "$persisted_hyperlink_preference_set" == true && -n "$persisted_hyperlink_preference" ]]; then
+		effective_hyperlink_preference="$persisted_hyperlink_preference"
+	elif [[ "$inherited_hyperlink_preference_set" == true && -n "$inherited_hyperlink_preference" ]]; then
+		effective_hyperlink_preference="$inherited_hyperlink_preference"
 	fi
 
 	local key
@@ -1458,6 +1530,12 @@ persist_state() {
 		fi
 		if [[ "$persisted_sort_direction_set" == true && -n "$persisted_sort_direction" ]]; then
 			scalar_lines+=("sort_direction=$persisted_sort_direction")
+		fi
+		if [[ "$persisted_color_preference_set" == true && -n "$persisted_color_preference" ]]; then
+			scalar_lines+=("color=$persisted_color_preference")
+		fi
+		if [[ "$persisted_hyperlink_preference_set" == true && -n "$persisted_hyperlink_preference" ]]; then
+			scalar_lines+=("hyperlink=$persisted_hyperlink_preference")
 		fi
 		if (( ${#scalar_lines[@]} > 0 )); then
 			if [[ "$wrote_block" == true ]]; then
@@ -2000,16 +2078,21 @@ while [[ $# -gt 0 ]]; do
 		--simple)
 			simple_mode=true
 			;;
-		--decorated)
-			force_decorated=true
-			;;
-		--no-icons)
-			user_disabled_icons=true
-			;;
-		--no-hyperlinks)
-			force_strip_hyperlinks=true
-			;;
-		--default)
+	--decorated)
+		force_decorated=true
+		;;
+	--no-icons)
+		user_disabled_icons=true
+		;;
+	--no-color)
+		cli_color_override=true
+		cli_color_value="false"
+		;;
+	--no-hyperlinks)
+		cli_hyperlink_override=true
+		cli_hyperlink_value="false"
+		;;
+	--default)
 			shift
 			collect_variadic_args collected "open opened close closed show shown hide hidden" "$@"
 			if (( variadic_arg_count == 0 )); then
@@ -2351,6 +2434,22 @@ if [[ "$cli_sort_direction_override" == true ]]; then
 	fi
 fi
 
+if [[ "$cli_color_override" == true ]]; then
+	if [[ "$persisted_color_preference_set" != true || "$persisted_color_preference" != "$cli_color_value" ]]; then
+		persisted_color_preference="$cli_color_value"
+		persisted_color_preference_set=true
+		state_modified=true
+	fi
+fi
+
+if [[ "$cli_hyperlink_override" == true ]]; then
+	if [[ "$persisted_hyperlink_preference_set" != true || "$persisted_hyperlink_preference" != "$cli_hyperlink_value" ]]; then
+		persisted_hyperlink_preference="$cli_hyperlink_value"
+		persisted_hyperlink_preference_set=true
+		state_modified=true
+	fi
+fi
+
 rebuild_effective_state
 
 if [[ "$cli_depth_override" != true && -n "$effective_depth" ]]; then
@@ -2366,6 +2465,22 @@ if [[ "$cli_sort_direction_override" != true ]]; then
 	esac
 fi
 
+if [[ "$cli_color_override" == true ]]; then
+	color_pref_override="$cli_color_value"
+elif [[ -n "$effective_color_preference" ]]; then
+	color_pref_override="$effective_color_preference"
+else
+	color_pref_override=""
+fi
+
+if [[ "$cli_hyperlink_override" == true ]]; then
+	hyperlink_pref_override="$cli_hyperlink_value"
+elif [[ -n "$effective_hyperlink_preference" ]]; then
+	hyperlink_pref_override="$effective_hyperlink_preference"
+else
+	hyperlink_pref_override=""
+fi
+
 if [[ "$state_modified" == true || "$state_needs_migration" == true ]]; then
 	persist_state "$abs_dir"
 fi
@@ -2375,6 +2490,12 @@ case "$sort_mode" in
 	*) render_sort_field="modified" ;;
 esac
 render_sort_reverse="$sort_reverse"
+
+if stdout_is_tty; then
+	stdout_is_tty_cached=true
+else
+	stdout_is_tty_cached=false
+fi
 
 # Determine mode if not explicitly forced
 if [[ "$force_decorated" == false ]]; then
@@ -2386,7 +2507,7 @@ if [[ "$force_decorated" == false ]]; then
 			force_decorated=true
 		elif [[ -n "${DIRTREE_AUTO_SIMPLE:-}" ]]; then
 			# Auto: enable simple when stdout is not a TTY
-			if ! stdout_is_tty; then
+			if [[ "$stdout_is_tty_cached" == false ]]; then
 				simple_mode=true
 			fi
 		fi
@@ -2405,26 +2526,44 @@ if ! command -v eza >/dev/null 2>&1; then
 	exit 1
 fi
 
-# Decide eza presentation based on mode/TTY.
+# Decide eza presentation based on mode/TTY/preferences.
 eza_color="always"
 eza_icons="always"
-strip_osc8=false
+eza_hyperlinks_enabled=false
 if [[ "$simple_mode" == true ]]; then
 	eza_color="never"
-	strip_osc8=true
+	eza_hyperlinks_enabled=false
 	if [[ "$user_disabled_icons" == true ]]; then
 		eza_icons="never"
 	fi
 else
-	if [[ "$force_strip_hyperlinks" == true ]]; then
-		strip_osc8=true
-	elif ! stdout_is_tty && [[ "$force_decorated" == false ]]; then
+	if [[ "$force_decorated" == true || "$stdout_is_tty_cached" == true ]]; then
+		eza_color="always"
+		eza_hyperlinks_enabled=true
+	else
 		eza_color="never"
-		strip_osc8=true
+		eza_hyperlinks_enabled=false
 	fi
 	if [[ "$user_disabled_icons" == true ]]; then
 		eza_icons="never"
 	fi
+fi
+
+if [[ "$color_pref_override" == "false" ]]; then
+	eza_color="never"
+elif [[ "$color_pref_override" == "true" && "$simple_mode" != true ]]; then
+	eza_color="always"
+fi
+
+if [[ "$hyperlink_pref_override" == "false" || "$simple_mode" == true ]]; then
+	eza_hyperlinks_enabled=false
+elif [[ "$hyperlink_pref_override" == "true" && "$simple_mode" != true ]]; then
+	eza_hyperlinks_enabled=true
+fi
+
+strip_osc8=false
+if [[ "$eza_hyperlinks_enabled" != true ]]; then
+	strip_osc8=true
 fi
 
 # Run renderer with optional OSC8 stripping

@@ -1,0 +1,86 @@
+# Test Purposes
+
+- **basic listing prints absolute root header**: Ensures basic listing prints absolute root header.
+- **decorated root header includes trailing slash**: Ensures decorated root header includes trailing slash.
+- **dotfiles visibility**: Ensures dotfiles visibility.
+- **depth limiting**: Ensures depth limiting.
+- **default depth limits to 4 levels**: Ensures default depth limits to 4 levels.
+- **depth limiting effectiveness**: Ensures depth limiting effectiveness.
+- **help option**: Ensures help option.
+- **current directory listing shows entries**: Ensures current directory listing shows entries.
+- **files visible at depth 2**: Ensures files visible at depth 2.
+- **files and directories both listed**: Ensures files and directories both listed.
+- **no hyperlinks by default when not TTY**: Ensures no hyperlinks by default when not TTY.
+- **hyperlinks present when forced with --decorated**: Ensures hyperlinks present when forced with --decorated.
+- **PIPED_STDOUT=0 treats pipe as TTY for hyperlinks**: Ensures PIPED_STDOUT=0 treats pipe as TTY for hyperlinks.
+- **--no-hyperlinks suppresses OSC8 sequences**: Ensures --no-hyperlinks suppresses OSC8 sequences.
+- **eza availability**: Ensures eza availability.
+- **depth parameter validation**: Ensures depth parameter validation.
+- **directory validation**: Ensures directory validation.
+- **persist default via --default only**: Ensures persist default via --default only.
+- **persist default visibility via --default hide**: Ensures persist default visibility via --default hide.
+- **persist default array via multiple --default tokens**: Ensures persist default array via multiple --default tokens.
+- **depth flag persists and applies**: Ensures depth flag persists and applies.
+- **sort flags persist and apply**: Ensures sort flags persist and apply.
+- **inherits parent .dirtree-state closing rules**: Ensures inherits parent .dirtree-state closing rules.
+- **no implicit state file creation**: Ensures no implicit state file creation.
+- **close glob applies to nested matches**: Ensures close glob applies to nested matches.
+- **decorated mode honors default=closed**: Ensures decorated mode honors default=closed.
+- **git modified file bypasses hide**: Ensures git modified file bypasses hide.
+- **git untracked file opens hidden parents**: Ensures git untracked file opens hidden parents.
+- **git override can be disabled via env**: Ensures git override can be disabled via env.
+- **decorated mode honors explicit open over default**: Ensures decorated mode honors explicit open over default.
+- **--open handles directories with spaces**: Ensures --open handles directories with spaces.
+- **decorated handles percent-encoded OSC8 hyperlinks**: Ensures decorated handles percent-encoded OSC8 hyperlinks.
+- **state persists using INI-MA arrays**: Ensures state persists using INI-MA arrays.
+- **legacy state migrates to INI-MA**: Ensures legacy state migrates to INI-MA.
+- **--simple default opened then close src**: Ensures --simple default opened then close src.
+- **--simple reopen src shows contents**: Ensures --simple reopen src shows contents.
+- **--simple set default closed and open docs**: Ensures --simple set default closed and open docs.
+- **--simple preserves unknown keys in state**: Ensures --simple preserves unknown keys in state.
+- **--simple emits tree connectors**: Ensures --simple emits tree connectors.
+- **--simple closed marker variants**: Ensures --simple closed marker variants.
+- **auto simple via DIRTREE_AUTO_SIMPLE when not TTY**: Ensures auto simple via DIRTREE_AUTO_SIMPLE when not TTY.
+- **DIRTREE_SIMPLE mirrors --simple output**: Ensures DIRTREE_SIMPLE mirrors --simple output.
+- **DIRTREE_DECORATED forces decorated output when piped**: Ensures DIRTREE_DECORATED forces decorated output when piped.
+- **--simple shows icons by default**: Ensures --simple shows icons by default.
+- **--simple --no-icons matches icon-stripped output**: Ensures --simple --no-icons matches icon-stripped output.
+- **decorated piped keeps icons by default**: Ensures decorated piped keeps icons by default.
+- **decorated piped --no-icons matches icon-stripped output**: Ensures decorated piped --no-icons matches icon-stripped output.
+- **decorated mode collapses explicitly closed .git**: Ensures decorated mode collapses explicitly closed .git.
+- **no ANSI colors when piped by default**: Ensures no ANSI colors when piped by default.
+- **ANSI colors retained when piped with --decorated**: Ensures ANSI colors retained when piped with --decorated.
+- **decorated output does not star non-executable plain files**: Ensures decorated output does not star non-executable plain files.
+- **decorated: dirs end with '/', files do not**: Ensures decorated: dirs end with '/', files do not.
+- **decorated: closing .git does not tag .gitignore**: Ensures decorated: closing .git does not tag .gitignore.
+- **decorated indentation reflects hierarchy**: Ensures decorated indentation reflects hierarchy.
+- **default sort is modified desc**: Ensures default sort is modified desc.
+- **--sort alpha --asc orders ascending**: Ensures --sort alpha --asc orders ascending.
+- **--sort alpha --desc orders descending**: Ensures --sort alpha --desc orders descending.
+- **--simple shares modified sort order**: Ensures --simple shares modified sort order.
+- **--simple shares alpha sort order**: Ensures --simple shares alpha sort order.
+- **open parent does not expand grandchildren by default**: Ensures open parent does not expand grandchildren by default.
+- **--open regex persists in state**: Ensures --open regex persists in state.
+- **--open slash regex persists in state**: Ensures --open slash regex persists in state.
+- **literal close beats regex open**: Ensures literal close beats regex open.
+- **--close slash regex persists in state**: Ensures --close slash regex persists in state.
+- **regex/open close conflict raises error**: Ensures regex/open close conflict raises error.
+- **--hide literal suppresses node**: Ensures --hide literal suppresses node.
+- **--hide regex suppresses matches**: Ensures --hide regex suppresses matches.
+- **--hide slash regex persists and hides**: Ensures --hide slash regex persists and hides.
+- **--hide negated regex hides non matches**: Ensures --hide negated regex hides non matches.
+- **--hide negated regex persists and hides**: Ensures --hide negated regex persists and hides.
+- **re-prefix --open treats argument as literal**: Ensures re-prefix --open treats argument as literal.
+- **re-prefix --hide treats argument as literal**: Ensures re-prefix --hide treats argument as literal.
+- **inline INI-MA arrays parse correctly**: Ensures inline INI-MA arrays parse correctly.
+- **--hide literal with dot stays literal**: Ensures --hide literal with dot stays literal.
+- **--show-hidden reveals hidden entries without persisting**: Ensures --show-hidden reveals hidden entries without persisting.
+- **decorated output reports hidden counts**: Ensures decorated output reports hidden counts.
+- **--show-hidden suppresses hidden count**: Ensures --show-hidden suppresses hidden count.
+- **--show literal overrides hide regex**: Ensures --show literal overrides hide regex.
+- **hide literal beats show regex**: Ensures hide literal beats show regex.
+- **--show slash regex persists**: Ensures --show slash regex persists.
+- **--show rejects absolute paths**: Ensures --show rejects absolute paths.
+- **open but hidden directory stays collapsed**: Ensures open but hidden directory stays collapsed.
+- **--hide rejects absolute paths**: Ensures --hide rejects absolute paths.
+- **decorated tree shows connectors**: Ensures decorated tree shows connectors.
