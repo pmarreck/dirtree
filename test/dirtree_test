@@ -35,34 +35,34 @@
 # [x] decorated mode honors explicit open over default — Ensures decorated mode honors explicit open over default.
 # [x] --open handles directories with spaces — Ensures --open handles directories with spaces.
 # [x] decorated handles percent-encoded OSC8 hyperlinks — Ensures decorated handles percent-encoded OSC8 hyperlinks.
-# [ ] state persists using INI-MA arrays — Ensures state persists using INI-MA arrays.
-# [ ] legacy state migrates to INI-MA — Ensures legacy state migrates to INI-MA.
-# [ ] --simple default opened then close src — Ensures --simple default opened then close src.
-# [ ] --simple reopen src shows contents — Ensures --simple reopen src shows contents.
-# [ ] --simple set default closed and open docs — Ensures --simple set default closed and open docs.
-# [ ] --simple preserves unknown keys in state — Ensures --simple preserves unknown keys in state.
-# [ ] --simple emits tree connectors — Ensures --simple emits tree connectors.
-# [ ] --simple closed marker variants — Ensures --simple closed marker variants.
-# [ ] auto simple via DIRTREE_AUTO_SIMPLE when not TTY — Ensures auto simple via DIRTREE_AUTO_SIMPLE when not TTY.
-# [ ] DIRTREE_SIMPLE mirrors --simple output — Ensures DIRTREE_SIMPLE mirrors --simple output.
-# [ ] DIRTREE_DECORATED forces decorated output when piped — Ensures DIRTREE_DECORATED forces decorated output when piped.
-# [ ] --simple shows icons by default — Ensures --simple shows icons by default.
-# [ ] --simple --no-icons matches icon-stripped output — Ensures --simple --no-icons matches icon-stripped output.
+# [x] state persists using INI-MA arrays — Ensures state persists using INI-MA arrays.
+# [x] legacy state migrates to INI-MA — Ensures legacy state migrates to INI-MA.
+# [x] --simple default opened then close src — Ensures --simple default opened then close src.
+# [x] --simple reopen src shows contents — Ensures --simple reopen src shows contents.
+# [x] --simple set default closed and open docs — Ensures --simple set default closed and open docs.
+# [x] --simple preserves unknown keys in state — Ensures --simple preserves unknown keys in state.
+# [x] --simple emits tree connectors — Ensures --simple emits tree connectors.
+# [x] --simple closed marker variants — Ensures --simple closed marker variants.
+# [x] auto simple via DIRTREE_AUTO_SIMPLE when not TTY — Ensures auto simple via DIRTREE_AUTO_SIMPLE when not TTY.
+# [x] DIRTREE_SIMPLE mirrors --simple output — Ensures DIRTREE_SIMPLE mirrors --simple output.
+# [x] DIRTREE_DECORATED forces decorated output when piped — Ensures DIRTREE_DECORATED forces decorated output when piped.
+# [x] --simple shows icons by default — Ensures --simple shows icons by default.
+# [x] --simple --no-icons matches icon-stripped output — Ensures --simple --no-icons matches icon-stripped output.
 # [x] decorated piped keeps icons by default — Ensures decorated piped keeps icons by default.
 # [x] decorated piped --no-icons matches icon-stripped output — Ensures decorated piped --no-icons matches icon-stripped output.
-# [ ] decorated mode collapses explicitly closed .git — Ensures decorated mode collapses explicitly closed .git.
-# [ ] no ANSI colors when piped by default — Ensures no ANSI colors when piped by default.
-# [ ] ANSI colors retained when piped with --decorated — Ensures ANSI colors retained when piped with --decorated.
-# [ ] decorated output does not star non-executable plain files — Ensures decorated output does not star non-executable plain files.
-# [ ] decorated: dirs end with '/', files do not — Ensures decorated: dirs end with '/', files do not.
-# [ ] decorated: closing .git does not tag .gitignore — Ensures decorated: closing .git does not tag .gitignore.
-# [ ] decorated indentation reflects hierarchy — Ensures decorated indentation reflects hierarchy.
-# [ ] default sort is modified desc — Ensures default sort is modified desc.
-# [ ] --sort alpha --asc orders ascending — Ensures --sort alpha --asc orders ascending.
-# [ ] --sort alpha --desc orders descending — Ensures --sort alpha --desc orders descending.
-# [ ] --simple shares modified sort order — Ensures --simple shares modified sort order.
-# [ ] --simple shares alpha sort order — Ensures --simple shares alpha sort order.
-# [ ] open parent does not expand grandchildren by default — Ensures open parent does not expand grandchildren by default.
+# [x] decorated mode collapses explicitly closed .git — Ensures decorated mode collapses explicitly closed .git.
+# [x] no ANSI colors when piped by default — Ensures no ANSI colors when piped by default.
+# [x] ANSI colors retained when piped with --decorated — Ensures ANSI colors retained when piped with --decorated.
+# [x] decorated output does not star non-executable plain files — Ensures decorated output does not star non-executable plain files.
+# [x] decorated: dirs end with '/', files do not — Ensures decorated: dirs end with '/', files do not.
+# [x] decorated: closing .git does not tag .gitignore — Ensures decorated: closing .git does not tag .gitignore.
+# [x] decorated indentation reflects hierarchy — Ensures decorated indentation reflects hierarchy.
+# [x] default sort is modified desc — Ensures default sort is modified desc.
+# [x] --sort alpha --asc orders ascending — Ensures --sort alpha --asc orders ascending.
+# [x] --sort alpha --desc orders descending — Ensures --sort alpha --desc orders descending.
+# [x] --simple shares modified sort order — Ensures --simple shares modified sort order.
+# [x] --simple shares alpha sort order — Ensures --simple shares alpha sort order.
+# [x] open parent does not expand grandchildren by default — Ensures open parent does not expand grandchildren by default.
 # [x] --open regex persists in state — Ensures --open regex persists in state.
 # [x] --open slash regex persists in state — Ensures --open slash regex persists in state.
 # [x] literal close beats regex open — Ensures literal close beats regex open.
@@ -75,18 +75,18 @@
 # [x] --hide negated regex persists and hides — Ensures --hide negated regex persists and hides.
 # [x] re-prefix --open treats argument as literal — Ensures re-prefix --open treats argument as literal.
 # [x] re-prefix --hide treats argument as literal — Ensures re-prefix --hide treats argument as literal.
-# [ ] inline INI-MA arrays parse correctly — Ensures inline INI-MA arrays parse correctly.
+# [x] inline INI-MA arrays parse correctly — Ensures inline INI-MA arrays parse correctly.
 # [x] --hide literal with dot stays literal — Ensures --hide literal with dot stays literal.
 # [x] --show-hidden reveals hidden entries without persisting — Ensures --show-hidden reveals hidden entries without persisting.
-# [ ] decorated output reports hidden counts — Ensures decorated output reports hidden counts.
-# [ ] --show-hidden suppresses hidden count — Ensures --show-hidden suppresses hidden count.
-# [ ] --show literal overrides hide regex — Ensures --show literal overrides hide regex.
-# [ ] hide literal beats show regex — Ensures hide literal beats show regex.
-# [ ] --show slash regex persists — Ensures --show slash regex persists.
-# [ ] --show rejects absolute paths — Ensures --show rejects absolute paths.
-# [ ] open but hidden directory stays collapsed — Ensures open but hidden directory stays collapsed.
-# [ ] --hide rejects absolute paths — Ensures --hide rejects absolute paths.
-# [ ] decorated tree shows connectors — Ensures decorated tree shows connectors.
+# [x] decorated output reports hidden counts — Ensures decorated output reports hidden counts.
+# [x] --show-hidden suppresses hidden count — Ensures --show-hidden suppresses hidden count.
+# [x] --show literal overrides hide regex — Ensures --show literal overrides hide regex.
+# [x] hide literal beats show regex — Ensures hide literal beats show regex.
+# [x] --show slash regex persists — Ensures --show slash regex persists.
+# [x] --show rejects absolute paths — Ensures --show rejects absolute paths.
+# [x] open but hidden directory stays collapsed — Ensures open but hidden directory stays collapsed.
+# [x] --hide rejects absolute paths — Ensures --hide rejects absolute paths.
+# [x] decorated tree shows connectors — Ensures decorated tree shows connectors.
 
 set -uo pipefail
 
@@ -225,6 +225,30 @@ build_decorated_without_hyperlinks_plain() {
 	parent=$(dirname "$target")
 	printf -v "$__var" $'\e[34m \e[36m%s/\e[0m\e[1;34m%s\e[0m/\n└──  %s\n' \
 		"$parent" "$base" "$filename"
+}
+
+build_decorated_dir_entry_plain() {
+	local __var="$1" target="$2" relative="$3" connector="$4" icons="${5:-true}" icon_char="${6:-}" suffix="${7:-/}"
+	if [[ "$icons" == true ]]; then
+		printf -v "$__var" $'%s\e[34m%s \e[0m\e]8;;file://%s/%s\e\\\e[1;34m%s\e[0m%s\e]8;;\e\\\n' \
+			"$connector" "$icon_char" "$target" "$relative" "$relative" "$suffix"
+	else
+		printf -v "$__var" $'%s\e]8;;file://%s/%s\e\\%s\e]8;;\e\\%s\n' \
+			"$connector" "$target" "$relative" "$relative" "$suffix"
+	fi
+}
+
+build_decorated_file_entry_plain() {
+	local __var="$1" target="$2" filename="$3" connector="$4" icons="${5:-true}" icon_char="${6:-}"
+	local prefix="$connector"
+	if [[ -z "$prefix" ]]; then
+		prefix=$'└── '
+	fi
+	if [[ "$icons" == true ]]; then
+		prefix+="$icon_char "
+	fi
+	printf -v "$__var" $'%s\e]8;;file://%s/%s\e\\%s\e]8;;\e\\\n' \
+		"$prefix" "$target" "$filename" "$filename"
 }
 
 compare_printable() {
@@ -819,6 +843,526 @@ EOS
 	compare_printable "decorated handles percent-encoded OSC8 hyperlinks" "$actual_pb" "$expected_pb"
 }
 
+test_decorated_mode_collapses_explicitly_closed_git() {
+	local workspace target stdout_file stderr_file actual_pb header_plain src_plain git_plain expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/decor-closed-git"
+	mkdir -p "$target/src" "$target/.git/objects"
+	touch -t 202402010101 "$target/src"
+	touch -t 202301010101 "$target/.git"
+	run_quiet "$DIRTREE_BIN" --close .git "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated "$target"; then
+		echo "decorated --close .git run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	local connector_branch connector_last
+	connector_branch=$'├── '
+	connector_last=$'└── '
+	encode_file_printable actual_pb "$stdout_file"
+	build_decorated_root_header_plain header_plain "$target" true
+	build_decorated_dir_entry_plain src_plain "$target" "src" "$connector_branch"
+	build_decorated_dir_entry_plain git_plain "$target" ".git" "$connector_last" true "" '/*'
+	printf -v expected_plain '%s%s%s' "$header_plain" "$src_plain" "$git_plain"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "decorated mode collapses explicitly closed .git" "$actual_pb" "$expected_pb"
+}
+
+test_no_ansi_colors_when_piped_by_default() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/no-ansi"
+	mkdir -p "$target"
+	touch "$target/file.txt"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
+		echo "default piped run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n└──  file.txt\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "no ANSI colors when piped by default" "$actual_pb" "$expected_pb"
+}
+
+test_ansi_colors_retained_when_piped_with_decorated() {
+	local workspace target stdout_file stderr_file actual_pb header_plain entry_plain expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/ansi-colored"
+	mkdir -p "$target"
+	local filename="file.txt"
+	touch "$target/$filename"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated "$target"; then
+		echo "--decorated color run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	build_decorated_root_header_plain header_plain "$target" true
+	build_decorated_with_hyperlinks_plain entry_plain "$target" "$filename" true
+	printf -v expected_plain '%s%s' "$header_plain" "$entry_plain"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "ANSI colors retained when piped with --decorated" "$actual_pb" "$expected_pb"
+}
+
+test_decorated_output_does_not_star_non_executable_plain_files() {
+	local workspace target stdout_file stderr_file actual_pb header_plain entry_plain expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/decor-no-star"
+	mkdir -p "$target"
+	local filename="plain.txt"
+	touch "$target/$filename"
+	chmod 0644 "$target/$filename"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated "$target"; then
+		echo "--decorated plain file run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	build_decorated_root_header_plain header_plain "$target" true
+	build_decorated_with_hyperlinks_plain entry_plain "$target" "$filename" true
+	printf -v expected_plain '%s%s' "$header_plain" "$entry_plain"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "decorated output does not star non-executable plain files" "$actual_pb" "$expected_pb"
+}
+
+test_decorated_dirs_end_with_slash_files_do_not() {
+	local workspace target stdout_file stderr_file actual_pb header_plain dir_plain file_plain expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/decor-slash"
+	mkdir -p "$target/docs" "$target/docs/guide"
+	touch "$target/file.txt"
+	touch -t 202402010101 "$target/docs"
+	touch -t 202401010101 "$target/file.txt"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated -d 1 "$target"; then
+		echo "--decorated slash run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	local connector_branch connector_last
+	connector_branch=$'├── '
+	connector_last=$'└── '
+	encode_file_printable actual_pb "$stdout_file"
+	build_decorated_root_header_plain header_plain "$target" true
+	build_decorated_dir_entry_plain dir_plain "$target" "docs" "$connector_branch" true ""
+	build_decorated_with_hyperlinks_plain file_plain "$target" "file.txt" true
+	printf -v expected_plain '%s%s%s' "$header_plain" "$dir_plain" "$file_plain"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "decorated: dirs end with '/', files do not" "$actual_pb" "$expected_pb"
+}
+
+test_decorated_output_reports_hidden_counts() {
+	local workspace target state_file stdout_file stderr_file actual_stdout_pb expected_stdout_plain expected_stdout_pb actual_stderr_pb expected_stderr_plain expected_stderr_pb doc_entry
+	workspace=$(new_tmpdir)
+	target="$workspace/decor-hidden-count"
+	mkdir -p "$target/src" "$target/docs"
+	run_quiet "$DIRTREE_BIN" --hide src "$target"
+	state_file="$target/.dirtree-state"
+	touch -t 202402010101 "$target/docs"
+	touch -t 202201010101 "$state_file"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated "$target"; then
+		echo "decorated hidden count run failed" >&2
+		return 1
+	fi
+	encode_file_printable actual_stdout_pb "$stdout_file"
+	build_decorated_root_header_plain expected_stdout_plain "$target" true
+	build_decorated_dir_entry_plain doc_entry "$target" "docs" $'└── '
+	expected_stdout_plain+="$doc_entry"
+	encode_printable expected_stdout_pb "$expected_stdout_plain"
+	if ! compare_printable "decorated hidden count stdout" "$actual_stdout_pb" "$expected_stdout_pb"; then
+		return 1
+	fi
+	encode_file_printable actual_stderr_pb "$stderr_file"
+	expected_stderr_plain=$'\n\e[2;3m1 directory is hidden.\e[0m\n'
+	encode_printable expected_stderr_pb "$expected_stderr_plain"
+	compare_printable "decorated output reports hidden counts" "$actual_stderr_pb" "$expected_stderr_pb"
+}
+
+test_show_hidden_suppresses_hidden_count() {
+	local workspace target state_file stdout_file stderr_file actual_pb expected_plain expected_pb docs_entry src_entry state_entry
+	workspace=$(new_tmpdir)
+	target="$workspace/decor-show-hidden"
+	mkdir -p "$target/src" "$target/docs"
+	run_quiet "$DIRTREE_BIN" --hide src "$target"
+	state_file="$target/.dirtree-state"
+	touch -t 202402010101 "$target/docs"
+	touch -t 202401010101 "$target/src"
+	touch -t 202201010101 "$state_file"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated --show-hidden "$target"; then
+		echo "decorated --show-hidden run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		echo "--show-hidden emitted stderr" >&2
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	build_decorated_root_header_plain expected_plain "$target" true
+	build_decorated_dir_entry_plain docs_entry "$target" "docs" $'├── '
+	build_decorated_dir_entry_plain src_entry "$target" "src" $'├── '
+	build_decorated_file_entry_plain state_entry "$target" ".dirtree-state" $'└── ' true ""
+	expected_plain+="$docs_entry$src_entry$state_entry"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--show-hidden suppresses hidden count" "$actual_pb" "$expected_pb"
+}
+
+test_show_literal_overrides_hide_regex() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/show-literal"
+	mkdir -p "$target/src" "$target/docs"
+	run_quiet "$DIRTREE_BIN" --hide '/^src/' "$target"
+	run_quiet "$DIRTREE_BIN" --show src "$target"
+	touch -t 202402010101 "$target/src"
+	touch -t 202401010101 "$target/docs"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 1 "$target"; then
+		echo "--simple show literal run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  src/\n└──  docs/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--show literal overrides hide regex" "$actual_pb" "$expected_pb"
+}
+
+test_hide_literal_beats_show_regex() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/hide-priority"
+	mkdir -p "$target/src" "$target/docs"
+	run_quiet "$DIRTREE_BIN" --show '/^src/' "$target"
+	run_quiet "$DIRTREE_BIN" --hide src "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 1 "$target"; then
+		echo "--simple hide literal run failed" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n└──  docs/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "hide literal beats show regex" "$actual_pb" "$expected_pb"
+}
+
+test_show_slash_regex_persists() {
+	local workspace target state_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/show-regex"
+	mkdir -p "$target/docs"
+	state_file="$target/.dirtree-state"
+	run_quiet "$DIRTREE_BIN" --show '/^docs/' "$target"
+	encode_file_printable actual_pb "$state_file"
+	expected_plain=$'ver=1.1\nshow=[\n\t/^docs/\n]\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--show slash regex persists" "$actual_pb" "$expected_pb"
+}
+
+test_show_rejects_absolute_paths() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/show-abs"
+	mkdir -p "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --show /absolute "$target"; then
+		echo "expected --show absolute failure" >&2
+		return 1
+	fi
+	if [[ -s "$stdout_file" ]]; then
+		echo "expected empty stdout for show absolute failure" >&2
+		cat "$stdout_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stderr_file"
+	expected_plain=$'Error: --show paths must be relative (no leading \'/\'): /absolute\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--show rejects absolute paths" "$actual_pb" "$expected_pb"
+}
+
+test_hide_rejects_absolute_paths() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/hide-abs"
+	mkdir -p "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --hide /absolute "$target"; then
+		echo "expected --hide absolute failure" >&2
+		return 1
+	fi
+	if [[ -s "$stdout_file" ]]; then
+		echo "expected empty stdout for hide absolute failure" >&2
+		cat "$stdout_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stderr_file"
+	expected_plain=$'Error: --hide paths must be relative (no leading \'/\'): /absolute\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--hide rejects absolute paths" "$actual_pb" "$expected_pb"
+}
+
+test_open_but_hidden_directory_stays_collapsed() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/open-hidden"
+	mkdir -p "$target/src/nested"
+	run_quiet "$DIRTREE_BIN" --open src "$target"
+	run_quiet "$DIRTREE_BIN" --hide src "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
+		echo "--simple open hidden run failed" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "open but hidden directory stays collapsed" "$actual_pb" "$expected_pb"
+}
+
+test_decorated_closing_git_does_not_tag_gitignore() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/git-ignore"
+	mkdir -p "$target/.git/objects" "$target/docs"
+	touch "$target/.gitignore"
+	touch -t 202403010101 "$target/.git"
+	touch -t 202402010101 "$target/docs"
+	touch -t 202401010101 "$target/.gitignore"
+	run_quiet "$DIRTREE_BIN" --close .git "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated --no-icons --no-color --no-hyperlinks -d 1 "$target"; then
+		echo "decorated git-ignore run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain '%s/\n├── .git/*\n├── docs/\n└── .gitignore\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "decorated: closing .git does not tag .gitignore" "$actual_pb" "$expected_pb"
+}
+
+test_decorated_indentation_reflects_hierarchy() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/decor-indent"
+	mkdir -p "$target/app/lib/module" "$target/app/tests" "$target/config"
+	touch -t 202403010101 "$target/app"
+	touch -t 202402010101 "$target/config"
+	touch -t 202403010201 "$target/app/tests"
+	touch -t 202403010101 "$target/app/lib"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated --no-icons --no-color --no-hyperlinks -d 2 "$target"; then
+		echo "decorated indentation run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain '%s/\n├── app/\n│   ├── tests/\n│   └── lib/\n└── config/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "decorated indentation reflects hierarchy" "$actual_pb" "$expected_pb"
+}
+
+test_decorated_tree_shows_connectors() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/decor-connectors"
+	mkdir -p "$target/src" "$target/docs"
+	touch -t 202402010101 "$target/docs"
+	touch -t 202401010101 "$target/src"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated --no-icons --no-color --no-hyperlinks -d 1 "$target"; then
+		echo "decorated connectors run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain '%s/\n├── docs/\n└── src/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "decorated tree shows connectors" "$actual_pb" "$expected_pb"
+}
+
+test_default_sort_is_modified_desc() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/sort-default"
+	mkdir -p "$target/newer" "$target/older"
+	touch -t 202403010101 "$target/newer"
+	touch -t 202201010101 "$target/older"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" -d 1 "$target"; then
+		echo "default sort run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  newer/\n└──  older/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "default sort is modified desc" "$actual_pb" "$expected_pb"
+}
+
+test_sort_alpha_asc_orders_ascending() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/sort-alpha-asc"
+	mkdir -p "$target/src" "$target/docs"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --sort alpha --asc -d 1 "$target"; then
+		echo "alpha asc run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  docs/\n└──  src/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--sort alpha --asc orders ascending" "$actual_pb" "$expected_pb"
+}
+
+test_sort_alpha_desc_orders_descending() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/sort-alpha-desc"
+	mkdir -p "$target/docs" "$target/src"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --sort alpha --desc -d 1 "$target"; then
+		echo "alpha desc run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  src/\n└──  docs/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--sort alpha --desc orders descending" "$actual_pb" "$expected_pb"
+}
+
+test_simple_shares_modified_sort_order() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-sort-default"
+	mkdir -p "$target/newer" "$target/older"
+	touch -t 202403010101 "$target/newer"
+	touch -t 202201010101 "$target/older"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 1 "$target"; then
+		echo "simple default sort run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  newer/\n└──  older/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple shares modified sort order" "$actual_pb" "$expected_pb"
+}
+
+test_simple_shares_alpha_sort_order() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-sort-alpha"
+	mkdir -p "$target/src" "$target/docs"
+	run_quiet "$DIRTREE_BIN" --sort alpha --asc "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 1 "$target"; then
+		echo "simple alpha sort run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  docs/\n└──  src/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple shares alpha sort order" "$actual_pb" "$expected_pb"
+}
+
+test_open_parent_does_not_expand_grandchildren_by_default() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/open-parent"
+	mkdir -p "$target/parent/child/grand"
+	run_quiet "$DIRTREE_BIN" --default closed "$target"
+	run_quiet "$DIRTREE_BIN" --open parent "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 3 "$target"; then
+		echo "open parent listing failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n└──  parent/\n    └──  child/*\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "open parent does not expand grandchildren by default" "$actual_pb" "$expected_pb"
+}
+
 test_git_modified_file_bypasses_hide() {
 	local workspace repo stdout_file stderr_file actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
@@ -884,6 +1428,350 @@ test_git_override_can_be_disabled_via_env() {
 	printf -v expected_plain ' %s/\n└──  .git/\n' "$repo"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "git override can be disabled via env" "$actual_pb" "$expected_pb"
+}
+
+test_state_persists_using_ini_ma_arrays() {
+	local workspace target state_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/state-ini"
+	mkdir -p "$target/src" "$target/lib" "$target/docs"
+	state_file="$target/.dirtree-state"
+	run_quiet "$DIRTREE_BIN" --default closed "$target"
+	run_quiet "$DIRTREE_BIN" --open src "$target"
+	run_quiet "$DIRTREE_BIN" --open lib "$target"
+	run_quiet "$DIRTREE_BIN" --close docs "$target"
+	run_quiet "$DIRTREE_BIN" --show README.md "$target"
+	run_quiet "$DIRTREE_BIN" --hide '/^build/' "$target"
+	run_quiet "$DIRTREE_BIN" --hide '/\.log$/' "$target"
+	encode_file_printable actual_pb "$state_file"
+	expected_plain=$'ver=1.1\ndefault=closed\n\nopen=[\n\tlib\n\tsrc\n]\n\nclose=[\n\tdocs\n]\n\nshow=[\n\tREADME.md\n]\n\nhide=[\n\t/^build/\n\t/\\.log$/\n]\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "state persists using INI-MA arrays" "$actual_pb" "$expected_pb"
+}
+
+test_legacy_state_migrates_to_ini_ma() {
+	local workspace target state_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/legacy-migrate"
+	mkdir -p "$target"
+	state_file="$target/.dirtree-state"
+	cat >"$state_file" <<'STATE'
+default=open hide
+open=src;lib
+open_regex=^docs
+close=logs
+close_regex=temp$
+show=README.md;docs/index.md
+show_regex=^docs/.*/index$
+hide=temp
+hide_regex=\.log$
+STATE
+	run_quiet "$DIRTREE_BIN" "$target"
+	encode_file_printable actual_pb "$state_file"
+	expected_plain=$'ver=1.1\ndefault=[\n\topened\n\thidden\n]\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\tlogs\n\t/temp$/\n]\n\nshow=[\n\t/^docs/.*/index$/\n\tdocs/index.md\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "legacy state migrates to INI-MA" "$actual_pb" "$expected_pb"
+}
+
+test_inline_ini_ma_arrays_parse_correctly() {
+	local workspace target state_file stdout_file stderr_file actual_tree_pb expected_tree_plain expected_tree_pb actual_stderr_pb expected_stderr_pb expected_stderr_plain
+	workspace=$(new_tmpdir)
+	target="$workspace/inline-arrays"
+	state_file="$target/.dirtree-state"
+	mkdir -p "$target/src/file" "$target/docs/guide" "$target/tests/cases" "$target/temp"
+	touch "$target/README.md" "$target/temp/ignore.log"
+	touch -t 202401010101 "$target/README.md"
+	touch -t 202312120101 "$target/src"
+	touch -t 202312010101 "$target/docs"
+	touch -t 202311010101 "$target/tests"
+	cat >"$state_file" <<'STATE'
+ver=1.1
+default=closed
+open=[src docs]
+close=[tests]
+show=[README.md]
+hide=[temp /\.log$/]
+STATE
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
+		echo "inline INI-MA listing failed" >&2
+		return 1
+	fi
+	encode_file_printable actual_tree_pb "$stdout_file"
+	printf -v expected_tree_plain ' %s/\n├── 󰂺 README.md\n├──  src/\n│   └──  file/\n├──  docs/\n│   └──  guide/\n└──  tests/*\n' "$target"
+	encode_printable expected_tree_pb "$expected_tree_plain"
+	if ! compare_printable "inline INI-MA arrays parse correctly (stdout)" "$actual_tree_pb" "$expected_tree_pb"; then
+		return 1
+	fi
+	encode_file_printable actual_stderr_pb "$stderr_file"
+	expected_stderr_plain=$'\n1 directory is hidden.\n'
+	encode_printable expected_stderr_pb "$expected_stderr_plain"
+	compare_printable "inline INI-MA arrays parse correctly (stderr)" "$actual_stderr_pb" "$expected_stderr_pb"
+}
+
+test_simple_default_opened_then_close_src() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-default-open"
+	mkdir -p "$target/src/nested" "$target/docs/guide"
+	touch -t 202402010101 "$target/src"
+	touch -t 202401010101 "$target/docs"
+	run_quiet "$DIRTREE_BIN" --simple --default opened "$target"
+	run_quiet "$DIRTREE_BIN" --simple --close src "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
+		echo "--simple listing failed after closing src" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  src/*\n└──  docs/\n    └──  guide/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple default opened then close src" "$actual_pb" "$expected_pb"
+}
+
+test_simple_reopen_src_shows_contents() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-reopen-src"
+	mkdir -p "$target/src/nested" "$target/docs/guide"
+	touch -t 202402010101 "$target/src"
+	touch -t 202401010101 "$target/docs"
+	run_quiet "$DIRTREE_BIN" --simple --default opened "$target"
+	run_quiet "$DIRTREE_BIN" --simple --close src "$target"
+	run_quiet "$DIRTREE_BIN" --simple --open src "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
+		echo "--simple listing failed after reopening src" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  src/\n│   └──  nested/\n└──  docs/\n    └──  guide/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple reopen src shows contents" "$actual_pb" "$expected_pb"
+}
+
+test_simple_set_default_closed_and_open_docs() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-default-closed"
+	mkdir -p "$target/src/nested" "$target/docs/guide"
+	touch -t 202402010101 "$target/docs"
+	touch -t 202401010101 "$target/src"
+	run_quiet "$DIRTREE_BIN" --simple --default closed "$target"
+	run_quiet "$DIRTREE_BIN" --simple --open docs "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
+		echo "--simple listing failed after opening docs" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  docs/\n│   └──  guide/\n└──  src/*\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple set default closed and open docs" "$actual_pb" "$expected_pb"
+}
+
+test_simple_preserves_unknown_keys_in_state() {
+	local workspace target state_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-unknown"
+	state_file="$target/.dirtree-state"
+	mkdir -p "$target"
+	printf 'ver=1.1\nmystery=1\n' > "$state_file"
+	run_quiet "$DIRTREE_BIN" --simple "$target"
+	encode_file_printable actual_pb "$state_file"
+	expected_plain=$'ver=1.1\nmystery=1\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple preserves unknown keys in state" "$actual_pb" "$expected_pb"
+}
+
+test_simple_emits_tree_connectors() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-connectors"
+	mkdir -p "$target/src" "$target/docs"
+	touch "$target/README.md"
+	touch -t 202402010101 "$target/README.md"
+	touch -t 202401010101 "$target/src"
+	touch -t 202312010101 "$target/docs"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple "$target"; then
+		echo "--simple connectors listing failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├── 󰂺 README.md\n├──  src/\n└──  docs/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple emits tree connectors" "$actual_pb" "$expected_pb"
+}
+
+test_simple_closed_marker_variants() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-closed-markers"
+	mkdir -p "$target/full/nested" "$target/empty"
+	touch -t 202402010101 "$target/full"
+	touch -t 202401010101 "$target/empty"
+	run_quiet "$DIRTREE_BIN" --simple --default closed "$target"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
+		echo "--simple closed markers listing failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  full/*\n└──  empty/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple closed marker variants" "$actual_pb" "$expected_pb"
+}
+
+test_auto_simple_via_env_when_not_tty() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/auto-simple"
+	mkdir -p "$target/src"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! DIRTREE_AUTO_SIMPLE=1 run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
+		echo "DIRTREE_AUTO_SIMPLE run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n└──  src/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "auto simple via DIRTREE_AUTO_SIMPLE when not TTY" "$actual_pb" "$expected_pb"
+}
+
+test_dirtree_simple_env_matches_flag() {
+	local workspace target env_stdout env_stderr flag_stdout flag_stderr env_pb flag_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/env-simple"
+	mkdir -p "$target/src"
+	touch "$target/file.txt"
+	env_stdout=$(new_tmpfile)
+	env_stderr=$(new_tmpfile)
+	flag_stdout=$(new_tmpfile)
+	flag_stderr=$(new_tmpfile)
+	if ! DIRTREE_SIMPLE=1 run_and_capture "$env_stdout" "$env_stderr" "$DIRTREE_BIN" "$target"; then
+		echo "DIRTREE_SIMPLE run failed" >&2
+		return 1
+	fi
+	if [[ -s "$env_stderr" ]]; then
+		cat "$env_stderr" >&2
+		return 1
+	fi
+	if ! run_and_capture "$flag_stdout" "$flag_stderr" "$DIRTREE_BIN" --simple "$target"; then
+		echo "--simple comparison run failed" >&2
+		return 1
+	fi
+	if [[ -s "$flag_stderr" ]]; then
+		cat "$flag_stderr" >&2
+		return 1
+	fi
+	encode_file_printable env_pb "$env_stdout"
+	encode_file_printable flag_pb "$flag_stdout"
+	compare_printable "DIRTREE_SIMPLE mirrors --simple output" "$env_pb" "$flag_pb"
+}
+
+test_dirtree_decorated_env_forces_decorated_when_piped() {
+	local workspace target filename stdout_file stderr_file actual_pb header_plain entry_plain expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/env-decorated"
+	filename="file.txt"
+	mkdir -p "$target"
+	touch "$target/$filename"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! DIRTREE_DECORATED=1 run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
+		echo "DIRTREE_DECORATED run failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	build_decorated_root_header_plain header_plain "$target" true
+	build_decorated_with_hyperlinks_plain entry_plain "$target" "$filename" true
+	printf -v expected_plain '%s%s' "$header_plain" "$entry_plain"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "DIRTREE_DECORATED forces decorated output when piped" "$actual_pb" "$expected_pb"
+}
+
+test_simple_shows_icons_by_default() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-icons"
+	mkdir -p "$target/src/nested"
+	touch "$target/file.txt"
+	touch -t 202402010101 "$target/file.txt"
+	touch -t 202401010101 "$target/src"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple "$target"; then
+		echo "--simple icon listing failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain ' %s/\n├──  file.txt\n└──  src/\n    └──  nested/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple shows icons by default" "$actual_pb" "$expected_pb"
+}
+
+test_simple_no_icons_matches_icon_stripped_output() {
+	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/simple-no-icons"
+	mkdir -p "$target/src"
+	touch "$target/file.txt"
+	touch -t 202402010101 "$target/file.txt"
+	touch -t 202401010101 "$target/src"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple --no-icons "$target"; then
+		echo "--simple --no-icons listing failed" >&2
+		return 1
+	fi
+	if [[ -s "$stderr_file" ]]; then
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	encode_file_printable actual_pb "$stdout_file"
+	printf -v expected_plain '%s/\n├── file.txt\n└── src/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--simple --no-icons matches icon-stripped output" "$actual_pb" "$expected_pb"
 }
 
 test_open_handles_directories_with_spaces() {
@@ -1497,6 +2385,44 @@ run_all_tests() {
 		test_decorated_mode_honors_explicit_open_over_default
 	run_test "decorated handles percent-encoded OSC8 hyperlinks" \
 		test_decorated_handles_percent_encoded_osc8_hyperlinks
+	run_test "decorated mode collapses explicitly closed .git" \
+		test_decorated_mode_collapses_explicitly_closed_git
+	run_test "no ANSI colors when piped by default" \
+		test_no_ansi_colors_when_piped_by_default
+	run_test "ANSI colors retained when piped with --decorated" \
+		test_ansi_colors_retained_when_piped_with_decorated
+	run_test "decorated output does not star non-executable plain files" \
+		test_decorated_output_does_not_star_non_executable_plain_files
+	run_test "decorated: dirs end with '/', files do not" \
+		test_decorated_dirs_end_with_slash_files_do_not
+	run_test "state persists using INI-MA arrays" \
+		test_state_persists_using_ini_ma_arrays
+	run_test "legacy state migrates to INI-MA" \
+		test_legacy_state_migrates_to_ini_ma
+	run_test "inline INI-MA arrays parse correctly" \
+		test_inline_ini_ma_arrays_parse_correctly
+	run_test "--simple default opened then close src" \
+		test_simple_default_opened_then_close_src
+	run_test "--simple reopen src shows contents" \
+		test_simple_reopen_src_shows_contents
+	run_test "--simple set default closed and open docs" \
+		test_simple_set_default_closed_and_open_docs
+	run_test "--simple preserves unknown keys in state" \
+		test_simple_preserves_unknown_keys_in_state
+	run_test "--simple emits tree connectors" \
+		test_simple_emits_tree_connectors
+	run_test "--simple closed marker variants" \
+		test_simple_closed_marker_variants
+	run_test "auto simple via DIRTREE_AUTO_SIMPLE when not TTY" \
+		test_auto_simple_via_env_when_not_tty
+	run_test "DIRTREE_SIMPLE mirrors --simple output" \
+		test_dirtree_simple_env_matches_flag
+	run_test "DIRTREE_DECORATED forces decorated output when piped" \
+		test_dirtree_decorated_env_forces_decorated_when_piped
+	run_test "--simple shows icons by default" \
+		test_simple_shows_icons_by_default
+	run_test "--simple --no-icons matches icon-stripped output" \
+		test_simple_no_icons_matches_icon_stripped_output
 	run_test "git modified file bypasses hide" \
 		test_git_modified_file_bypasses_hide
 	run_test "git untracked file opens hidden parents" \
@@ -1533,6 +2459,40 @@ run_all_tests() {
 		test_hide_literal_with_dot_stays_literal
 	run_test "--show-hidden reveals hidden entries without persisting" \
 		test_show_hidden_reveals_hidden_entries_without_persisting
+	run_test "decorated output reports hidden counts" \
+		test_decorated_output_reports_hidden_counts
+	run_test "--show-hidden suppresses hidden count" \
+		test_show_hidden_suppresses_hidden_count
+	run_test "--show literal overrides hide regex" \
+		test_show_literal_overrides_hide_regex
+	run_test "hide literal beats show regex" \
+		test_hide_literal_beats_show_regex
+	run_test "--show slash regex persists" \
+		test_show_slash_regex_persists
+	run_test "--show rejects absolute paths" \
+		test_show_rejects_absolute_paths
+	run_test "open but hidden directory stays collapsed" \
+		test_open_but_hidden_directory_stays_collapsed
+	run_test "--hide rejects absolute paths" \
+		test_hide_rejects_absolute_paths
+	run_test "decorated: closing .git does not tag .gitignore" \
+		test_decorated_closing_git_does_not_tag_gitignore
+	run_test "decorated indentation reflects hierarchy" \
+		test_decorated_indentation_reflects_hierarchy
+	run_test "decorated tree shows connectors" \
+		test_decorated_tree_shows_connectors
+	run_test "default sort is modified desc" \
+		test_default_sort_is_modified_desc
+	run_test "--sort alpha --asc orders ascending" \
+		test_sort_alpha_asc_orders_ascending
+	run_test "--sort alpha --desc orders descending" \
+		test_sort_alpha_desc_orders_descending
+	run_test "--simple shares modified sort order" \
+		test_simple_shares_modified_sort_order
+	run_test "--simple shares alpha sort order" \
+		test_simple_shares_alpha_sort_order
+	run_test "open parent does not expand grandchildren by default" \
+		test_open_parent_does_not_expand_grandchildren_by_default
 	run_test "decorated root header includes trailing slash" \
 		test_decorated_root_header_includes_trailing_slash
 	run_test "decorated piped keeps icons by default" \

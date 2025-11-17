@@ -3,8 +3,6 @@
 # dirtree: A simple wrapper around eza for directory trees
 
 DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-# shellcheck source=lib/dirtree_output.sh
-source "$DIRTREE_ROOT/lib/dirtree_output.sh"
 
 # Ensure mktemp outputs land on RAM-backed /tmp unless caller already set TMPDIR
 export TMPDIR="${TMPDIR:-/tmp}"
@@ -2565,6 +2563,10 @@ strip_osc8=false
 if [[ "$eza_hyperlinks_enabled" != true ]]; then
 	strip_osc8=true
 fi
+
+strip_osc8_links() {
+	perl -CSDA -0pe 's/\e]8;;.*?\e\\//gs'
+}
 
 # Run renderer with optional OSC8 stripping
 status=0
