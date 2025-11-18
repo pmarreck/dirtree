@@ -90,8 +90,21 @@
 
 set -uo pipefail
 
+export WASM_RUNNER=${WASM_RUNNER:-"wazero"}
+export WASM_COMMAND=${WASM_COMMAND:-"$WASM_RUNNER run"}
+
+# error out unless a wasm runner exists
+if [[ ! -x "$(command -v "$WASM_RUNNER")" ]]; then
+	echo "$WASM_RUNNER (a wasm runner) not found in PATH; this suite requires it to run printable_binary for safe/legible/editable assertions without encoding headaches;"
+	echo "Please either install it, or set and export WASM_RUNNER (just the executable name) and WASM_COMMAND (the full command) to a wasm runner and run command" >&2
+	exit 1
+fi
+
 DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-DIRTREE_BIN="$DIRTREE_ROOT/bin/dirtree"
+TEST_SCRIPT_DIR="$DIRTREE_ROOT/test"
+BIN_ROOT="$DIRTREE_ROOT/bin"
+
+DIRTREE_BIN="$BIN_ROOT/dirtree"
 
 if [[ ! -x "$DIRTREE_BIN" ]]; then
 	echo "dirtree binary not found at $DIRTREE_BIN" >&2
@@ -110,7 +123,7 @@ if [[ -z "$BASH_BIN" ]]; then
 	exit 1
 fi
 
-export PATH="$DIRTREE_ROOT:$PATH"
+export PATH="$BIN_ROOT:$PATH"
 export TMPDIR="${TMPDIR:-/tmp}"
 
 declare -a TEST_TEMP_PATHS=()
@@ -178,9 +191,13 @@ run_quiet() {
 
 encode_printable() {
 	local __var="$1"
-	local input="$2"
+	shift
 	local encoded
-	encoded=$(printf '%s' "$input" | "$PRINTABLE_BINARY_BIN" 2>/dev/null)
+	if [[ $# -gt 0 ]]; then
+		encoded=$(printf '%s' "$1" | "$PRINTABLE_BINARY_BIN" 2>/dev/null)
+	else
+		encoded=$("$PRINTABLE_BINARY_BIN" 2>/dev/null)
+	fi
 	printf -v "$__var" '%s' "$encoded"
 }
 
@@ -281,6 +298,22 @@ run_test() {
 }
 
 # Test implementations
+
+test_encode_printable_reads_from_stdin() {
+	local actual expected
+	expected=$(printf 'abc\0def' | "$PRINTABLE_BINARY_BIN" 2>/dev/null)
+	actual=''
+	if ! encode_printable actual < <(printf 'abc\0def'); then
+		echo "encode_printable failed when reading stdin" >&2
+		return 1
+	fi
+	if [[ "$actual" != "$expected" ]]; then
+		echo "encode_printable stdin output mismatch" >&2
+		echo "Expected: $expected" >&2
+		echo "Actual:   $actual" >&2
+		return 1
+	fi
+}
 
 test_basic_listing_prints_absolute_root_header() {
 	local workspace
@@ -2341,6 +2374,8 @@ EOF
 }
 
 run_all_tests() {
+	run_test "encode_printable reads stdin" \
+		test_encode_printable_reads_from_stdin
 	run_test "basic listing prints absolute root header" \
 		test_basic_listing_prints_absolute_root_header
 	run_test "dotfiles visibility" \

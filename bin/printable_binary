@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
 
-WASM_RUNNER=${WASM_RUNNER:-"wazero run"}
-
 # run printable_binary with given arguments and stdin using $WASM_RUNNER taking note of sandboxing
-$WASM_RUNNER printable_binary.wasm "$@" -- <&0
+$WASM_COMMAND "$PB_BIN_ROOT/printable_binary.wasm" "$@" -- <&0
