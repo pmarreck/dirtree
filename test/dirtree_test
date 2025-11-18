@@ -91,7 +91,7 @@
 set -uo pipefail
 
 DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-DIRTREE_BIN="$DIRTREE_ROOT/dirtree"
+DIRTREE_BIN="$DIRTREE_ROOT/bin/dirtree"
 
 if [[ ! -x "$DIRTREE_BIN" ]]; then
 	echo "dirtree binary not found at $DIRTREE_BIN" >&2
@@ -100,7 +100,7 @@ fi
 
 PRINTABLE_BINARY_BIN=${PRINTABLE_BINARY_BIN:-$(command -v printable_binary || true)}
 if [[ -z "$PRINTABLE_BINARY_BIN" ]]; then
-	echo "printable_binary not found in PATH" >&2
+	echo "printable_binary not found in PATH; please either set PRINTABLE_BINARY_BIN or add $(pwd)/bin to your PATH or install direnv which will then do this for you automatically" >&2
 	exit 1
 fi
 
