@@ -161,22 +161,6 @@ init_git_repo() {
 	)
 }
 
-create_tool_dir_without_eza() {
-	local tool_dir fake_root fake_bin
-	tool_dir=$(dirname "$BASH_BIN")
-	fake_root=$(mktemp -d "${TMPDIR%/}/dirtree-no-eza.XXXXXXXX") || return 1
-	TEST_TEMP_PATHS+=("$fake_root")
-	fake_bin="$fake_root/bin"
-	mkdir -p "$fake_bin"
-	while IFS= read -r path; do
-		local name
-		name=$(basename "$path")
-		[[ "$name" == "eza" ]] && continue
-		ln -s "$path" "$fake_bin/$name"
-	done < <(find "$tool_dir" -maxdepth 1 -mindepth 1 ! -type d -print)
-	printf '%s\n' "$fake_bin"
-}
-
 run_and_capture() {
 	local stdout_file="$1"
 	local stderr_file="$2"
@@ -299,6 +283,18 @@ run_test() {
 
 # Test implementations
 
+test_dirtree_root_points_to_repo_root() {
+	local expected actual
+	expected='DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)'
+	actual=$(rg -n '^DIRTREE_ROOT=' "$DIRTREE_ROOT/bin/dirtree" | head -n1 | cut -d: -f2-)
+	if [[ "$actual" != "$expected" ]]; then
+		echo "DIRTREE_ROOT definition mismatch" >&2
+		echo "Expected: $expected" >&2
+		echo "Actual:   $actual" >&2
+		return 1
+	fi
+}
+
 test_encode_printable_reads_from_stdin() {
 	local actual expected
 	expected=$(printf 'abc\0def' | "$PRINTABLE_BINARY_BIN" 2>/dev/null)
@@ -311,6 +307,42 @@ test_encode_printable_reads_from_stdin() {
 		echo "encode_printable stdin output mismatch" >&2
 		echo "Expected: $expected" >&2
 		echo "Actual:   $actual" >&2
+		return 1
+	fi
+}
+
+test_dirtree_test_runs_from_any_directory() {
+	local workspace stub marker stdout_file stderr_file status
+	workspace=$(new_tmpdir)
+	marker="$workspace/dirtree-test-marker"
+	stub="$workspace/fake_dirtree_test"
+	cat >"$stub" <<'EOF'
+#!/usr/bin/env bash
+if [[ -n "$DIRTREE_TEST_MARKER" ]]; then
+	printf 'invoked\n' >>"$DIRTREE_TEST_MARKER"
+fi
+exit 7
+EOF
+	chmod +x "$stub"
+	stdout_file=$(new_tmpfile)
+	stderr_file=$(new_tmpfile)
+	(
+		cd "$workspace" && \
+		run_and_capture "$stdout_file" "$stderr_file" \
+			env DIRTREE_TEST_MARKER="$marker" DIRTREE_TEST_BIN="$stub" \
+			"$DIRTREE_BIN" --test
+	)
+	status=$?
+	if [[ $status -ne 7 ]]; then
+		echo "dirtree --test did not propagate stub exit code" >&2
+		echo "stdout:" >&2
+		cat "$stdout_file" >&2
+		echo "stderr:" >&2
+		cat "$stderr_file" >&2
+		return 1
+	fi
+	if [[ ! -s "$marker" ]]; then
+		echo "stub marker not created; dirtree --test likely ran wrong path" >&2
 		return 1
 	fi
 }
@@ -2347,18 +2379,41 @@ test_eza_availability() {
 	local stdout_file stderr_file
 	stdout_file=$(new_tmpfile)
 	stderr_file=$(new_tmpfile)
-	local fake_bin
-	fake_bin=$(create_tool_dir_without_eza)
-	local limited_path="$fake_bin:/usr/bin:/bin"
-	local cnf_env
+	local fake_path
+	fake_path=$(new_tmpdir)
+	cat >"$fake_path/eza" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+	chmod +x "$fake_path/eza"
+	local original_path="$PATH"
+	local cnf_env path_log
 	cnf_env=$(new_tmpfile)
-	cat >"$cnf_env" <<'EOF'
+	path_log=$(new_tmpfile)
+cat >"$cnf_env" <<'EOF'
 command_not_found_handle() {
 	return 127
 }
+command() {
+	if [[ "$1" == "-v" && "$2" == "eza" ]]; then
+		return 1
+	fi
+	builtin command "$@"
+}
+echo "$PATH" >"$DIRTREE_PATH_LOG"
 EOF
-	if run_and_capture "$stdout_file" "$stderr_file" env PATH="$limited_path" BASH_ENV="$cnf_env" "$DIRTREE_BIN" "$target"; then
+	if run_and_capture "$stdout_file" "$stderr_file" \
+		env PATH="$fake_path:$original_path" \
+		DIRTREE_PATH_LOG="$path_log" \
+		BASH_ENV="$cnf_env" \
+		"$DIRTREE_BIN" "$target"; then
 		echo "Expected eza availability failure" >&2
+		return 1
+	fi
+	local recorded_path
+	recorded_path=$(<"$path_log")
+	if [[ "$recorded_path" != "$fake_path:$original_path" ]]; then
+		echo "PATH inside dirtree did not match expected value" >&2
 		return 1
 	fi
 	if [[ -s "$stdout_file" ]]; then
@@ -2374,8 +2429,12 @@ EOF
 }
 
 run_all_tests() {
+	run_test "dirtree root resolves repo" \
+		test_dirtree_root_points_to_repo_root
 	run_test "encode_printable reads stdin" \
 		test_encode_printable_reads_from_stdin
+	run_test "dirtree --test works from any directory" \
+		test_dirtree_test_runs_from_any_directory
 	run_test "basic listing prints absolute root header" \
 		test_basic_listing_prints_absolute_root_header
 	run_test "dotfiles visibility" \

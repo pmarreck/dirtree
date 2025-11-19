@@ -2,7 +2,7 @@
 
 # dirtree: A simple wrapper around eza for directory trees
 
-DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
 # Ensure mktemp outputs land on RAM-backed /tmp unless caller already set TMPDIR
 export TMPDIR="${TMPDIR:-/tmp}"
@@ -2304,13 +2304,15 @@ while [[ $# -gt 0 ]]; do
 			continue
 			;;
 		--test)
-			if [[ -x "$(dirname "$0")/test/dirtree_test" ]]; then
-				"$(dirname "$0")/test/dirtree_test" >/dev/null
+			test_bin="${DIRTREE_TEST_BIN:-"$DIRTREE_ROOT/test/dirtree_test"}"
+			if [[ -x "$test_bin" ]]; then
+				"$test_bin" >/dev/null
+				test_status=$?
+				exit $test_status
 			else
-				echo "Error: dirtree_test not found or not executable." >&2
+				echo "Error: dirtree_test not found or not executable ($test_bin)." >&2
 				exit 1
 			fi
-			exit $?
 			;;
 		-*)
 			echo "Unknown option: $1" >&2
