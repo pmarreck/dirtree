@@ -2,7 +2,7 @@
 
 # if PB_BIN_ROOT is unset, default it
 if ! [[ -v PB_BIN_ROOT ]]; then
-	PB_BIN_ROOT="$(dirname "${BASH_SOURCE[0]}")"
+	export PB_BIN_ROOT="$(dirname "${BASH_SOURCE[0]}")"
 fi
 
 # if WASM_COMMAND is unset, just call the bin/printable_binary_ape.com version
