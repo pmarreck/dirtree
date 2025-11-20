@@ -2,6 +2,12 @@
 
 # dirtree_test: printable_binary-based regression tests for dirtree
 #
+# Pending in-memory refactors (remaining run_and_capture/new_tmpfile users):
+#  - close glob nested matches
+#  - decorated/simple listing clusters (lines ~1460-2060)
+#  - decorated hyperlink flag tests (PIPED_STDOUT etc.)
+#  - git/no-icons/no-color variations near file end
+#
 # Test TODOs (mark [x] as they gain full printable_binary expectations):
 # [x] basic listing prints absolute root header — Ensures basic listing prints absolute root header.
 # [x] decorated root header includes trailing slash — Ensures decorated root header includes trailing slash.
@@ -925,7 +931,7 @@ test_no_implicit_state_file_creation() {
 }
 
 test_close_glob_applies_to_nested_matches() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/close-glob"
 	mkdir -p "$target/node_modules/lib" \
@@ -939,13 +945,19 @@ test_close_glob_applies_to_nested_matches() {
 		cd "$target" && \
 		run_quiet "$DIRTREE_BIN" --close '/node_modules$/'
 	)
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "close glob listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for close glob listing" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "close glob listing failed with rc=$rc" >&2
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for close glob listing" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  packages/\n│   ├──  pkg1/\n│   │   └──  node_modules/*\n│   └──  pkg2/\n│       └──  component/\n└──  node_modules/*\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "close glob applies to nested matches" "$actual_pb" "$expected_pb"
@@ -1453,7 +1465,7 @@ test_decorated_closing_git_does_not_tag_gitignore() {
 }
 
 test_decorated_indentation_reflects_hierarchy() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/decor-indent"
 	mkdir -p "$target/app/lib/module" "$target/app/tests" "$target/config"
@@ -1461,105 +1473,115 @@ test_decorated_indentation_reflects_hierarchy() {
 	touch -t 202402010101 "$target/config"
 	touch -t 202403010201 "$target/app/tests"
 	touch -t 202403010101 "$target/app/lib"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated --no-icons --no-color --no-hyperlinks -d 2 "$target"; then
-		echo "decorated indentation run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated --no-icons --no-color --no-hyperlinks -d 2 "$target"; then
+		echo "capture helper failed for decorated indentation" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "decorated indentation run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for decorated indentation" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain '%s/\n├── app/\n│   ├── tests/\n│   └── lib/\n└── config/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "decorated indentation reflects hierarchy" "$actual_pb" "$expected_pb"
 }
 
 test_decorated_tree_shows_connectors() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/decor-connectors"
 	mkdir -p "$target/src" "$target/docs"
 	touch -t 202402010101 "$target/docs"
 	touch -t 202401010101 "$target/src"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated --no-icons --no-color --no-hyperlinks -d 1 "$target"; then
-		echo "decorated connectors run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated --no-icons --no-color --no-hyperlinks -d 1 "$target"; then
+		echo "capture helper failed for decorated connectors run" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "decorated connectors run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for decorated connectors run" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain '%s/\n├── docs/\n└── src/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "decorated tree shows connectors" "$actual_pb" "$expected_pb"
 }
 
 test_default_sort_is_modified_desc() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/sort-default"
 	mkdir -p "$target/newer" "$target/older"
 	touch -t 202403010101 "$target/newer"
 	touch -t 202201010101 "$target/older"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" -d 1 "$target"; then
-		echo "default sort run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc -d 1 "$target"; then
+		echo "capture helper failed for default sort run" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "default sort run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for default sort run" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  newer/\n└──  older/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "default sort is modified desc" "$actual_pb" "$expected_pb"
 }
 
 test_sort_alpha_asc_orders_ascending() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/sort-alpha-asc"
 	mkdir -p "$target/src" "$target/docs"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --sort alpha --asc -d 1 "$target"; then
-		echo "alpha asc run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --sort alpha --asc -d 1 "$target"; then
+		echo "capture helper failed for alpha asc run" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "alpha asc run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for alpha asc run" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  docs/\n└──  src/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--sort alpha --asc orders ascending" "$actual_pb" "$expected_pb"
 }
 
 test_sort_alpha_desc_orders_descending() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/sort-alpha-desc"
 	mkdir -p "$target/docs" "$target/src"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --sort alpha --desc -d 1 "$target"; then
-		echo "alpha desc run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --sort alpha --desc -d 1 "$target"; then
+		echo "capture helper failed for alpha desc run" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "alpha desc run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for alpha desc run" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  src/\n└──  docs/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--sort alpha --desc orders descending" "$actual_pb" "$expected_pb"
