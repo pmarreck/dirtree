@@ -222,6 +222,22 @@ print_printable_to_stderr() {
 	printf '%s' "$data" | "$PRINTABLE_BINARY_BIN" -d >&2
 }
 
+capture_command_printable() {
+	local __stdout_var="$1"
+	local __stderr_var="$2"
+	local __rc_var="$3"
+	shift 3
+	local out="" err=""
+	rc=0
+	if ! capture -p "$@"; then
+		return 1
+	fi
+	printf -v "$__stdout_var" '%s' "$out"
+	printf -v "$__stderr_var" '%s' "$err"
+	printf -v "$__rc_var" '%s' "$rc"
+	return 0
+}
+
 capture_printable_outputs() {
 	local -n __stdout_ref="$1"
 	local -n __stderr_ref="$2"
@@ -351,6 +367,29 @@ test_encode_printable_reads_from_stdin() {
 		echo "encode_printable stdin output mismatch" >&2
 		echo "Expected: $expected" >&2
 		echo "Actual:   $actual" >&2
+		return 1
+	fi
+}
+
+test_capture_command_printable_handles_nuls() {
+	local stdout_pb="" stderr_pb="" rc=0 expected_stdout_pb expected_stderr_pb=""
+	expected_stdout_pb=$(printf 'a\0b' | "$PRINTABLE_BINARY_BIN")
+	if ! capture_command_printable stdout_pb stderr_pb rc printf '%b' 'a\0b'; then
+		echo "capture_command_printable failed to run command" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "expected rc=0, got rc=$rc" >&2
+		return 1
+	fi
+	if [[ "$stdout_pb" != "$expected_stdout_pb" ]]; then
+		echo "stdout mismatch after printable capture" >&2
+		echo "Expected (printable): $expected_stdout_pb" >&2
+		echo "Actual   (printable): $stdout_pb" >&2
+		return 1
+	fi
+	if [[ "$stderr_pb" != "$expected_stderr_pb" ]]; then
+		echo "expected empty stderr, got printable: $stderr_pb" >&2
 		return 1
 	fi
 }
@@ -872,31 +911,36 @@ test_close_glob_applies_to_nested_matches() {
 }
 
 test_depth_parameter_validation() {
-	local stdout_file stderr_file actual_pb expected_plain expected_pb
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" -d nope; then
-		echo "expected depth validation failure" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_command_printable stdout_pb stderr_pb rc "$DIRTREE_BIN" -d nope; then
+		echo "capture helper failed for depth validation" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stderr_file"
+	if [[ "$rc" -eq 0 ]]; then
+		echo "expected non-zero rc for depth validation" >&2
+		return 1
+	fi
+	local actual_pb expected_plain expected_pb
+	actual_pb="$stderr_pb"
 	expected_plain=$'Error: --depth requires a numeric argument\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "depth parameter validation" "$actual_pb" "$expected_pb"
 }
 
 test_directory_validation() {
-	local workspace file stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace file stdout_pb stderr_pb rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	file="$workspace/file.txt"
 	touch "$file"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$file"; then
-		echo "expected directory validation failure" >&2
+	if ! capture_command_printable stdout_pb stderr_pb rc "$DIRTREE_BIN" "$file"; then
+		echo "capture helper failed for directory validation" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stderr_file"
+	if [[ "$rc" -eq 0 ]]; then
+		echo "expected non-zero rc for directory validation" >&2
+		return 1
+	fi
+	actual_pb="$stderr_pb"
 	printf -v expected_plain 'Error: '\''%s'\'' is not a directory\n' "$file"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "directory validation" "$actual_pb" "$expected_pb"
@@ -2451,9 +2495,6 @@ test_eza_availability() {
 	workspace=$(new_tmpdir)
 	local target="$workspace/eza-check"
 	mkdir -p "$target"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
 	local fake_path
 	fake_path=$(new_tmpdir)
 	cat >"$fake_path/eza" <<'EOF'
@@ -2477,11 +2518,16 @@ command() {
 }
 echo "$PATH" >"$DIRTREE_PATH_LOG"
 EOF
-	if run_and_capture "$stdout_file" "$stderr_file" \
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_command_printable stdout_pb stderr_pb rc \
 		env PATH="$fake_path:$original_path" \
 		DIRTREE_PATH_LOG="$path_log" \
 		BASH_ENV="$cnf_env" \
 		"$DIRTREE_BIN" "$target"; then
+		echo "capture_command_printable failed for eza availability" >&2
+		return 1
+	fi
+	if [[ "$rc" -eq 0 ]]; then
 		echo "Expected eza availability failure" >&2
 		return 1
 	fi
@@ -2491,16 +2537,14 @@ EOF
 		echo "PATH inside dirtree did not match expected value" >&2
 		return 1
 	fi
-	if [[ -s "$stdout_file" ]]; then
+	if [[ -n "$stdout_pb" ]]; then
 		echo "Expected empty stdout for eza failure" >&2
-		cat "$stdout_file" >&2
 		return 1
 	fi
-	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stderr_file"
+	local expected_plain expected_pb
 	expected_plain=$'Error: eza is not installed. Please install eza first.\n'
 	encode_printable expected_pb "$expected_plain"
-	compare_printable "eza availability" "$actual_pb" "$expected_pb"
+	compare_printable "eza availability" "$stderr_pb" "$expected_pb"
 }
 
 run_all_tests() {
@@ -2508,6 +2552,8 @@ run_all_tests() {
 		test_dirtree_root_points_to_repo_root
 	run_test "encode_printable reads stdin" \
 		test_encode_printable_reads_from_stdin
+	run_test "capture_command_printable handles NULs" \
+		test_capture_command_printable_handles_nuls
 	run_test "dirtree --test works from any directory" \
 		test_dirtree_test_runs_from_any_directory
 	run_test "basic listing prints absolute root header" \
