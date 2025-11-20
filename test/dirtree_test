@@ -1588,75 +1588,81 @@ test_sort_alpha_desc_orders_descending() {
 }
 
 test_simple_shares_modified_sort_order() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-sort-default"
 	mkdir -p "$target/newer" "$target/older"
 	touch -t 202403010101 "$target/newer"
 	touch -t 202201010101 "$target/older"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 1 "$target"; then
-		echo "simple default sort run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 1 "$target"; then
+		echo "capture helper failed for simple default sort run" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "simple default sort run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for simple default sort run" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  newer/\n└──  older/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple shares modified sort order" "$actual_pb" "$expected_pb"
 }
 
 test_simple_shares_alpha_sort_order() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-sort-alpha"
 	mkdir -p "$target/src" "$target/docs"
 	run_quiet "$DIRTREE_BIN" --sort alpha --asc "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 1 "$target"; then
-		echo "simple alpha sort run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 1 "$target"; then
+		echo "capture helper failed for simple alpha sort run" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "simple alpha sort run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for simple alpha sort run" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  docs/\n└──  src/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple shares alpha sort order" "$actual_pb" "$expected_pb"
 }
 
 test_open_parent_does_not_expand_grandchildren_by_default() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/open-parent"
 	mkdir -p "$target/parent/child/grand"
 	run_quiet "$DIRTREE_BIN" --default closed "$target"
 	run_quiet "$DIRTREE_BIN" --open parent "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 3 "$target"; then
-		echo "open parent listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 3 "$target"; then
+		echo "capture helper failed for open parent listing" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "open parent listing failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for open parent listing" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  parent/\n    └──  child/*\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "open parent does not expand grandchildren by default" "$actual_pb" "$expected_pb"
 }
 
 test_git_modified_file_bypasses_hide() {
-	local workspace repo stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace repo stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	repo="$workspace/git-mod"
 	mkdir -p "$repo"
@@ -1670,53 +1676,59 @@ test_git_modified_file_bypasses_hide() {
 		printf 'ver=1.1\nhide=[\n\ttracked.txt\n]\n' > .dirtree-state && \
 		echo changed > tracked.txt
 	)
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 1 "$repo"; then
-		echo "git modified run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 1 "$repo"; then
+		echo "capture helper failed for git modified run" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "git modified run failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  .dirtree-state\n├──  .git/\n└──  tracked.txt\n' "$repo"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "git modified file bypasses hide" "$actual_pb" "$expected_pb"
 }
 
 test_git_untracked_file_opens_hidden_parents() {
-	local workspace repo stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace repo stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	repo="$workspace/git-untracked"
 	mkdir -p "$repo/hidden"
 	init_git_repo "$repo"
 	printf 'ver=1.1\nhide=[\n\thidden\n\t/.git\n]\nclose=[\n\thidden\n]\n' > "$repo/.dirtree-state"
 	touch "$repo/hidden/new.txt"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$repo"; then
-		echo "git untracked run failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 "$repo"; then
+		echo "capture helper failed for git untracked run" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "git untracked run failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  .dirtree-state\n└── 󱞞 hidden/\n    └──  new.txt\n' "$repo"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "git untracked file opens hidden parents" "$actual_pb" "$expected_pb"
 }
 
 test_git_override_can_be_disabled_via_env() {
-	local workspace repo stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace repo stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	repo="$workspace/git-disable"
 	mkdir -p "$repo/hidden"
 	init_git_repo "$repo"
 	printf 'ver=1.1\nhide=[\n\thidden\n]\nclose=[\n\thidden\n]\n' > "$repo/.dirtree-state"
 	touch "$repo/hidden/new.txt"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED=1 run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 1 "$repo"; then
-		echo "git override disable run failed" >&2
+	if ! DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED=1 capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 1 "$repo"; then
+		echo "capture helper failed for git override disable run" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "git override disable run failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  .git/\n' "$repo"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "git override can be disabled via env" "$actual_pb" "$expected_pb"
