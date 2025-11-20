@@ -91,40 +91,55 @@
 set -uo pipefail
 
 export WASM_RUNNER=${WASM_RUNNER:-"wazero"}
-export WASM_COMMAND=${WASM_COMMAND:-"$WASM_RUNNER run"}
+
+export USE_WASM=${USE_WASM:-true}
 
 # error out unless a wasm runner exists
-if [[ ! -x "$(command -v "$WASM_RUNNER")" ]]; then
-	echo "$WASM_RUNNER (a wasm runner) not found in PATH; this suite requires it to run printable_binary for safe/legible/editable assertions without encoding headaches;"
-	echo "Please either install it, or set and export WASM_RUNNER (just the executable name) and WASM_COMMAND (the full command) to a wasm runner and run command" >&2
-	exit 1
+if [[ "$USE_WASM" == "false" || "$USE_WASM" == "0" || "$USE_WASM" == "no" || "$USE_WASM" == "off" ]]; then
+	echo "Using printable_binary_ape.com as printable_binary executable" >&2
+	unset WASM_RUNNER WASM_COMMAND
+elif [[ ! -x "$(command -v "$WASM_RUNNER")" ]]; then
+	echo "$WASM_RUNNER or another suitable wasm runner was not found (set via \$WASM_RUNNER); defaulting to printable_binary_ape.com" >&2
+	unset WASM_RUNNER WASM_COMMAND
+else
+	echo "Using $WASM_RUNNER as wasm runner for printable_binary" >&2
+	export WASM_COMMAND=${WASM_COMMAND:-"$WASM_RUNNER run --env-inherit"}
 fi
 
-DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-TEST_SCRIPT_DIR="$DIRTREE_ROOT/test"
-BIN_ROOT="$DIRTREE_ROOT/bin"
+export DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+export TEST_SCRIPT_DIR="$DIRTREE_ROOT/test"
+export PB_BIN_ROOT="$DIRTREE_ROOT/bin"
 
-DIRTREE_BIN="$BIN_ROOT/dirtree"
+export DIRTREE_BIN="$PB_BIN_ROOT/dirtree"
 
 if [[ ! -x "$DIRTREE_BIN" ]]; then
 	echo "dirtree binary not found at $DIRTREE_BIN" >&2
 	exit 1
 fi
 
-PRINTABLE_BINARY_BIN=${PRINTABLE_BINARY_BIN:-$(command -v printable_binary || true)}
+export PRINTABLE_BINARY_BIN=${PRINTABLE_BINARY_BIN:-$(command -v printable_binary || true)}
 if [[ -z "$PRINTABLE_BINARY_BIN" ]]; then
-	echo "printable_binary not found in PATH; please either set PRINTABLE_BINARY_BIN or add $(pwd)/bin to your PATH or install direnv which will then do this for you automatically" >&2
+	echo "printable_binary not found in PATH; please either set PRINTABLE_BINARY_BIN or add $DIRTREE_ROOT/bin to your PATH or install direnv which will then do this for you automatically" >&2
 	exit 1
+else
+	echo "Using $PRINTABLE_BINARY_BIN as printable_binary executable" >&2
 fi
 
-BASH_BIN=${BASH_BIN:-$(command -v bash || true)}
+export PRINTABLE_BINARY_MUTE_STATS=${PRINTABLE_BINARY_MUTE_STATS:-true}
+
+# shellcheck disable=SC1091
+source "$TEST_SCRIPT_DIR/capture.bash"
+
+export BASH_BIN=${BASH_BIN:-$(command -v bash || true)}
 if [[ -z "$BASH_BIN" ]]; then
 	echo "bash binary not found" >&2
 	exit 1
 fi
 
-export PATH="$BIN_ROOT:$PATH"
-export TMPDIR="${TMPDIR:-/tmp}"
+export PATH="$PB_BIN_ROOT:$PATH"
+: "${TMPDIR:=/tmp}"   # default TMPDIR to /tmp if unset/empty
+TMPDIR="${TMPDIR%/}"  # drop any trailing slash
+export TMPDIR
 
 declare -a TEST_TEMP_PATHS=()
 
@@ -139,14 +154,14 @@ trap cleanup EXIT
 
 new_tmpdir() {
 	local dir
-	dir=$(mktemp -d "${TMPDIR%/}/dirtree-test.XXXXXXXX") || return 1
+	dir=$(mktemp -d "${TMPDIR}/dirtree-test.XXXXXXXX") || return 1
 	TEST_TEMP_PATHS+=("$dir")
 	printf '%s\n' "$dir"
 }
 
 new_tmpfile() {
 	local file
-	file=$(mktemp "${TMPDIR%/}/dirtree-test.XXXXXXXX") || return 1
+	file=$(mktemp "${TMPDIR}/dirtree-test.XXXXXXXX") || return 1
 	TEST_TEMP_PATHS+=("$file")
 	printf '%s\n' "$file"
 }
@@ -178,9 +193,9 @@ encode_printable() {
 	shift
 	local encoded
 	if [[ $# -gt 0 ]]; then
-		encoded=$(printf '%s' "$1" | "$PRINTABLE_BINARY_BIN" 2>/dev/null)
+		encoded=$(printf '%s' "$1" | "$PRINTABLE_BINARY_BIN")
 	else
-		encoded=$("$PRINTABLE_BINARY_BIN" 2>/dev/null)
+		encoded=$("$PRINTABLE_BINARY_BIN")
 	fi
 	printf -v "$__var" '%s' "$encoded"
 }
@@ -189,8 +204,37 @@ encode_file_printable() {
 	local __var="$1"
 	local file="$2"
 	local encoded
-	encoded=$("$PRINTABLE_BINARY_BIN" 2>/dev/null <"$file")
+	encoded=$("$PRINTABLE_BINARY_BIN" <"$file")
 	printf -v "$__var" '%s' "$encoded"
+}
+
+decode_printable() {
+	local __var="$1"
+	local data="$2"
+	local decoded
+	decoded=$(printf '%s' "$data" | "$PRINTABLE_BINARY_BIN" -d)
+	printf -v "$__var" '%s' "$decoded"
+}
+
+print_printable_to_stderr() {
+	local data="$1"
+	[[ -z "$data" ]] && return
+	printf '%s' "$data" | "$PRINTABLE_BINARY_BIN" -d >&2
+}
+
+capture_printable_outputs() {
+	local -n __stdout_ref="$1"
+	local -n __stderr_ref="$2"
+	local -n __rc_ref="$3"
+	shift 3
+	local out err rc
+	if ! capture -p "$@"; then
+		return 1
+	fi
+	__stdout_ref="$out"
+	__stderr_ref="$err"
+	__rc_ref="$rc"
+	return 0
 }
 
 build_decorated_root_header_plain() {
@@ -297,7 +341,7 @@ test_dirtree_root_points_to_repo_root() {
 
 test_encode_printable_reads_from_stdin() {
 	local actual expected
-	expected=$(printf 'abc\0def' | "$PRINTABLE_BINARY_BIN" 2>/dev/null)
+	expected=$(printf 'abc\0def' | "$PRINTABLE_BINARY_BIN")
 	actual=''
 	if ! encode_printable actual < <(printf 'abc\0def'); then
 		echo "encode_printable failed when reading stdin" >&2
@@ -352,20 +396,23 @@ test_basic_listing_prints_absolute_root_header() {
 	workspace=$(new_tmpdir)
 	local target="$workspace/basic-root"
 	mkdir -p "$target"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "dirtree exited non-zero for $target" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" "$target"; then
+		echo "capture helper failed for basic listing" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for $target" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for basic listing" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "basic listing prints absolute root header" "$actual_pb" "$expected_pb"
@@ -377,20 +424,23 @@ test_dotfiles_visibility() {
 	local target="$workspace/dotfiles"
 	mkdir -p "$target"
 	touch "$target/.hidden"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "dirtree exited non-zero for dotfiles visibility" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" "$target"; then
+		echo "capture helper failed for dotfiles test" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for dotfiles visibility" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for dotfiles visibility" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  .hidden\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "dotfiles visibility" "$actual_pb" "$expected_pb"
@@ -404,20 +454,23 @@ test_depth_limiting() {
 	touch "$target/root.txt" "$target/sub/deep.txt"
 	touch -t 200001010101 "$target/root.txt"
 	touch -t 199001010101 "$target/sub"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" -d 1 "$target"; then
-		echo "dirtree exited non-zero for depth limiting" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" -d 1 "$target"; then
+		echo "capture helper failed for depth limiting" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for depth limiting" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for depth limiting" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  root.txt\n└──  sub/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "depth limiting" "$actual_pb" "$expected_pb"
@@ -428,20 +481,23 @@ test_default_depth_limits_to_four_levels() {
 	workspace=$(new_tmpdir)
 	local target="$workspace/depth-default"
 	mkdir -p "$target/l1/l2/l3/l4/l5"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "dirtree exited non-zero for default depth" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" "$target"; then
+		echo "capture helper failed for default depth" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for default depth" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for default depth" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  l1/\n    └──  l2/\n        └──  l3/\n            └──  l4/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "default depth limits to 4 levels" "$actual_pb" "$expected_pb"
@@ -455,40 +511,46 @@ test_depth_limiting_effectiveness() {
 	touch "$target/alpha/file.txt"
 	touch -t 200001010201 "$target/alpha"
 	touch -t 199001010101 "$target/beta"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" -d 1 "$target"; then
-		echo "dirtree exited non-zero for depth effectiveness" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" -d 1 "$target"; then
+		echo "capture helper failed for depth effectiveness" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for depth effectiveness" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for depth effectiveness" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  alpha/\n└──  beta/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "depth limiting effectiveness" "$actual_pb" "$expected_pb"
 }
 
 test_help_option() {
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --help; then
-		echo "dirtree --help exited non-zero" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" --help; then
+		echo "capture helper failed for help option" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree --help exited non-zero" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for help option" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_pb expected_plain
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	expected_plain=$(cat <<'EOF'
 dirtree - Display directory trees using eza
 
@@ -537,20 +599,27 @@ test_current_directory_listing_shows_entries() {
 	local target="$workspace/current"
 	mkdir -p "$target"
 	touch "$target/file.txt"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! (cd "$target" && run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN"); then
-		echo "dirtree exited non-zero for current directory" >&2
+	local stdout_pb="" stderr_pb="" rc=0 prev_dir
+	prev_dir=$PWD
+	cd "$target" || return 1
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN"; then
+		cd "$prev_dir" || true
+		echo "capture helper failed for current directory" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	cd "$prev_dir" || return 1
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for current directory" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for current directory listing" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  file.txt\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "current directory listing shows entries" "$actual_pb" "$expected_pb"
@@ -562,20 +631,23 @@ test_files_visible_at_depth_two() {
 	local target="$workspace/depth-two"
 	mkdir -p "$target/sub"
 	touch "$target/sub/file.txt"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" -d 2 "$target"; then
-		echo "dirtree exited non-zero for depth 2" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" -d 2 "$target"; then
+		echo "capture helper failed for depth 2" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for depth 2" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for depth 2" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  sub/\n    └──  file.txt\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "files visible at depth 2" "$actual_pb" "$expected_pb"
@@ -589,20 +661,23 @@ test_files_and_directories_both_listed() {
 	touch "$target/file.txt"
 	touch -t 200001010301 "$target/file.txt"
 	touch -t 199001010101 "$target/dir"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "dirtree exited non-zero for files/dirs" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" "$target"; then
+		echo "capture helper failed for files/dirs" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for files/dirs" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for files/dirs" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  file.txt\n└──  dir/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "files and directories both listed" "$actual_pb" "$expected_pb"

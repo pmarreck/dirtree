@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
 
-# run printable_binary with given arguments and stdin using $WASM_RUNNER taking note of sandboxing
-$WASM_COMMAND "$PB_BIN_ROOT/printable_binary.wasm" "$@" -- <&0
+# if PB_BIN_ROOT is unset, default it
+if ! [[ -v PB_BIN_ROOT ]]; then
+	PB_BIN_ROOT="$(dirname "${BASH_SOURCE[0]}")"
+fi
+
+# if WASM_COMMAND is unset, just call the bin/printable_binary_ape.com version
+# which should run on anything
+if ! [[ -v WASM_COMMAND ]]; then
+	"$PB_BIN_ROOT/printable_binary_ape.com" "$@" -- <&0
+  # "$PB_BIN_ROOT/printable_binary_c" "$@" -- <&0
+else
+	# run printable_binary with given arguments and stdin using $WASM_RUNNER taking note of sandboxing
+	$WASM_COMMAND "${PB_BIN_ROOT}/printable_binary.wasm" "$@" -- <&0
+fi
