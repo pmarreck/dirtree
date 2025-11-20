@@ -1778,7 +1778,7 @@ STATE
 }
 
 test_inline_ini_ma_arrays_parse_correctly() {
-	local workspace target state_file stdout_file stderr_file actual_tree_pb expected_tree_plain expected_tree_pb actual_stderr_pb expected_stderr_pb expected_stderr_plain
+	local workspace target state_file stdout_pb="" stderr_pb="" rc=0 actual_tree_pb expected_tree_plain expected_tree_pb actual_stderr_pb expected_stderr_pb expected_stderr_plain
 	workspace=$(new_tmpdir)
 	target="$workspace/inline-arrays"
 	state_file="$target/.dirtree-state"
@@ -1788,7 +1788,7 @@ test_inline_ini_ma_arrays_parse_correctly() {
 	touch -t 202312120101 "$target/src"
 	touch -t 202312010101 "$target/docs"
 	touch -t 202311010101 "$target/tests"
-	cat >"$state_file" <<'STATE'
+cat >"$state_file" <<'STATE'
 ver=1.1
 default=closed
 open=[src docs]
@@ -1796,26 +1796,32 @@ close=[tests]
 show=[README.md]
 hide=[temp /\.log$/]
 STATE
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
-		echo "inline INI-MA listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 "$target"; then
+		echo "capture helper failed for inline INI-MA listing" >&2
 		return 1
 	fi
-	encode_file_printable actual_tree_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "inline INI-MA listing failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
 	printf -v expected_tree_plain ' %s/\n├── 󰂺 README.md\n├──  src/\n│   └──  file/\n├──  docs/\n│   └──  guide/\n└──  tests/*\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	if ! compare_printable "inline INI-MA arrays parse correctly (stdout)" "$actual_tree_pb" "$expected_tree_pb"; then
 		return 1
 	fi
-	encode_file_printable actual_stderr_pb "$stderr_file"
+	if [[ -z "$stderr_pb" ]]; then
+		echo "expected stderr for inline INI-MA hidden count" >&2
+		return 1
+	fi
+	actual_stderr_pb="$stderr_pb"
 	expected_stderr_plain=$'\n1 directory is hidden.\n'
 	encode_printable expected_stderr_pb "$expected_stderr_plain"
 	compare_printable "inline INI-MA arrays parse correctly (stderr)" "$actual_stderr_pb" "$expected_stderr_pb"
 }
 
 test_simple_default_opened_then_close_src() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-default-open"
 	mkdir -p "$target/src/nested" "$target/docs/guide"
@@ -1823,24 +1829,26 @@ test_simple_default_opened_then_close_src() {
 	touch -t 202401010101 "$target/docs"
 	run_quiet "$DIRTREE_BIN" --simple --default opened "$target"
 	run_quiet "$DIRTREE_BIN" --simple --close src "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
-		echo "--simple listing failed after closing src" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 "$target"; then
+		echo "capture helper failed after closing src" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--simple listing failed after closing src with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr after closing src" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  src/*\n└──  docs/\n    └──  guide/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple default opened then close src" "$actual_pb" "$expected_pb"
 }
 
 test_simple_reopen_src_shows_contents() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-reopen-src"
 	mkdir -p "$target/src/nested" "$target/docs/guide"
@@ -1849,24 +1857,26 @@ test_simple_reopen_src_shows_contents() {
 	run_quiet "$DIRTREE_BIN" --simple --default opened "$target"
 	run_quiet "$DIRTREE_BIN" --simple --close src "$target"
 	run_quiet "$DIRTREE_BIN" --simple --open src "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
-		echo "--simple listing failed after reopening src" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 "$target"; then
+		echo "capture helper failed after reopening src" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--simple listing failed after reopening src with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr after reopening src" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  src/\n│   └──  nested/\n└──  docs/\n    └──  guide/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple reopen src shows contents" "$actual_pb" "$expected_pb"
 }
 
 test_simple_set_default_closed_and_open_docs() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-default-closed"
 	mkdir -p "$target/src/nested" "$target/docs/guide"
@@ -1874,17 +1884,19 @@ test_simple_set_default_closed_and_open_docs() {
 	touch -t 202401010101 "$target/src"
 	run_quiet "$DIRTREE_BIN" --simple --default closed "$target"
 	run_quiet "$DIRTREE_BIN" --simple --open docs "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
-		echo "--simple listing failed after opening docs" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 "$target"; then
+		echo "capture helper failed after opening docs" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--simple listing failed after opening docs with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr after opening docs" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  docs/\n│   └──  guide/\n└──  src/*\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple set default closed and open docs" "$actual_pb" "$expected_pb"
@@ -1905,7 +1917,7 @@ test_simple_preserves_unknown_keys_in_state() {
 }
 
 test_simple_emits_tree_connectors() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-connectors"
 	mkdir -p "$target/src" "$target/docs"
@@ -1913,116 +1925,126 @@ test_simple_emits_tree_connectors() {
 	touch -t 202402010101 "$target/README.md"
 	touch -t 202401010101 "$target/src"
 	touch -t 202312010101 "$target/docs"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple "$target"; then
-		echo "--simple connectors listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple "$target"; then
+		echo "capture helper failed for simple connectors" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--simple connectors listing failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for simple connectors" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├── 󰂺 README.md\n├──  src/\n└──  docs/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple emits tree connectors" "$actual_pb" "$expected_pb"
 }
 
 test_simple_closed_marker_variants() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-closed-markers"
 	mkdir -p "$target/full/nested" "$target/empty"
 	touch -t 202402010101 "$target/full"
 	touch -t 202401010101 "$target/empty"
 	run_quiet "$DIRTREE_BIN" --simple --default closed "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple -d 2 "$target"; then
-		echo "--simple closed markers listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 "$target"; then
+		echo "capture helper failed for simple closed markers" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--simple closed markers listing failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for simple closed markers" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  full/*\n└──  empty/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple closed marker variants" "$actual_pb" "$expected_pb"
 }
 
 test_auto_simple_via_env_when_not_tty() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/auto-simple"
 	mkdir -p "$target/src"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! DIRTREE_AUTO_SIMPLE=1 run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "DIRTREE_AUTO_SIMPLE run failed" >&2
+	if ! DIRTREE_AUTO_SIMPLE=1 capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for DIRTREE_AUTO_SIMPLE" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "DIRTREE_AUTO_SIMPLE run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for DIRTREE_AUTO_SIMPLE run" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  src/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "auto simple via DIRTREE_AUTO_SIMPLE when not TTY" "$actual_pb" "$expected_pb"
 }
 
 test_dirtree_simple_env_matches_flag() {
-	local workspace target env_stdout env_stderr flag_stdout flag_stderr env_pb flag_pb
+	local workspace target env_stderr="" flag_stderr="" env_pb flag_pb env_rc=0 flag_rc=0
 	workspace=$(new_tmpdir)
 	target="$workspace/env-simple"
 	mkdir -p "$target/src"
 	touch "$target/file.txt"
-	env_stdout=$(new_tmpfile)
-	env_stderr=$(new_tmpfile)
-	flag_stdout=$(new_tmpfile)
-	flag_stderr=$(new_tmpfile)
-	if ! DIRTREE_SIMPLE=1 run_and_capture "$env_stdout" "$env_stderr" "$DIRTREE_BIN" "$target"; then
-		echo "DIRTREE_SIMPLE run failed" >&2
+	if ! DIRTREE_SIMPLE=1 capture_dirtree_printable env_pb env_stderr env_rc "$target"; then
+		echo "capture helper failed for DIRTREE_SIMPLE run" >&2
 		return 1
 	fi
-	if [[ -s "$env_stderr" ]]; then
-		cat "$env_stderr" >&2
+	if [[ "$env_rc" -ne 0 ]]; then
+		echo "DIRTREE_SIMPLE run failed with rc=$env_rc" >&2
 		return 1
 	fi
-	if ! run_and_capture "$flag_stdout" "$flag_stderr" "$DIRTREE_BIN" --simple "$target"; then
-		echo "--simple comparison run failed" >&2
+	if [[ -n "$env_stderr" ]]; then
+		echo "Unexpected stderr for DIRTREE_SIMPLE run" >&2
 		return 1
 	fi
-	if [[ -s "$flag_stderr" ]]; then
-		cat "$flag_stderr" >&2
+	if ! capture_dirtree_printable flag_pb flag_stderr flag_rc --simple "$target"; then
+		echo "capture helper failed for --simple comparison run" >&2
 		return 1
 	fi
-	encode_file_printable env_pb "$env_stdout"
-	encode_file_printable flag_pb "$flag_stdout"
+	if [[ "$flag_rc" -ne 0 ]]; then
+		echo "--simple comparison run failed with rc=$flag_rc" >&2
+		return 1
+	fi
+	if [[ -n "$flag_stderr" ]]; then
+		echo "Unexpected stderr for --simple comparison run" >&2
+		return 1
+	fi
 	compare_printable "DIRTREE_SIMPLE mirrors --simple output" "$env_pb" "$flag_pb"
 }
 
 test_dirtree_decorated_env_forces_decorated_when_piped() {
-	local workspace target filename stdout_file stderr_file actual_pb header_plain entry_plain expected_plain expected_pb
+	local workspace target filename stdout_pb="" stderr_pb="" rc=0 actual_pb header_plain entry_plain expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/env-decorated"
 	filename="file.txt"
 	mkdir -p "$target"
 	touch "$target/$filename"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! DIRTREE_DECORATED=1 run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "DIRTREE_DECORATED run failed" >&2
+	if ! DIRTREE_DECORATED=1 capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for DIRTREE_DECORATED run" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "DIRTREE_DECORATED run failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for DIRTREE_DECORATED run" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	build_decorated_root_header_plain header_plain "$target" true
 	build_decorated_with_hyperlinks_plain entry_plain "$target" "$filename" true
 	printf -v expected_plain '%s%s' "$header_plain" "$entry_plain"
@@ -2031,69 +2053,75 @@ test_dirtree_decorated_env_forces_decorated_when_piped() {
 }
 
 test_simple_shows_icons_by_default() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-icons"
 	mkdir -p "$target/src/nested"
 	touch "$target/file.txt"
 	touch -t 202402010101 "$target/file.txt"
 	touch -t 202401010101 "$target/src"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple "$target"; then
-		echo "--simple icon listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple "$target"; then
+		echo "capture helper failed for --simple icons default" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--simple icon listing failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for --simple icons default" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n├──  file.txt\n└──  src/\n    └──  nested/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple shows icons by default" "$actual_pb" "$expected_pb"
 }
 
 test_simple_no_icons_matches_icon_stripped_output() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/simple-no-icons"
 	mkdir -p "$target/src"
 	touch "$target/file.txt"
 	touch -t 202402010101 "$target/file.txt"
 	touch -t 202401010101 "$target/src"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple --no-icons "$target"; then
-		echo "--simple --no-icons listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --no-icons "$target"; then
+		echo "capture helper failed for --simple --no-icons" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--simple --no-icons listing failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for --simple --no-icons" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain '%s/\n├── file.txt\n└── src/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple --no-icons matches icon-stripped output" "$actual_pb" "$expected_pb"
 }
 
 test_open_handles_directories_with_spaces() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/open-spaces"
 	mkdir -p "$target/sys (server)/child"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --open 'sys (server)' "$target"; then
-		echo "dirtree --open spaces failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --open 'sys (server)' "$target"; then
+		echo "capture helper failed for --open spaces" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "dirtree --open spaces failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for --open spaces" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  '\''sys (server)'\''/\n    └──  child/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--open handles directories with spaces" "$actual_pb" "$expected_pb"
