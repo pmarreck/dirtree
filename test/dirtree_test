@@ -2,12 +2,6 @@
 
 # dirtree_test: printable_binary-based regression tests for dirtree
 #
-# Pending in-memory refactors (remaining run_and_capture/new_tmpfile users):
-#  - close glob nested matches
-#  - decorated/simple listing clusters (lines ~1460-2060)
-#  - decorated hyperlink flag tests (PIPED_STDOUT etc.)
-#  - git/no-icons/no-color variations near file end
-#
 # Test TODOs (mark [x] as they gain full printable_binary expectations):
 # [x] basic listing prints absolute root header — Ensures basic listing prints absolute root header.
 # [x] decorated root header includes trailing slash — Ensures decorated root header includes trailing slash.
@@ -198,14 +192,6 @@ init_git_repo() {
 	)
 }
 
-run_and_capture() {
-	local stdout_file="$1"
-	local stderr_file="$2"
-	shift 2
-	"$@" >"$stdout_file" 2>"$stderr_file"
-	return $?
-}
-
 run_quiet() {
 	"$@" >/dev/null 2>&1
 }
@@ -266,6 +252,23 @@ capture_dirtree_printable() {
 	local __rc_var="$3"
 	shift 3
 	capture_command_printable "$__stdout_var" "$__stderr_var" "$__rc_var" "$DIRTREE_BIN" "$@"
+}
+
+capture_dirtree_test_printable() {
+	local __stdout_var="$1"
+	local __stderr_var="$2"
+	local __rc_var="$3"
+	shift 3
+	capture_command_printable "$__stdout_var" "$__stderr_var" "$__rc_var" "$@" "$DIRTREE_BIN" --test
+}
+
+capture_dirtree_printable_outputs() {
+	local __stdout_name="$1" __stderr_name="$2" __rc_name="$3"
+	shift 3
+	if ! capture_printable_outputs "$__stdout_name" "$__stderr_name" "$__rc_name" "$DIRTREE_BIN" "$@"; then
+		return 1
+	fi
+	return 0
 }
 
 capture_printable_outputs() {
@@ -371,6 +374,19 @@ run_test() {
 	fi
 }
 
+# Reusable fixture helpers (amortize setup, keep state clean)
+fixture_simple_tree() {
+	local path
+	path="${FIXTURE_SIMPLE_TREE_PATH:-$TMPDIR/dirtree-fixture-simple.$$}"
+	if [[ ! -d "$path" ]]; then
+		mkdir -p "$path/src" "$path/tests"
+		touch "$path/src/file.txt" "$path/tests/test_helper.sh"
+		TEST_TEMP_PATHS+=("$path")
+	fi
+	find "$path" -name '.dirtree-state' -type f -delete
+	printf '%s\n' "$path"
+}
+
 # Test implementations
 
 test_dirtree_root_points_to_repo_root() {
@@ -465,8 +481,27 @@ test_capture_dirtree_printable_runs_help() {
 	fi
 }
 
+test_fixture_helper_resets_state_between_uses() {
+	if ! command -v fixture_simple_tree >/dev/null 2>&1; then
+		echo "fixture_simple_tree helper is missing" >&2
+		return 1
+	fi
+	local path1 path2
+	path1=$(fixture_simple_tree)
+	printf 'ver=1.1\ndefault=closed\n' >"$path1/.dirtree-state"
+	path2=$(fixture_simple_tree)
+	if [[ "$path1" != "$path2" ]]; then
+		echo "fixture helper returned different paths; expected reuse" >&2
+		return 1
+	fi
+	if [[ -e "$path2/.dirtree-state" ]]; then
+		echo "fixture helper did not clear existing .dirtree-state" >&2
+		return 1
+	fi
+}
+
 test_dirtree_test_runs_from_any_directory() {
-	local workspace stub marker stdout_file stderr_file status
+	local workspace stub marker stdout_pb stderr_pb rc=0 status
 	workspace=$(new_tmpdir)
 	marker="$workspace/dirtree-test-marker"
 	stub="$workspace/fake_dirtree_test"
@@ -478,21 +513,21 @@ fi
 exit 7
 EOF
 	chmod +x "$stub"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	(
-		cd "$workspace" && \
-		run_and_capture "$stdout_file" "$stderr_file" \
-			env DIRTREE_TEST_MARKER="$marker" DIRTREE_TEST_BIN="$stub" \
-			"$DIRTREE_BIN" --test
-	)
-	status=$?
+	local prev_dir
+	prev_dir=$PWD
+	cd "$workspace" || return 1
+	if ! capture_dirtree_test_printable stdout_pb stderr_pb rc \
+		env DIRTREE_TEST_MARKER="$marker" DIRTREE_TEST_BIN="$stub"; then
+		cd "$prev_dir" || return 1
+		echo "capture helper failed running dirtree --test" >&2
+		return 1
+	fi
+	cd "$prev_dir" || return 1
+	status=$rc
 	if [[ $status -ne 7 ]]; then
 		echo "dirtree --test did not propagate stub exit code" >&2
-		echo "stdout:" >&2
-		cat "$stdout_file" >&2
-		echo "stderr:" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stdout_pb"
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	if [[ ! -s "$marker" ]]; then
@@ -949,13 +984,11 @@ STATE
 }
 
 test_no_implicit_state_file_creation() {
-	local workspace target stdout_file stderr_file
+	local workspace target stdout_pb stderr_pb rc=0
 	workspace=$(new_tmpdir)
 	target="$workspace/no-state"
 	mkdir -p "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
+	if ! capture_dirtree_printable_outputs stdout_pb stderr_pb rc "$target"; then
 		echo "initial listing failed" >&2
 		return 1
 	fi
@@ -2403,13 +2436,21 @@ test_reprefix_open_treats_argument_as_literal() {
 	if ! compare_printable "re-prefix open persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
 	fi
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
 		echo "re-prefix open listing failed" >&2
 		return 1
 	fi
-	encode_file_printable actual_tree_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "re-prefix open listing failed with rc=$rc" >&2
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for re-prefix open listing" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
 	printf -v expected_tree_plain ' %s/\n├──  re:^src/\n│   └──  inner/\n└──  src/*\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	compare_printable "re-prefix --open treats argument as literal" "$actual_tree_pb" "$expected_tree_pb"
@@ -2432,13 +2473,16 @@ test_reprefix_hide_treats_argument_as_literal() {
 	if ! compare_printable "re-prefix hide persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
 	fi
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
 		echo "re-prefix hide listing failed" >&2
 		return 1
 	fi
-	encode_file_printable actual_tree_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "re-prefix hide listing failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
 	printf -v expected_tree_plain ' %s/\n└──  src/\n    └──  deep/\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	compare_printable "re-prefix --hide treats argument as literal" "$actual_tree_pb" "$expected_tree_pb"
@@ -2458,13 +2502,16 @@ test_hide_literal_with_dot_stays_literal() {
 	if ! compare_printable "hide literal dot persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
 	fi
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
 		echo "hide dot listing failed" >&2
 		return 1
 	fi
-	encode_file_printable actual_tree_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "hide dot listing failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
 	printf -v expected_tree_plain ' %s/\n└──  src/\n    └──  configXjson\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	compare_printable "--hide literal with dot stays literal" "$actual_tree_pb" "$expected_tree_pb"
@@ -2480,13 +2527,16 @@ test_show_hidden_reveals_hidden_entries_without_persisting() {
 	run_quiet "$DIRTREE_BIN" --hide '/^src/' "$target"
 	touch -t 199001010101 "$target/tests"
 	touch -t 200001010101 "$target/src"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --show-hidden "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --show-hidden "$target"; then
 		echo "show-hidden listing failed" >&2
 		return 1
 	fi
-	encode_file_printable actual_tree_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "show-hidden listing failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
 	printf -v expected_tree_plain ' %s/\n├──  .dirtree-state\n├──  src/\n└──  tests/\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	if ! compare_printable "--show-hidden reveals hidden entries without persisting" "$actual_tree_pb" "$expected_tree_pb"; then
@@ -2503,20 +2553,22 @@ test_decorated_root_header_includes_trailing_slash() {
 	workspace=$(new_tmpdir)
 	local target="$workspace/decor-root"
 	mkdir -p "$target"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated "$target"; then
 		echo "dirtree --decorated failed for root header" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ "$rc" -ne 0 ]]; then
+		echo "decorated root header run failed with rc=$rc" >&2
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for decorated root header" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
 		return 1
 	fi
 	local actual_pb header_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	build_decorated_root_header_plain header_plain "$target" true ""
 	encode_printable expected_pb "$header_plain"
 	compare_printable "decorated root header includes trailing slash" "$actual_pb" "$expected_pb"
@@ -2529,20 +2581,22 @@ test_decorated_piped_keeps_icons_by_default() {
 	mkdir -p "$target"
 	local filename="file.txt"
 	touch "$target/$filename"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated "$target"; then
 		echo "dirtree --decorated failed for icons" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for decorated icons" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "decorated icons run failed with rc=$rc" >&2
 		return 1
 	fi
 	local actual_pb header_plain entry_plain expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	build_decorated_root_header_plain header_plain "$target" true
 	build_decorated_with_hyperlinks_plain entry_plain "$target" "$filename" true
 	printf -v expected_plain '%s%s' "$header_plain" "$entry_plain"
@@ -2557,20 +2611,22 @@ test_decorated_piped_no_icons_matches_icon_stripped_output() {
 	mkdir -p "$target"
 	local filename="file.txt"
 	touch "$target/$filename"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated --no-icons "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated --no-icons "$target"; then
 		echo "dirtree --decorated --no-icons failed" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for decorated --no-icons" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "decorated --no-icons run failed with rc=$rc" >&2
 		return 1
 	fi
 	local actual_pb header_plain entry_plain expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	build_decorated_root_header_plain header_plain "$target" false
 	build_decorated_with_hyperlinks_plain entry_plain "$target" "$filename" false
 	printf -v expected_plain '%s%s' "$header_plain" "$entry_plain"
@@ -2585,20 +2641,22 @@ test_no_hyperlinks_by_default_when_not_tty() {
 	mkdir -p "$target"
 	local filename="file.txt"
 	touch "$target/$filename"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
 		echo "dirtree exited non-zero for default hyperlink test" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for default hyperlink test" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "default hyperlink test rc=$rc" >&2
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  %s\n' "$target" "$filename"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "no hyperlinks by default when not TTY" "$actual_pb" "$expected_pb"
@@ -2611,20 +2669,22 @@ test_hyperlinks_present_when_forced_with_decorated() {
 	mkdir -p "$target"
 	local filename="file.txt"
 	touch "$target/$filename"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated "$target"; then
 		echo "dirtree --decorated failed" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for --decorated" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "decorated run failed with rc=$rc" >&2
 		return 1
 	fi
 	local actual_pb header_plain entry_plain expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	build_decorated_root_header_plain header_plain "$target" true
 	build_decorated_with_hyperlinks_plain entry_plain "$target" "$filename" true
 	printf -v expected_plain '%s%s' "$header_plain" "$entry_plain"
@@ -2639,20 +2699,22 @@ test_piped_stdout_zero_treats_pipe_as_tty_for_hyperlinks() {
 	mkdir -p "$target"
 	local filename="file.txt"
 	touch "$target/$filename"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" env PIPED_STDOUT=0 "$DIRTREE_BIN" "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_command_printable stdout_pb stderr_pb rc env PIPED_STDOUT=0 "$DIRTREE_BIN" "$target"; then
 		echo "PIPED_STDOUT=0 run failed" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for PIPED_STDOUT=0" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "PIPED_STDOUT=0 run rc=$rc" >&2
 		return 1
 	fi
 	local actual_pb header_plain entry_plain expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	build_decorated_root_header_plain header_plain "$target" true
 	build_decorated_with_hyperlinks_plain entry_plain "$target" "$filename" true
 	printf -v expected_plain '%s%s' "$header_plain" "$entry_plain"
@@ -2667,20 +2729,22 @@ test_no_hyperlinks_flag_suppresses_osc8_sequences() {
 	mkdir -p "$target"
 	local filename="file.txt"
 	touch "$target/$filename"
-	local stdout_file stderr_file
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --decorated --no-hyperlinks "$target"; then
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated --no-hyperlinks "$target"; then
 		echo "dirtree --decorated --no-hyperlinks failed" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
+	if [[ -n "$stderr_pb" ]]; then
 		echo "Unexpected stderr for --no-hyperlinks" >&2
-		cat "$stderr_file" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "decorated --no-hyperlinks run rc=$rc" >&2
 		return 1
 	fi
 	local actual_pb expected_plain expected_pb
-	encode_file_printable actual_pb "$stdout_file"
+	actual_pb="$stdout_pb"
 	build_decorated_without_hyperlinks_plain expected_plain "$target" "$filename"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--no-hyperlinks suppresses OSC8 sequences" "$actual_pb" "$expected_pb"
@@ -2752,6 +2816,8 @@ run_all_tests() {
 		test_capture_command_printable_handles_nuls
 	run_test "capture_dirtree_printable runs --help" \
 		test_capture_dirtree_printable_runs_help
+	run_test "fixture helper resets state between uses" \
+		test_fixture_helper_resets_state_between_uses
 	run_test "dirtree --test works from any directory" \
 		test_dirtree_test_runs_from_any_directory
 	run_test "basic listing prints absolute root header" \
