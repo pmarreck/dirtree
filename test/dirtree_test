@@ -378,7 +378,9 @@ run_test() {
 
 fixture_simple_tree() {
 	local path
-	path="${FIXTURE_SIMPLE_TREE_PATH:-$TMPDIR/dirtree-fixture-simple.$$}"
+	local base="${TMPDIR:-/tmp}"
+	base="${base%/}"
+	path="${FIXTURE_SIMPLE_TREE_PATH:-$base/dirtree-fixture-simple.$$}"
 	if [[ ! -d "$path" ]]; then
 		mkdir -p "$path/src" "$path/tests"
 		touch "$path/src/file.txt" "$path/tests/test_helper.sh"
@@ -390,7 +392,9 @@ fixture_simple_tree() {
 
 fixture_decorated_single_file() {
 	local path
-	path="${FIXTURE_DECOR_SINGLE_FILE_PATH:-$TMPDIR/dirtree-fixture-decor.$$}"
+	local base="${TMPDIR:-/tmp}"
+	base="${base%/}"
+	path="${FIXTURE_DECOR_SINGLE_FILE_PATH:-$base/dirtree-fixture-decor.$$}"
 	if [[ ! -d "$path" ]]; then
 		mkdir -p "$path"
 		touch "$path/file.txt"
@@ -402,7 +406,9 @@ fixture_decorated_single_file() {
 
 fixture_hide_show() {
 	local path
-	path="${FIXTURE_HIDE_SHOW_PATH:-$TMPDIR/dirtree-fixture-hide-show.$$}"
+	local base="${TMPDIR:-/tmp}"
+	base="${base%/}"
+	path="${FIXTURE_HIDE_SHOW_PATH:-$base/dirtree-fixture-hide-show.$$}"
 	if [[ ! -d "$path" ]]; then
 		mkdir -p "$path/src" "$path/tests"
 		touch "$path/src/config.json" "$path/src/configXjson" "$path/tests/test_helper.sh"
