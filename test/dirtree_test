@@ -2172,17 +2172,20 @@ test_literal_close_beats_regex_open() {
 		run_quiet "$DIRTREE_BIN" --open '/^src/' && \
 		run_quiet "$DIRTREE_BIN" --close src
 	)
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "literal close listing failed" >&2
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for literal close listing" >&2
 		return 1
 	fi
-	if [[ -s "$stderr_file" ]]; then
-		cat "$stderr_file" >&2
+	if [[ "$rc" -ne 0 ]]; then
+		echo "literal close listing failed with rc=$rc" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for literal close listing" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  src/*\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "literal close beats regex open" "$actual_pb" "$expected_pb"
@@ -2206,18 +2209,17 @@ test_close_slash_regex_persists_in_state() {
 }
 
 test_regex_open_close_conflict_raises_error() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/regex-conflict"
 	mkdir -p "$target/src"
 	printf 'ver=1.1\ndefault=closed\n\nopen=[\n/^src/\n]\nclose=[\n/^src/\n]\n' > "$target/.dirtree-state"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "expected regex conflict failure" >&2
+	capture_dirtree_printable stdout_pb stderr_pb rc "$target" || true
+	if [[ "$rc" -eq 0 ]]; then
+		echo "expected non-zero rc for regex conflict" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stderr_file"
+	actual_pb="$stderr_pb"
 	expected_plain=$'Error: path '\''src'\'' matches both open and close patterns
   open pattern: ^src
   close pattern: ^src
