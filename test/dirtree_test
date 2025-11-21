@@ -141,6 +141,9 @@ if [[ -z "$PRINTABLE_BINARY_BIN" ]]; then
 	echo "printable_binary not found in PATH; please either set PRINTABLE_BINARY_BIN or add $DIRTREE_ROOT/bin to your PATH or install direnv which will then do this for you automatically" >&2
 	exit 1
 else
+	if [[ -n "$PRINTABLE_BACKING_BIN" ]]; then
+		PRINTABLE_BACKING_BIN="$(dirname "$PRINTABLE_BINARY_BIN")/printable_binary_ape.com"
+	fi
 	print_printable_banner
 fi
 
