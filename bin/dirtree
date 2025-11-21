@@ -408,9 +408,9 @@ add_priority_path() {
 		return
 	fi
 	local relative
-	relative=$(realpath --relative-to="$abs_dir" "$abs_path" 2>/dev/null) || return
-	if [[ "$relative" == ..* ]]; then
-		return
+	relative=$(realpath --relative-to="$abs_dir" "$abs_path" 2>/dev/null) || relative=""
+	if [[ -z "$relative" || "$relative" == ..* ]]; then
+		relative="$rel_path"
 	fi
 	if [[ -d "$abs_path" ]]; then
 		priority_dirs["$relative"]=1
@@ -438,6 +438,9 @@ collect_priority_paths() {
 		if git -C "$base" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 			local repo_root
 			repo_root=$(git -C "$base" rev-parse --show-toplevel 2>/dev/null) || repo_root=""
+			if [[ -n "$repo_root" ]]; then
+				repo_root=$(cd "$repo_root" && pwd -P)
+			fi
 			if [[ -n "$repo_root" ]]; then
 				while IFS= read -r -d '' record; do
 					[[ -z "$record" ]] && continue

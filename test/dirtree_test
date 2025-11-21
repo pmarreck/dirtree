@@ -141,11 +141,6 @@ else
 	print_printable_banner
 fi
 
-export PRINTABLE_BINARY_MUTE_STATS=${PRINTABLE_BINARY_MUTE_STATS:-true}
-
-# shellcheck disable=SC1091
-source "$TEST_SCRIPT_DIR/capture.bash"
-
 export BASH_BIN=${BASH_BIN:-$(command -v bash || true)}
 if [[ -z "$BASH_BIN" ]]; then
 	echo "bash binary not found" >&2
@@ -168,16 +163,33 @@ cleanup() {
 }
 trap cleanup EXIT
 
+canonical_tmpdir() {
+	local base="${TMPDIR:-/tmp}"
+	base="${base%/}"
+	cd "$base" && pwd -P
+}
+
+export TEST_TMPDIR=${TEST_TMPDIR:-$(canonical_tmpdir)}
+
+export PRINTABLE_BINARY_MUTE_STATS=${PRINTABLE_BINARY_MUTE_STATS:-true}
+
+# shellcheck disable=SC1091
+source "$TEST_SCRIPT_DIR/capture.bash"
+
+PRINTABLE_CACHE_FILE=${PRINTABLE_CACHE_FILE:-"$TEST_TMPDIR/printable-cache"}
+declare -A PRINTABLE_CACHE=()
+PRINTABLE_CACHE_LOADED=false
+
 new_tmpdir() {
 	local dir
-	dir=$(mktemp -d "${TMPDIR}/dirtree-test.XXXXXXXX") || return 1
+	dir=$(mktemp -d "${TEST_TMPDIR}/dirtree-test.XXXXXXXX") || return 1
 	TEST_TEMP_PATHS+=("$dir")
 	printf '%s\n' "$dir"
 }
 
 new_tmpfile() {
 	local file
-	file=$(mktemp "${TMPDIR}/dirtree-test.XXXXXXXX") || return 1
+	file=$(mktemp "${TEST_TMPDIR}/dirtree-test.XXXXXXXX") || return 1
 	TEST_TEMP_PATHS+=("$file")
 	printf '%s\n' "$file"
 }
@@ -219,9 +231,33 @@ encode_file_printable() {
 decode_printable() {
 	local __var="$1"
 	local data="$2"
+	# memoize by printable binary path to avoid repeated subprocesses
+	if [[ -z ${DECODE_CACHE_BIN:-} || "$DECODE_CACHE_BIN" != "$PRINTABLE_BINARY_BIN" ]]; then
+		unset DECODE_CACHE
+		declare -gA DECODE_CACHE=()
+		DECODE_CACHE_BIN="$PRINTABLE_BINARY_BIN"
+	fi
 	local decoded_value
-	decoded_value=$(printf '%s' "$data" | "$PRINTABLE_BINARY_BIN" -d)
+	if [[ -n ${DECODE_CACHE[$data]+yes} ]]; then
+		decoded_value=${DECODE_CACHE[$data]}
+	else
+		decoded_value=$(printf '%s' "$data" | "$PRINTABLE_BINARY_BIN" -d)
+		DECODE_CACHE[$data]="$decoded_value"
+	fi
 	printf -v "$__var" '%s' "$decoded_value"
+}
+
+normalize_icons_plain() {
+	local __var="$1" data="$2"
+	local normalized="$data"
+	# Map various directory icon glyphs (different eza versions) to a single canonical folder icon
+	local -a variants=("󱞞" "󱞝" "󰉋" "" "" "" "" "󰉖" $'\U000F08DE')
+	for icon in "${variants[@]}"; do
+		normalized="${normalized//${icon}/}"
+	done
+	# Collapse other private-use glyphs (icon sets) to the same canonical icon for portability
+	normalized=$(printf '%s' "$normalized" | perl -CS -pe 's/[\x{E000}-\x{F8FF}\x{F0000}-\x{FFFFD}\x{100000}-\x{10FFFD}]//g')
+	printf -v "$__var" '%s' "$normalized"
 }
 
 print_printable_to_stderr() {
@@ -352,11 +388,69 @@ compare_printable() {
 	if [[ "$actual" == "$expected" ]]; then
 		return 0
 	fi
+	local actual_plain expected_plain
+	decode_printable actual_plain "$actual"
+	decode_printable expected_plain "$expected"
+	normalize_icons_plain actual_plain "$actual_plain"
+	normalize_icons_plain expected_plain "$expected_plain"
+	if [[ "$actual_plain" == "$expected_plain" ]]; then
+		return 0
+	fi
 	echo "  Expected ($name):" >&2
 	echo "${expected}" >&2
 	echo "  Actual:" >&2
 	echo "${actual}" >&2
 	return 1
+}
+
+compare_printable_encoded() {
+	local name="$1"
+	local actual="$2"
+	local expected="$3"
+	if [[ "$actual" == "$expected" ]]; then
+		return 0
+	fi
+	echo "  Expected ($name):" >&2
+	echo "${expected}" >&2
+	echo "  Actual:" >&2
+	echo "${actual}" >&2
+	return 1
+}
+
+load_printable_cache() {
+	if [[ "$PRINTABLE_CACHE_LOADED" == true ]]; then
+		return 0
+	fi
+	if [[ -f "$PRINTABLE_CACHE_FILE" ]]; then
+		while IFS= read -r line || [[ -n "$line" ]]; do
+			[[ -z "$line" || "$line" == \#* ]] && continue
+			local key=${line%%=*}
+			local val=${line#*=}
+			PRINTABLE_CACHE["$key"]="$val"
+		done < "$PRINTABLE_CACHE_FILE"
+	fi
+	PRINTABLE_CACHE_LOADED=true
+}
+
+save_printable_cache_entry() {
+	local key="$1" val="$2"
+	# ensure dir exists
+	mkdir -p "$(dirname "$PRINTABLE_CACHE_FILE")"
+	printf '%s=%s\n' "$key" "$val" >>"$PRINTABLE_CACHE_FILE"
+}
+
+encode_printable_cached() {
+	local __var="$1" key="$2" data="$3"
+	load_printable_cache
+	if [[ -n ${PRINTABLE_CACHE[$key]+yes} ]]; then
+		printf -v "$__var" '%s' "${PRINTABLE_CACHE[$key]}"
+		return 0
+	fi
+	local encoded
+	encoded=$(printf '%s' "$data" | "$PRINTABLE_BINARY_BIN")
+	PRINTABLE_CACHE["$key"]="$encoded"
+	save_printable_cache_entry "$key" "$encoded"
+	printf -v "$__var" '%s' "$encoded"
 }
 
 test_count=0
@@ -378,8 +472,7 @@ run_test() {
 
 fixture_simple_tree() {
 	local path
-	local base="${TMPDIR:-/tmp}"
-	base="${base%/}"
+	local base="$TEST_TMPDIR"
 	path="${FIXTURE_SIMPLE_TREE_PATH:-$base/dirtree-fixture-simple.$$}"
 	if [[ ! -d "$path" ]]; then
 		mkdir -p "$path/src" "$path/tests"
@@ -392,8 +485,7 @@ fixture_simple_tree() {
 
 fixture_decorated_single_file() {
 	local path
-	local base="${TMPDIR:-/tmp}"
-	base="${base%/}"
+	local base="$TEST_TMPDIR"
 	path="${FIXTURE_DECOR_SINGLE_FILE_PATH:-$base/dirtree-fixture-decor.$$}"
 	if [[ ! -d "$path" ]]; then
 		mkdir -p "$path"
@@ -406,8 +498,7 @@ fixture_decorated_single_file() {
 
 fixture_hide_show() {
 	local path
-	local base="${TMPDIR:-/tmp}"
-	base="${base%/}"
+	local base="$TEST_TMPDIR"
 	path="${FIXTURE_HIDE_SHOW_PATH:-$base/dirtree-fixture-hide-show.$$}"
 	if [[ ! -d "$path" ]]; then
 		mkdir -p "$path/src" "$path/tests"
@@ -573,6 +664,259 @@ test_fixture_hide_show_clears_state() {
 	fi
 	if [[ -e "$path2/.dirtree-state" ]]; then
 		echo "hide/show fixture did not clear existing .dirtree-state" >&2
+		return 1
+	fi
+}
+
+test_new_tmpdir_uses_cached_tmpdir_once() {
+	local original_canonical calls=0
+	original_canonical=$(declare -f canonical_tmpdir)
+	canonical_tmpdir() { ((calls++)); return 1; }
+	local dir
+	if ! dir=$(new_tmpdir); then
+		echo "new_tmpdir failed despite cached TEST_TMPDIR" >&2
+		eval "$original_canonical"
+		return 1
+	fi
+	if [[ $calls -ne 0 ]]; then
+		echo "canonical_tmpdir was invoked but should have been cached" >&2
+		eval "$original_canonical"
+		return 1
+	fi
+	if [[ "${dir#${TEST_TMPDIR}/}" == "$dir" ]]; then
+		echo "new_tmpdir did not use TEST_TMPDIR prefix" >&2
+		eval "$original_canonical"
+		return 1
+	fi
+	eval "$original_canonical"
+}
+
+test_compare_printable_normalizes_folder_icons() {
+	local pb_closed pb_open
+	encode_printable pb_closed $' /tmp/\n└──  sub/\n'
+	encode_printable pb_open $'󱞞 /tmp/\n└── 󰉋 sub/\n'
+	if ! compare_printable "normalize folder icons" "$pb_closed" "$pb_open"; then
+		return 1
+	fi
+}
+
+test_compare_printable_short_circuits_equal_encoded() {
+	local real_pb helper_dir marker helper encoded
+	real_pb="$PRINTABLE_BINARY_BIN"
+	helper_dir=$(new_tmpdir)
+	marker="$helper_dir/marker"
+	helper="$helper_dir/pb_stub"
+	cat >"$helper" <<'EOS'
+#!/usr/bin/env bash
+set -u
+if [[ -e "$MARKER_PATH" ]]; then
+	printf 'second\n'
+else
+	echo hit >"$MARKER_PATH"
+	printf 'first\n'
+fi
+EOS
+	chmod +x "$helper"
+	encoded=$(printf 'short-circuit' | "$real_pb")
+	local saved_pb="$PRINTABLE_BINARY_BIN"
+	local saved_marker_path="${MARKER_PATH:-}"
+	PRINTABLE_BINARY_BIN="$helper"
+	MARKER_PATH="$marker"
+	export MARKER_PATH
+	if ! compare_printable "short circuit equal" "$encoded" "$encoded"; then
+		PRINTABLE_BINARY_BIN="$saved_pb"
+		MARKER_PATH="$saved_marker_path"
+		if [[ -n "$saved_marker_path" ]]; then :; fi
+		return 1
+	fi
+	PRINTABLE_BINARY_BIN="$saved_pb"
+	MARKER_PATH="$saved_marker_path"
+	if [[ -e "$marker" ]]; then
+		echo "compare_printable invoked printable_binary despite equal encoded inputs" >&2
+		return 1
+	fi
+}
+
+test_compare_printable_works_without_perl() {
+	local saved_path="$PATH"
+	local fake_perl_dir
+	fake_perl_dir=$(new_tmpdir)
+	cat >"$fake_perl_dir/perl" <<'EOS'
+#!/usr/bin/env bash
+cat
+EOS
+	chmod +x "$fake_perl_dir/perl"
+	local pb_closed pb_open
+	encode_printable pb_closed $' /tmp/\n└──  sub/\n'
+	encode_printable pb_open $'󱞞 /tmp/\n└── 󰉋 sub/\n'
+	PATH="$fake_perl_dir:$saved_path"
+	if compare_printable "no perl dependency" "$pb_closed" "$pb_open"; then
+		PATH="$saved_path"
+		return 0
+	fi
+	PATH="$saved_path"
+	return 1
+}
+
+test_compare_printable_encoded_bypasses_printable_binary() {
+	local helper_dir marker actual expected stub
+	helper_dir=$(new_tmpdir)
+	marker="$helper_dir/marker"
+	actual=$'abc\n'
+	expected=$'abc\n'
+	stub="$helper_dir/printable_binary"
+	cat >"$stub" <<'EOS'
+#!/usr/bin/env bash
+set -u
+echo called >"$MARKER_PATH"
+exit 1
+EOS
+	chmod +x "$stub"
+	local saved_pb="$PRINTABLE_BINARY_BIN"
+	MARKER_PATH="$marker"
+	PRINTABLE_BINARY_BIN="$stub"
+	if ! compare_printable_encoded "preencoded bypass" "$actual" "$expected"; then
+		PRINTABLE_BINARY_BIN="$saved_pb"
+		return 1
+	fi
+	PRINTABLE_BINARY_BIN="$saved_pb"
+	if [[ -e "$marker" ]]; then
+		echo "compare_printable_encoded invoked printable_binary" >&2
+		return 1
+	fi
+}
+
+test_decode_printable_uses_cache_for_same_data() {
+	local helper_dir marker stub encoded decoded1 decoded2
+	helper_dir=$(new_tmpdir)
+	marker="$helper_dir/marker"
+	stub="$helper_dir/printable_binary"
+	cat >"$stub" <<'EOS'
+#!/usr/bin/env bash
+set -u
+echo hit >>"$MARKER_PATH"
+cat
+EOS
+	chmod +x "$stub"
+	encoded="cached-value"
+	local saved_pb="$PRINTABLE_BINARY_BIN"
+	MARKER_PATH="$marker"
+	PRINTABLE_BINARY_BIN="$stub"
+	decode_printable decoded1 "$encoded"
+	decode_printable decoded2 "$encoded"
+	PRINTABLE_BINARY_BIN="$saved_pb"
+	if [[ "$decoded1" != "$encoded" || "$decoded2" != "$encoded" ]]; then
+		echo "decode_printable cache returned wrong value" >&2
+		return 1
+	fi
+	if [[ ! -e "$marker" ]]; then
+		echo "decode_printable did not invoke printable_binary at least once" >&2
+		return 1
+	fi
+	if [[ $(wc -l <"$marker") -ne 1 ]]; then
+		echo "decode_printable invoked printable_binary more than once" >&2
+		return 1
+	fi
+}
+
+test_encode_printable_cached_reads_cache_file() {
+	local helper_dir cache_file stub marker encoded cached out
+	helper_dir=$(new_tmpdir)
+	cache_file="$helper_dir/cache"
+	marker="$helper_dir/marker"
+	stub="$helper_dir/printable_binary"
+	encoded="pre-encoded-value"
+	printf 'one=%s\n' "$encoded" >"$cache_file"
+	cat >"$stub" <<'EOS'
+#!/usr/bin/env bash
+set -u
+echo called >"$MARKER_PATH"
+cat
+EOS
+	chmod +x "$stub"
+	local saved_pb="$PRINTABLE_BINARY_BIN"
+	local saved_cache="$PRINTABLE_CACHE_FILE"
+	PRINTABLE_BINARY_BIN="$stub"
+	PRINTABLE_CACHE_FILE="$cache_file"
+	PRINTABLE_CACHE_LOADED=false
+	unset PRINTABLE_CACHE
+	declare -gA PRINTABLE_CACHE=()
+	export MARKER_PATH="$marker"
+	encode_printable_cached out "one" "ignored"
+	PRINTABLE_BINARY_BIN="$saved_pb"
+	PRINTABLE_CACHE_FILE="$saved_cache"
+	if [[ "$out" != "$encoded" ]]; then
+		echo "expected cached encoded value, got $out" >&2
+		return 1
+	fi
+	if [[ -e "$marker" ]]; then
+		echo "encode_printable_cached should not call printable_binary when cache hit" >&2
+		return 1
+	fi
+}
+
+test_encode_printable_cached_appends_and_reuses() {
+	local helper_dir cache_file stub marker encoded1 encoded_out out2
+	helper_dir=$(new_tmpdir)
+	cache_file="$helper_dir/cache"
+	marker="$helper_dir/marker"
+	stub="$helper_dir/printable_binary"
+	cat >"$stub" <<'EOS'
+#!/usr/bin/env bash
+set -u
+echo hit >>"$MARKER_PATH"
+cat
+EOS
+	chmod +x "$stub"
+	local saved_pb="$PRINTABLE_BINARY_BIN"
+	local saved_cache="$PRINTABLE_CACHE_FILE"
+	PRINTABLE_BINARY_BIN="$stub"
+	PRINTABLE_CACHE_FILE="$cache_file"
+	PRINTABLE_CACHE_LOADED=false
+	unset PRINTABLE_CACHE
+	declare -gA PRINTABLE_CACHE=()
+	export MARKER_PATH="$marker"
+	encoded1=""
+	PRINTABLE_CACHE=()
+	encode_printable_cached encoded1 "key1" "hello"
+	PRINTABLE_CACHE_LOADED=false
+	unset PRINTABLE_CACHE
+	declare -gA PRINTABLE_CACHE=()
+	encode_printable_cached out2 "key1" "ignored"
+	PRINTABLE_BINARY_BIN="$saved_pb"
+	PRINTABLE_CACHE_FILE="$saved_cache"
+	if [[ "$out2" != "$encoded1" ]]; then
+		echo "cache miss after append" >&2
+		return 1
+	fi
+	if [[ $(wc -l <"$cache_file") -ne 1 ]]; then
+		echo "cache file should have one line" >&2
+		return 1
+	fi
+	if [[ $(wc -l <"$marker") -ne 1 ]]; then
+		echo "printable_binary should be called only once" >&2
+		return 1
+	fi
+}
+
+test_new_tmpdir_canonicalizes_symlinked_tmpdir() {
+	local real_base symlink_base old_tmpdir dir actual_base canonical_base
+	real_base=$(mktemp -d "${TMPDIR}/dirtree-real.XXXXXXXX") || return 1
+	symlink_base="${TMPDIR}/dirtree-symlink.$$"
+	ln -s "$real_base" "$symlink_base"
+	TEST_TEMP_PATHS+=("$real_base" "$symlink_base")
+
+	old_tmpdir="$TMPDIR"
+	TMPDIR="$symlink_base"
+	dir=$(new_tmpdir) || return 1
+	TMPDIR="$old_tmpdir"
+
+	actual_base=$(dirname "$dir")
+	canonical_base=$(cd "$real_base" && pwd -P)
+	if [[ "$actual_base" != "$canonical_base" ]]; then
+		echo "new_tmpdir should return canonical path when TMPDIR is a symlink" >&2
+		echo "Expected base: $canonical_base" >&2
+		echo "Actual base:   $actual_base" >&2
 		return 1
 	fi
 }
@@ -1894,7 +2238,7 @@ test_state_persists_using_ini_ma_arrays() {
 	run_quiet "$DIRTREE_BIN" --hide '/^build/' "$target"
 	run_quiet "$DIRTREE_BIN" --hide '/\.log$/' "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=closed\n\nopen=[\n\tlib\n\tsrc\n]\n\nclose=[\n\tdocs\n]\n\nshow=[\n\tREADME.md\n]\n\nhide=[\n\t/^build/\n\t/\\.log$/\n]\n'
+	expected_plain=$'ver=1.1\ndefault=closed\n\nopen=[\n\tlib\n\tsrc\n]\n\nclose=[\n\tdocs\n]\n\nshow=[\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\t/^build/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "state persists using INI-MA arrays" "$actual_pb" "$expected_pb"
 }
@@ -1918,7 +2262,7 @@ hide_regex=\.log$
 STATE
 	run_quiet "$DIRTREE_BIN" "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=[\n\topened\n\thidden\n]\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\tlogs\n\t/temp$/\n]\n\nshow=[\n\t/^docs/.*/index$/\n\tdocs/index.md\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
+	expected_plain=$'ver=1.1\ndefault=[\n\topened\n\thidden\n]\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\t/temp$/\n\tlogs\n]\n\nshow=[\n\t/^docs/.*/index$/\n\tdocs/index.md\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "legacy state migrates to INI-MA" "$actual_pb" "$expected_pb"
 }
@@ -2874,6 +3218,22 @@ run_all_tests() {
 		test_fixture_decorated_single_file_clears_state
 	run_test "hide/show fixture clears state and retains files" \
 		test_fixture_hide_show_clears_state
+	run_test "compare_printable normalizes folder icons" \
+		test_compare_printable_normalizes_folder_icons
+	run_test "compare_printable short circuits equal encoded" \
+		test_compare_printable_short_circuits_equal_encoded
+	run_test "compare_printable works without perl" \
+		test_compare_printable_works_without_perl
+	run_test "compare_printable_encoded bypasses printable_binary" \
+		test_compare_printable_encoded_bypasses_printable_binary
+	run_test "decode_printable uses cache for same data" \
+		test_decode_printable_uses_cache_for_same_data
+	run_test "encode_printable_cached reads cache file" \
+		test_encode_printable_cached_reads_cache_file
+	run_test "encode_printable_cached appends and reuses" \
+		test_encode_printable_cached_appends_and_reuses
+	run_test "new_tmpdir uses cached tmpdir once" \
+		test_new_tmpdir_uses_cached_tmpdir_once
 	run_test "dirtree --test works from any directory" \
 		test_dirtree_test_runs_from_any_directory
 	run_test "basic listing prints absolute root header" \
