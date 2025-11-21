@@ -4,10 +4,10 @@
 - Working tree dirty (tests tweaked); latest commit: `tests: banner shows ape path via wrapper` (c80c8b6) plus earlier test refactors.
 - Banner now logs once: `Using /home/pmarreck/Documents/printable-binary/bin/printable_binary_ape.com as printable_binary executable via wrapper /home/pmarreck/Documents/printable-binary/bin/printable_binary`.
 - All tests currently pass: `./test/dirtree_test` ~10–12s runtime using APE printable_binary.
-- Printable capture helpers: `capture_command_printable`, `capture_dirtree_printable`, `capture_dirtree_test_printable`, `capture_dirtree_printable_outputs`; new reusable fixture helper `fixture_simple_tree` ensures state files are cleared between uses.
+- Printable capture helpers: `capture_command_printable`, `capture_dirtree_printable`, `capture_dirtree_test_printable`, `capture_dirtree_printable_outputs`; reusable fixtures `fixture_simple_tree` and `fixture_decorated_single_file` clear `.dirtree-state` between uses.
 
 ## Remaining TODOs
-1) Expand reusable fixture approach where safe to trim setup time (e.g., hide/show/decorated clusters), ensuring state files are cleaned between uses (see `fixture_simple_tree`).
+1) Expand reusable fixture approach where safe to trim setup time (e.g., hide/show/decorated clusters), ensuring state files are cleaned between uses (see `fixture_simple_tree` / `fixture_decorated_single_file`).
 2) Keep banners single-line; ensure PRINTABLE_BACKING_BIN set before calling `print_printable_banner` (already done; derivation uses wrapper dir if unset).
 
 ## Notes

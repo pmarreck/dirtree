@@ -375,12 +375,25 @@ run_test() {
 }
 
 # Reusable fixture helpers (amortize setup, keep state clean)
+
 fixture_simple_tree() {
 	local path
 	path="${FIXTURE_SIMPLE_TREE_PATH:-$TMPDIR/dirtree-fixture-simple.$$}"
 	if [[ ! -d "$path" ]]; then
 		mkdir -p "$path/src" "$path/tests"
 		touch "$path/src/file.txt" "$path/tests/test_helper.sh"
+		TEST_TEMP_PATHS+=("$path")
+	fi
+	find "$path" -name '.dirtree-state' -type f -delete
+	printf '%s\n' "$path"
+}
+
+fixture_decorated_single_file() {
+	local path
+	path="${FIXTURE_DECOR_SINGLE_FILE_PATH:-$TMPDIR/dirtree-fixture-decor.$$}"
+	if [[ ! -d "$path" ]]; then
+		mkdir -p "$path"
+		touch "$path/file.txt"
 		TEST_TEMP_PATHS+=("$path")
 	fi
 	find "$path" -name '.dirtree-state' -type f -delete
@@ -496,6 +509,29 @@ test_fixture_helper_resets_state_between_uses() {
 	fi
 	if [[ -e "$path2/.dirtree-state" ]]; then
 		echo "fixture helper did not clear existing .dirtree-state" >&2
+		return 1
+	fi
+}
+
+test_fixture_decorated_single_file_clears_state() {
+	if command -v fixture_decorated_single_file >/dev/null 2>&1; then :; else
+		echo "fixture_decorated_single_file helper is missing" >&2
+		return 1
+	fi
+	local path1 path2
+	path1=$(fixture_decorated_single_file)
+	printf 'ver=1.1\ndefault=opened\n' >"$path1/.dirtree-state"
+	path2=$(fixture_decorated_single_file)
+	if [[ "$path1" != "$path2" ]]; then
+		echo "decor fixture returned different paths; expected reuse" >&2
+		return 1
+	fi
+	if [[ ! -e "$path2/file.txt" ]]; then
+		echo "decor fixture missing file.txt" >&2
+		return 1
+	fi
+	if [[ -e "$path2/.dirtree-state" ]]; then
+		echo "decor fixture did not clear existing .dirtree-state" >&2
 		return 1
 	fi
 }
@@ -2549,9 +2585,8 @@ test_show_hidden_reveals_hidden_entries_without_persisting() {
 }
 
 test_decorated_root_header_includes_trailing_slash() {
-	local workspace
-	workspace=$(new_tmpdir)
-	local target="$workspace/decor-root"
+	local target
+	target=$(new_tmpdir)/decor-root
 	mkdir -p "$target"
 	local stdout_pb="" stderr_pb="" rc=0
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated "$target"; then
@@ -2575,12 +2610,8 @@ test_decorated_root_header_includes_trailing_slash() {
 }
 
 test_decorated_piped_keeps_icons_by_default() {
-	local workspace
-	workspace=$(new_tmpdir)
-	local target="$workspace/decor-icons"
-	mkdir -p "$target"
-	local filename="file.txt"
-	touch "$target/$filename"
+	local target filename="file.txt"
+	target=$(fixture_decorated_single_file)
 	local stdout_pb="" stderr_pb="" rc=0
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated "$target"; then
 		echo "dirtree --decorated failed for icons" >&2
@@ -2605,12 +2636,8 @@ test_decorated_piped_keeps_icons_by_default() {
 }
 
 test_decorated_piped_no_icons_matches_icon_stripped_output() {
-	local workspace
-	workspace=$(new_tmpdir)
-	local target="$workspace/decor-no-icons"
-	mkdir -p "$target"
-	local filename="file.txt"
-	touch "$target/$filename"
+	local target filename="file.txt"
+	target=$(fixture_decorated_single_file)
 	local stdout_pb="" stderr_pb="" rc=0
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated --no-icons "$target"; then
 		echo "dirtree --decorated --no-icons failed" >&2
@@ -2635,12 +2662,8 @@ test_decorated_piped_no_icons_matches_icon_stripped_output() {
 }
 
 test_no_hyperlinks_by_default_when_not_tty() {
-	local workspace
-	workspace=$(new_tmpdir)
-	local target="$workspace/no-hyper-default"
-	mkdir -p "$target"
-	local filename="file.txt"
-	touch "$target/$filename"
+	local target filename="file.txt"
+	target=$(fixture_decorated_single_file)
 	local stdout_pb="" stderr_pb="" rc=0
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
 		echo "dirtree exited non-zero for default hyperlink test" >&2
@@ -2663,12 +2686,8 @@ test_no_hyperlinks_by_default_when_not_tty() {
 }
 
 test_hyperlinks_present_when_forced_with_decorated() {
-	local workspace
-	workspace=$(new_tmpdir)
-	local target="$workspace/decorated-links"
-	mkdir -p "$target"
-	local filename="file.txt"
-	touch "$target/$filename"
+	local target filename="file.txt"
+	target=$(fixture_decorated_single_file)
 	local stdout_pb="" stderr_pb="" rc=0
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated "$target"; then
 		echo "dirtree --decorated failed" >&2
@@ -2693,12 +2712,8 @@ test_hyperlinks_present_when_forced_with_decorated() {
 }
 
 test_piped_stdout_zero_treats_pipe_as_tty_for_hyperlinks() {
-	local workspace
-	workspace=$(new_tmpdir)
-	local target="$workspace/piped-tty"
-	mkdir -p "$target"
-	local filename="file.txt"
-	touch "$target/$filename"
+	local target filename="file.txt"
+	target=$(fixture_decorated_single_file)
 	local stdout_pb="" stderr_pb="" rc=0
 	if ! capture_command_printable stdout_pb stderr_pb rc env PIPED_STDOUT=0 "$DIRTREE_BIN" "$target"; then
 		echo "PIPED_STDOUT=0 run failed" >&2
@@ -2723,12 +2738,8 @@ test_piped_stdout_zero_treats_pipe_as_tty_for_hyperlinks() {
 }
 
 test_no_hyperlinks_flag_suppresses_osc8_sequences() {
-	local workspace
-	workspace=$(new_tmpdir)
-	local target="$workspace/decorated-no-links"
-	mkdir -p "$target"
-	local filename="file.txt"
-	touch "$target/$filename"
+	local target filename="file.txt"
+	target=$(fixture_decorated_single_file)
 	local stdout_pb="" stderr_pb="" rc=0
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated --no-hyperlinks "$target"; then
 		echo "dirtree --decorated --no-hyperlinks failed" >&2
@@ -2818,6 +2829,8 @@ run_all_tests() {
 		test_capture_dirtree_printable_runs_help
 	run_test "fixture helper resets state between uses" \
 		test_fixture_helper_resets_state_between_uses
+	run_test "decor fixture clears state and retains file" \
+		test_fixture_decorated_single_file_clears_state
 	run_test "dirtree --test works from any directory" \
 		test_dirtree_test_runs_from_any_directory
 	run_test "basic listing prints absolute root header" \
