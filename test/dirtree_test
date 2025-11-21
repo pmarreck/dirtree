@@ -2229,43 +2229,47 @@ test_regex_open_close_conflict_raises_error() {
 }
 
 test_hide_literal_suppresses_node() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/hide-literal"
 	mkdir -p "$target/src" "$target/tests"
 	run_quiet "$DIRTREE_BIN" --hide tests "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "hide literal listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for hide literal" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "hide literal listing failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  src/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--hide literal suppresses node" "$actual_pb" "$expected_pb"
 }
 
 test_hide_regex_suppresses_matches() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/hide-regex"
 	mkdir -p "$target/src" "$target/tests"
 	run_quiet "$DIRTREE_BIN" --hide '/^src/' "$target"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "hide regex listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for hide regex" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "hide regex listing failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n└──  tests/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--hide regex suppresses matches" "$actual_pb" "$expected_pb"
 }
 
 test_hide_slash_regex_persists_and_hides() {
-	local workspace target state_file stdout_file stderr_file actual_state_pb expected_state_plain expected_state_pb actual_tree_pb expected_tree_plain expected_tree_pb
+	local workspace target state_file stdout_pb="" stderr_pb="" rc=0 actual_state_pb expected_state_plain expected_state_pb actual_tree_pb expected_tree_plain expected_tree_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/hide-slash"
 	mkdir -p "$target/src"
@@ -2280,38 +2284,42 @@ test_hide_slash_regex_persists_and_hides() {
 	if ! compare_printable "hide regex persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
 	fi
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" "$target"; then
-		echo "hide slash listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for hide slash listing" >&2
 		return 1
 	fi
-	encode_file_printable actual_tree_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "hide slash listing failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
 	printf -v expected_tree_plain ' %s/\n└──  src/\n    ├──  file.txt\n    └──  shortcut.lnk\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	compare_printable "--hide slash regex persists and hides" "$actual_tree_pb" "$expected_tree_pb"
 }
 
 test_hide_negated_regex_hides_non_matches() {
-	local workspace target stdout_file stderr_file actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/hide-neg"
 	mkdir -p "$target"
 	touch "$target/keep.exe" "$target/skip.txt"
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple --hide '!/\\.exe$/' "$target"; then
-		echo "hide negated listing failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --hide '!/\\.exe$/' "$target"; then
+		echo "capture helper failed for hide negated listing" >&2
 		return 1
 	fi
-	encode_file_printable actual_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "hide negated listing failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_pb="$stdout_pb"
 	printf -v expected_plain ' %s/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--hide negated regex hides non matches" "$actual_pb" "$expected_pb"
 }
 
 test_hide_negated_regex_persists_and_hides() {
-	local workspace target state_file stdout_file stderr_file actual_state_pb expected_state_plain expected_state_pb actual_tree_pb expected_tree_plain expected_tree_pb
+	local workspace target state_file stdout_pb="" stderr_pb="" rc=0 actual_state_pb expected_state_plain expected_state_pb actual_tree_pb expected_tree_plain expected_tree_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/hide-neg-persist"
 	mkdir -p "$target"
@@ -2324,13 +2332,15 @@ test_hide_negated_regex_persists_and_hides() {
 	if ! compare_printable "negated hide persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
 	fi
-	stdout_file=$(new_tmpfile)
-	stderr_file=$(new_tmpfile)
-	if ! run_and_capture "$stdout_file" "$stderr_file" "$DIRTREE_BIN" --simple "$target"; then
-		echo "simple listing after negated hide failed" >&2
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple "$target"; then
+		echo "capture helper failed for negated hide listing" >&2
 		return 1
 	fi
-	encode_file_printable actual_tree_pb "$stdout_file"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "simple listing after negated hide failed with rc=$rc" >&2
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
 	printf -v expected_tree_plain ' %s/\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	compare_printable "--hide negated regex persists and hides" "$actual_tree_pb" "$expected_tree_pb"
