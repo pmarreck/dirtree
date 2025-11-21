@@ -400,6 +400,18 @@ fixture_decorated_single_file() {
 	printf '%s\n' "$path"
 }
 
+fixture_hide_show() {
+	local path
+	path="${FIXTURE_HIDE_SHOW_PATH:-$TMPDIR/dirtree-fixture-hide-show.$$}"
+	if [[ ! -d "$path" ]]; then
+		mkdir -p "$path/src" "$path/tests"
+		touch "$path/src/config.json" "$path/src/configXjson" "$path/tests/test_helper.sh"
+		TEST_TEMP_PATHS+=("$path")
+	fi
+	find "$path" -name '.dirtree-state' -type f -delete
+	printf '%s\n' "$path"
+}
+
 # Test implementations
 
 test_dirtree_root_points_to_repo_root() {
@@ -532,6 +544,29 @@ test_fixture_decorated_single_file_clears_state() {
 	fi
 	if [[ -e "$path2/.dirtree-state" ]]; then
 		echo "decor fixture did not clear existing .dirtree-state" >&2
+		return 1
+	fi
+}
+
+test_fixture_hide_show_clears_state() {
+	if command -v fixture_hide_show >/dev/null 2>&1; then :; else
+		echo "fixture_hide_show helper is missing" >&2
+		return 1
+	fi
+	local path1 path2
+	path1=$(fixture_hide_show)
+	printf 'ver=1.1\ndefault=opened\n' >"$path1/.dirtree-state"
+	path2=$(fixture_hide_show)
+	if [[ "$path1" != "$path2" ]]; then
+		echo "hide/show fixture returned different paths; expected reuse" >&2
+		return 1
+	fi
+	if [[ ! -e "$path2/src/config.json" || ! -e "$path2/tests/test_helper.sh" ]]; then
+		echo "hide/show fixture missing expected files" >&2
+		return 1
+	fi
+	if [[ -e "$path2/.dirtree-state" ]]; then
+		echo "hide/show fixture did not clear existing .dirtree-state" >&2
 		return 1
 	fi
 }
@@ -2831,6 +2866,8 @@ run_all_tests() {
 		test_fixture_helper_resets_state_between_uses
 	run_test "decor fixture clears state and retains file" \
 		test_fixture_decorated_single_file_clears_state
+	run_test "hide/show fixture clears state and retains files" \
+		test_fixture_hide_show_clears_state
 	run_test "dirtree --test works from any directory" \
 		test_dirtree_test_runs_from_any_directory
 	run_test "basic listing prints absolute root header" \
