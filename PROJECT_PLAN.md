@@ -1,5 +1,10 @@
 # PROJECT PLAN
 
+## Context Snapshot (Jan 25, 2026)
+- Added `.dirtree-state` header comment on persist and `--rewrite-settings` to rewrite state with format updates.
+- Synced local `bin/printable_binary`, `bin/printable_binary_ape.com`, and `bin/printable_binary_c` to the main printable-binary repo, added `character_map.txt`, and defaulted tests to the local printable_binary.
+- Unit test suite passes: `./test/dirtree_test` (All 103 tests passed).
+
 ## Context Snapshot (Nov 21, 2025)
 - Working tree dirty (tests tweaked); latest commit: `tests: banner shows ape path via wrapper` (c80c8b6) plus earlier test refactors.
 - Banner now logs once: `Using /home/pmarreck/Documents/printable-binary/bin/printable_binary_ape.com as printable_binary executable via wrapper /home/pmarreck/Documents/printable-binary/bin/printable_binary`.

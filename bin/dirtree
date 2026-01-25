@@ -30,6 +30,7 @@ show_help() {
 	echo "  --asc              Sort ascending"
 	echo "  --desc             Sort descending (default)"
 	echo "  --show-hidden      Temporarily display paths hidden via config"
+	echo "  --rewrite-settings Rewrite state file using current settings"
 	echo "  --test             Run associated tests"
 	echo ""
 	echo "Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals."
@@ -88,8 +89,10 @@ render_sort_field="modified"
 render_sort_reverse=1
 dir_pending=true
 show_hidden=false
+rewrite_settings=false
 
 STATE_VERSION_LABEL="ver=1.1"
+STATE_HEADER_COMMENT="# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree"
 state_version=""
 state_needs_migration=false
 declare -a state_passthrough_lines=()
@@ -779,6 +782,12 @@ strip_trailing_space_tabs() {
 	printf '%s' "$value"
 }
 
+is_state_header_comment() {
+	local line="$1"
+	line=$(strip_leading_space_tabs "$line")
+	[[ "$line" == "$STATE_HEADER_COMMENT" ]]
+}
+
 split_inline_items() {
 	local content="$1"
 	local ref_name="$2"
@@ -1003,7 +1012,9 @@ read_state() {
 				continue
 			fi
 			if [[ "$line" =~ ^[[:space:]]*# ]]; then
-				state_passthrough_lines+=("$raw")
+				if ! is_state_header_comment "$line"; then
+					state_passthrough_lines+=("$raw")
+				fi
 				((idx++))
 				continue
 			fi
@@ -1024,6 +1035,13 @@ read_state() {
 		fi
 
 		if [[ "$format" == "legacy" ]]; then
+		if [[ "$line" =~ ^[[:space:]]*# ]]; then
+			if ! is_state_header_comment "$line"; then
+				state_passthrough_lines+=("$raw")
+			fi
+			((idx++))
+			continue
+		fi
 		case "$line" in
 			default=*)
 				local legacy_value="${line#default=}"
@@ -1047,7 +1065,9 @@ read_state() {
 		fi
 
 		if [[ "$line" =~ ^[[:space:]]*# ]]; then
-			state_passthrough_lines+=("$raw")
+			if ! is_state_header_comment "$line"; then
+				state_passthrough_lines+=("$raw")
+			fi
 			((idx++))
 			continue
 		fi
@@ -1498,6 +1518,7 @@ persist_state() {
 	tmp_file=$(mktemp "${state_file}.XXXXXX")
 
 	{
+		echo "$STATE_HEADER_COMMENT"
 		echo "$STATE_VERSION_LABEL"
 		local wrote_block=false
 		local default_entries=()
@@ -2166,6 +2187,9 @@ while [[ $# -gt 0 ]]; do
 			--show-hidden)
 				show_hidden=true
 				;;
+			--rewrite-settings)
+				rewrite_settings=true
+				;;
 		-o|--open)
 			shift
 			collect_variadic_args collected "" "$@"
@@ -2355,6 +2379,10 @@ fi
 
 # Load and possibly update state (including inheritance)
 load_state_chain "$abs_dir"
+
+if [[ "$rewrite_settings" == true && -f "$abs_dir/.dirtree-state" ]]; then
+	state_needs_migration=true
+fi
 
 # Apply CLI default after loading persisted state so it isn't overwritten
 if [[ -n "$cli_default_state" ]]; then

@@ -41,6 +41,7 @@
 # [x] --simple reopen src shows contents — Ensures --simple reopen src shows contents.
 # [x] --simple set default closed and open docs — Ensures --simple set default closed and open docs.
 # [x] --simple preserves unknown keys in state — Ensures --simple preserves unknown keys in state.
+# [x] --rewrite-settings rewrites state with format updates — Ensures state rewrite adds format updates without changing settings.
 # [x] --simple emits tree connectors — Ensures --simple emits tree connectors.
 # [x] --simple closed marker variants — Ensures --simple closed marker variants.
 # [x] auto simple via DIRTREE_AUTO_SIMPLE when not TTY — Ensures auto simple via DIRTREE_AUTO_SIMPLE when not TTY.
@@ -130,7 +131,19 @@ if [[ ! -x "$DIRTREE_BIN" ]]; then
 	exit 1
 fi
 
-export PRINTABLE_BINARY_BIN=${PRINTABLE_BINARY_BIN:-$(command -v printable_binary || true)}
+if [[ -z "${PRINTABLE_BINARY_MAP:-}" && -f "$DIRTREE_ROOT/character_map.txt" ]]; then
+	export PRINTABLE_BINARY_MAP="$DIRTREE_ROOT/character_map.txt"
+fi
+
+SYSTEM_PRINTABLE_BINARY_BIN=${SYSTEM_PRINTABLE_BINARY_BIN:-$(command -v printable_binary || true)}
+if [[ -z "${PRINTABLE_BINARY_BIN:-}" ]]; then
+	if [[ -x "$PB_BIN_ROOT/printable_binary" ]]; then
+		PRINTABLE_BINARY_BIN="$PB_BIN_ROOT/printable_binary"
+	else
+		PRINTABLE_BINARY_BIN=$(command -v printable_binary || true)
+	fi
+fi
+export PRINTABLE_BINARY_BIN
 if [[ -z "$PRINTABLE_BINARY_BIN" ]]; then
 	echo "printable_binary not found in PATH; please either set PRINTABLE_BINARY_BIN or add $DIRTREE_ROOT/bin to your PATH or install direnv which will then do this for you automatically" >&2
 	exit 1
@@ -558,6 +571,38 @@ test_capture_command_printable_handles_nuls() {
 	fi
 	if [[ "$stderr_pb" != "$expected_stderr_pb" ]]; then
 		echo "expected empty stderr, got printable: $stderr_pb" >&2
+		return 1
+	fi
+}
+
+test_local_printable_binary_matches_system() {
+	local system_bin="$SYSTEM_PRINTABLE_BINARY_BIN"
+	local local_bin="$PB_BIN_ROOT/printable_binary"
+	if [[ -z "$system_bin" || ! -x "$system_bin" ]]; then
+		echo "system printable_binary not found" >&2
+		return 1
+	fi
+	if [[ ! -x "$local_bin" ]]; then
+		echo "local printable_binary not found" >&2
+		return 1
+	fi
+	local system_out local_out
+	system_out=$(printf 'a\0b\n' | "$system_bin")
+	local_out=$(printf 'a\0b\n' | "$local_bin")
+	if [[ "$system_out" != "$local_out" ]]; then
+		echo "local printable_binary does not match system encoding" >&2
+		echo "System: $system_bin" >&2
+		echo "Local:  $local_bin" >&2
+		return 1
+	fi
+}
+
+test_printable_binary_bin_prefers_local() {
+	local expected="$PB_BIN_ROOT/printable_binary"
+	if [[ "$PRINTABLE_BINARY_BIN" != "$expected" ]]; then
+		echo "PRINTABLE_BINARY_BIN should default to local printable_binary" >&2
+		echo "Expected: $expected" >&2
+		echo "Actual:   $PRINTABLE_BINARY_BIN" >&2
 		return 1
 	fi
 }
@@ -1140,6 +1185,7 @@ Options:
   --asc              Sort ascending
   --desc             Sort descending (default)
   --show-hidden      Temporarily display paths hidden via config
+  --rewrite-settings Rewrite state file using current settings
   --test             Run associated tests
 
 Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.
@@ -1264,7 +1310,7 @@ test_persist_default_via_default_only() {
 		return 1
 	fi
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=closed\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "persist default via --default only" "$actual_pb" "$expected_pb"
 }
@@ -1280,7 +1326,7 @@ test_persist_default_visibility_via_default_hide() {
 		return 1
 	fi
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=hidden\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=hidden\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "persist default visibility via --default hide" "$actual_pb" "$expected_pb"
 }
@@ -1296,7 +1342,7 @@ test_persist_default_array_via_multiple_tokens() {
 		return 1
 	fi
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=[\n\topened\n\thidden\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=[\n\topened\n\thidden\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "persist default array via multiple --default tokens" "$actual_pb" "$expected_pb"
 }
@@ -1312,7 +1358,7 @@ test_depth_flag_persists_and_applies() {
 		return 1
 	fi
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'ver=1.1\ndepth=1\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndepth=1\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "depth state persistence" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -1347,7 +1393,7 @@ test_sort_flags_persist_and_apply() {
 		return 1
 	fi
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'ver=1.1\nsort=alpha\nsort_direction=asc\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nsort=alpha\nsort_direction=asc\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "sort state persistence" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -1854,7 +1900,7 @@ test_show_slash_regex_persists() {
 	state_file="$target/.dirtree-state"
 	run_quiet "$DIRTREE_BIN" --show '/^docs/' "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\nshow=[\n\t/^docs/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nshow=[\n\t/^docs/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--show slash regex persists" "$actual_pb" "$expected_pb"
 }
@@ -2238,7 +2284,7 @@ test_state_persists_using_ini_ma_arrays() {
 	run_quiet "$DIRTREE_BIN" --hide '/^build/' "$target"
 	run_quiet "$DIRTREE_BIN" --hide '/\.log$/' "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=closed\n\nopen=[\n\tlib\n\tsrc\n]\n\nclose=[\n\tdocs\n]\n\nshow=[\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\t/^build/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nopen=[\n\tlib\n\tsrc\n]\n\nclose=[\n\tdocs\n]\n\nshow=[\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\t/^build/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "state persists using INI-MA arrays" "$actual_pb" "$expected_pb"
 }
@@ -2262,7 +2308,7 @@ hide_regex=\.log$
 STATE
 	run_quiet "$DIRTREE_BIN" "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=[\n\topened\n\thidden\n]\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\t/temp$/\n\tlogs\n]\n\nshow=[\n\t/^docs/.*/index$/\n\tdocs/index.md\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=[\n\topened\n\thidden\n]\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\t/temp$/\n\tlogs\n]\n\nshow=[\n\t/^docs/.*/index$/\n\tREADME.md\n\tdocs/index.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "legacy state migrates to INI-MA" "$actual_pb" "$expected_pb"
 }
@@ -2404,6 +2450,20 @@ test_simple_preserves_unknown_keys_in_state() {
 	expected_plain=$'ver=1.1\nmystery=1\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple preserves unknown keys in state" "$actual_pb" "$expected_pb"
+}
+
+test_rewrite_settings_rewrites_state_with_format_updates() {
+	local workspace target state_file actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/rewrite-settings"
+	state_file="$target/.dirtree-state"
+	mkdir -p "$target"
+	printf 'ver=1.1\ndefault=closed\n' > "$state_file"
+	run_quiet "$DIRTREE_BIN" --rewrite-settings "$target"
+	encode_file_printable actual_pb "$state_file"
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "--rewrite-settings rewrites state with format updates" "$actual_pb" "$expected_pb"
 }
 
 test_simple_emits_tree_connectors() {
@@ -2629,7 +2689,7 @@ test_open_regex_persists_in_state() {
 		run_quiet "$DIRTREE_BIN" --open '/^src/'
 	)
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=closed\n\nopen=[\n\t/^src/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nopen=[\n\t/^src/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--open regex persists in state" "$actual_pb" "$expected_pb"
 }
@@ -2646,7 +2706,7 @@ test_open_slash_regex_persists_in_state() {
 		run_quiet "$DIRTREE_BIN" --open '/^docs/'
 	)
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=closed\n\nopen=[\n\t/^docs/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nopen=[\n\t/^docs/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--open slash regex persists in state" "$actual_pb" "$expected_pb"
 }
@@ -2693,7 +2753,7 @@ test_close_slash_regex_persists_in_state() {
 		run_quiet "$DIRTREE_BIN" --close '/^src/'
 	)
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\ndefault=closed\n\nclose=[\n\t/^src/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nclose=[\n\t/^src/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--close slash regex persists in state" "$actual_pb" "$expected_pb"
 }
@@ -2769,7 +2829,7 @@ test_hide_slash_regex_persists_and_hides() {
 	state_file="$target/.dirtree-state"
 	run_quiet "$DIRTREE_BIN" --hide '/\\.lnk$/' "$target"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'ver=1.1\nhide=[\n\t/\\\\.lnk$/\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nhide=[\n\t/\\\\.lnk$/\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "hide regex persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -2817,7 +2877,7 @@ test_hide_negated_regex_persists_and_hides() {
 	state_file="$target/.dirtree-state"
 	run_quiet "$DIRTREE_BIN" --hide '!/\\.exe$/' "$target"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'ver=1.1\nhide=[\n\t!/\\\\.exe$/\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nhide=[\n\t!/\\\\.exe$/\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "negated hide persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -2852,7 +2912,7 @@ test_reprefix_open_treats_argument_as_literal() {
 	touch -t 200001010101 "$target/re:^src"
 	state_file="$target/.dirtree-state"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'ver=1.1\ndefault=closed\n\nopen=[\n\tre:^src\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nopen=[\n\tre:^src\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "re-prefix open persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -2889,7 +2949,7 @@ test_reprefix_hide_treats_argument_as_literal() {
 	)
 	state_file="$target/.dirtree-state"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'ver=1.1\ndefault=opened\n\nhide=[\n\tre:^src\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=opened\n\nhide=[\n\tre:^src\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "re-prefix hide persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -2918,7 +2978,7 @@ test_hide_literal_with_dot_stays_literal() {
 	state_file="$target/.dirtree-state"
 	run_quiet "$DIRTREE_BIN" --hide src/config.json "$target"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'ver=1.1\nhide=[\n\tsrc/config.json\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nhide=[\n\tsrc/config.json\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "hide literal dot persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -2964,7 +3024,7 @@ test_show_hidden_reveals_hidden_entries_without_persisting() {
 		return 1
 	fi
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'ver=1.1\nhide=[\n\t/^src/\n\ttests\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nhide=[\n\t/^src/\n\ttests\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	compare_printable "show-hidden keeps hide rules" "$actual_state_pb" "$expected_state_pb"
 }
@@ -3210,6 +3270,10 @@ run_all_tests() {
 		test_encode_printable_reads_from_stdin
 	run_test "capture_command_printable handles NULs" \
 		test_capture_command_printable_handles_nuls
+	run_test "local printable_binary matches system" \
+		test_local_printable_binary_matches_system
+	run_test "printable_binary bin prefers local" \
+		test_printable_binary_bin_prefers_local
 	run_test "capture_dirtree_printable runs --help" \
 		test_capture_dirtree_printable_runs_help
 	run_test "fixture helper resets state between uses" \
@@ -3304,6 +3368,8 @@ run_all_tests() {
 		test_simple_set_default_closed_and_open_docs
 	run_test "--simple preserves unknown keys in state" \
 		test_simple_preserves_unknown_keys_in_state
+	run_test "--rewrite-settings rewrites state with format updates" \
+		test_rewrite_settings_rewrites_state_with_format_updates
 	run_test "--simple emits tree connectors" \
 		test_simple_emits_tree_connectors
 	run_test "--simple closed marker variants" \
