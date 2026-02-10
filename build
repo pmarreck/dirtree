@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Build dirtree
+set -euo pipefail
+
+MODE="ReleaseFast"
+for arg in "$@"; do
+	case "$arg" in
+		--debug)   MODE="Debug" ;;
+		--test)    MODE="Debug" ;;
+		--release) MODE="ReleaseFast" ;;
+		--help|-h)
+			echo "Usage: ./build [--debug|--test|--release]"
+			echo "  --debug    Build with debug info"
+			echo "  --test     Build in debug mode (for testing)"
+			echo "  --release  Build with optimizations (default)"
+			exit 0
+			;;
+		*)
+			echo "Unknown argument: $arg" >&2
+			exit 1
+			;;
+	esac
+done
+
+zig build "-Doptimize=$MODE"
+
+echo "Built zig-out/bin/dirtree ($MODE)"

@@ -124,7 +124,7 @@ export DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 export TEST_SCRIPT_DIR="$DIRTREE_ROOT/test"
 export PB_BIN_ROOT="$DIRTREE_ROOT/bin"
 
-export DIRTREE_BIN="$PB_BIN_ROOT/dirtree"
+export DIRTREE_BIN="${DIRTREE_BIN:-$PB_BIN_ROOT/dirtree}"
 
 if [[ ! -x "$DIRTREE_BIN" ]]; then
 	echo "dirtree binary not found at $DIRTREE_BIN" >&2
@@ -164,6 +164,18 @@ export PATH="$PB_BIN_ROOT:$PATH"
 : "${TMPDIR:=/tmp}"   # default TMPDIR to /tmp if unset/empty
 TMPDIR="${TMPDIR%/}"  # drop any trailing slash
 export TMPDIR
+
+is_compiled_binary() {
+	# Direct compiled binary
+	if file "$DIRTREE_BIN" 2>/dev/null | grep -qE 'Mach-O|ELF|PE32'; then
+		return 0
+	fi
+	# Shell wrapper that references a zig-out binary
+	if grep -q 'zig-out' "$DIRTREE_BIN" 2>/dev/null; then
+		return 0
+	fi
+	return 1
+}
 
 declare -a TEST_TEMP_PATHS=()
 
@@ -1591,32 +1603,12 @@ test_decorated_mode_honors_explicit_open_over_default() {
 }
 
 test_decorated_handles_percent_encoded_osc8_hyperlinks() {
-	local workspace target stubdir stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
+	local workspace target stdout_pb="" stderr_pb="" rc=0
 	workspace=$(new_tmpdir)
 	target="$workspace/spaces"
 	mkdir -p "$target/sys (server)/child"
 	printf 'ver=1.1\ndefault=closed\n' > "$target/.dirtree-state"
-	stubdir=$(mktemp -d)
-	cat >"$stubdir/eza" <<'EOS'
-#!/usr/bin/env bash
-path="${@: -1}"
-abs=$(cd "$path" && pwd -P)
-case "$abs" in
-*/sys\ \(server\))
-	base="${abs%/sys (server)}"
-	printf '\e]8;;file://%s/sys%%20(server)/child\e\child\e]8;;\e\
-' "$base"
-	;;
-*)
-	printf '\e]8;;file://%s/.dirtree-state\e\.dirtree-state\e]8;;\e\
-' "$abs"
-	printf '\e]8;;file://%s/sys%%20(server)\e\sys (server)\e]8;;\e\
-' "$abs"
-	;;
-esac
-EOS
-	chmod +x "$stubdir/eza"
-	if ! PATH="$stubdir:$PATH" capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated "$target"; then
 		echo "capture helper failed for percent-encoded run" >&2
 		return 1
 	fi
@@ -1628,10 +1620,40 @@ EOS
 		echo "Unexpected stderr for percent-encoded run" >&2
 		return 1
 	fi
-	actual_pb="$stdout_pb"
-	printf -v expected_plain '.dirtree-state\nsys (server)/\n└── sys (server)/*\n'
-	encode_printable expected_pb "$expected_plain"
-	compare_printable "decorated handles percent-encoded OSC8 hyperlinks" "$actual_pb" "$expected_pb"
+	# Decode actual output and verify key properties:
+	# 1. URL contains percent-encoded space and parens for dir name with spaces
+	# 2. Display name is single-quoted
+	# 3. Closed marker /* is present
+	local actual_plain
+	decode_printable actual_plain "$stdout_pb"
+	# Check for percent-encoded URL (space=20, parens=28/29)
+	if [[ "$actual_plain" != *"sys%20%28server%29"* ]]; then
+		echo "Missing percent-encoded URL 'sys%20%28server%29' in output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	# Check for single-quoted display name
+	if [[ "$actual_plain" != *"'sys (server)'"* ]]; then
+		echo "Missing quoted display name \"'sys (server)'\" in output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	# Check for closed-with-children marker
+	if [[ "$actual_plain" != *"/*"* ]]; then
+		echo "Missing closed marker '/*' in output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	# Check for OSC8 hyperlink start sequence
+	if [[ "$actual_plain" != *$'\e]8;;file://'* ]]; then
+		echo "Missing OSC8 hyperlink start in output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
 }
 
 test_decorated_mode_collapses_explicitly_closed_git() {
@@ -3206,7 +3228,75 @@ test_no_hyperlinks_flag_suppresses_osc8_sequences() {
 	compare_printable "--no-hyperlinks suppresses OSC8 sequences" "$actual_pb" "$expected_pb"
 }
 
+test_symlink_shows_target() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/sym-test"
+	mkdir -p "$target"
+	touch "$target/real-file.txt"
+	ln -s "$target/real-file.txt" "$target/link-file.txt"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for symlink test" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "symlink test rc=$rc" >&2
+		return 1
+	fi
+	local actual_plain
+	decode_printable actual_plain "$stdout_pb"
+	# Symlink entry should contain ' -> ' and the target path
+	if [[ "$actual_plain" != *"link-file.txt -> "* ]]; then
+		echo "Missing symlink target arrow in output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	if [[ "$actual_plain" != *"real-file.txt"* ]]; then
+		echo "Missing symlink target path in output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+}
+
+test_symlink_shows_target_with_spaces() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/sym-spaces"
+	mkdir -p "$target/sub dir"
+	touch "$target/sub dir/file.txt"
+	ln -s "$target/sub dir/file.txt" "$target/my-link.txt"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for symlink spaces test" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "symlink spaces test rc=$rc" >&2
+		return 1
+	fi
+	local actual_plain
+	decode_printable actual_plain "$stdout_pb"
+	# Symlink target with spaces should be single-quoted
+	if [[ "$actual_plain" != *"my-link.txt -> "* ]]; then
+		echo "Missing symlink target arrow in output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	if [[ "$actual_plain" != *"'$target/sub dir/file.txt'"* ]]; then
+		echo "Missing quoted symlink target path in output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+}
+
 test_eza_availability() {
+	# Zig binary doesn't use eza - skip this test for compiled binaries
+	if is_compiled_binary; then
+		return 0
+	fi
 	local workspace
 	workspace=$(new_tmpdir)
 	local target="$workspace/eza-check"
@@ -3468,6 +3558,10 @@ run_all_tests() {
 		test_piped_stdout_zero_treats_pipe_as_tty_for_hyperlinks
 	run_test "--no-hyperlinks suppresses OSC8 sequences" \
 		test_no_hyperlinks_flag_suppresses_osc8_sequences
+	run_test "symlink shows target" \
+		test_symlink_shows_target
+	run_test "symlink target with spaces is quoted" \
+		test_symlink_shows_target_with_spaces
 	run_test "eza availability" \
 		test_eza_availability
 }

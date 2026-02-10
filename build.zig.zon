@@ -1,0 +1,17 @@
+.{
+	.name = .dirtree,
+	.version = "0.1.0",
+	.minimum_zig_version = "0.15.0",
+	.dependencies = .{
+		.regex = .{
+			.url = "https://github.com/tiehuis/zig-regex/archive/49c5694c8b3ee4ae4a7131035a44a69841ef4740.tar.gz",
+			.hash = "regex-0.1.3-axC357jaAQBRENglwG9NTcuej8pYz1IZmfwER_AXMlHZ",
+		},
+	},
+	.fingerprint = 0xd806db75ec1acf97,
+	.paths = .{
+		"src",
+		"build.zig",
+		"build.zig.zon",
+	},
+}

@@ -1,2 +1,4 @@
 .DS_Store
 .codescan
+zig-out/
+.zig-cache/

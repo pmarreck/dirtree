@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Run all dirtree tests
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+errors=0
+
+echo "=== Zig unit tests ==="
+if zig build test 2>&1; then
+	echo "Zig unit tests: PASS"
+else
+	echo "Zig unit tests: FAIL"
+	((errors++))
+fi
+
+echo ""
+echo "=== Bash integration tests ==="
+if [[ -x "$SCRIPT_DIR/test/dirtree_test" ]]; then
+	if "$SCRIPT_DIR/test/dirtree_test" 2>&1; then
+		echo "Integration tests: PASS"
+	else
+		((errors+=$?))
+		echo "Integration tests: FAIL"
+	fi
+else
+	echo "Integration test script not found at $SCRIPT_DIR/test/dirtree_test"
+	((errors++))
+fi
+
+echo ""
+if [[ $errors -eq 0 ]]; then
+	echo "All tests passed."
+else
+	echo "$errors test suite(s) failed."
+fi
+
+exit $errors

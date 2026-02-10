@@ -1,12 +1,12 @@
 # dirtree
 
-`dirtree` is a Bash wrapper around [`eza`](https://github.com/eza-community/eza) that produces stateful directory trees. It aims to make it easy for humans—and tooling like LLM pair-programmers—to share a consistent view of a project hierarchy without drowning in noise from build artifacts, vendor bundles, or other clutter.
+`dirtree` is a native Zig CLI that produces stateful directory trees. It aims to make it easy for humans—and tooling like LLM pair-programmers—to share a consistent view of a project hierarchy without drowning in noise from build artifacts, vendor bundles, or other clutter.
 
 ## Use case
 
-- Capture and persist the “interesting” parts of a repository’s structure by closing noisy directories or hiding file types you rarely need.
+- Capture and persist the "interesting" parts of a repository's structure by closing noisy directories or hiding file types you rarely need.
 - Share tree snapshots that match what you normally see locally, so collaborators (human or AI) have the same mental model of the project layout.
-- Switch between a decorated tree (with icons, hyperlinks, colors) and a simplified, glyph-free output that’s LLM-friendly.
+- Switch between a decorated tree (with icons, hyperlinks, colors) and a simplified, glyph-free output that's LLM-friendly.
 
 ## Features
 
@@ -22,7 +22,7 @@
   - `--show-hidden` temporarily reveals everything hidden by config.
   - Hidden directories/files are counted and summarized after each run (decorated mode uses dim italics; simple mode prints plain text).
 - **Decorated vs simple output**
-  - Decorated mode keeps eza’s colors, glyph icons, and OSC8 hyperlinks whenever stdout is a TTY or you force it with `--decorated`. When dirtree detects a pipe, it automatically falls back to monochrome icons and no hyperlinks for log-friendly output unless you opt in via `--decorated` or `PIPED_STDOUT=0`.
+  - Decorated mode renders Nerd Font icons, ANSI colors, and OSC8 hyperlinks whenever stdout is a TTY or you force it with `--decorated`. When dirtree detects a pipe, it automatically falls back to monochrome icons and no hyperlinks for log-friendly output unless you opt in via `--decorated` or `PIPED_STDOUT=0`.
   - Simple mode keeps the same tree connectors and monochrome icons but strips ANSI color/hyperlink sequences so LLMs or diff tools get a stable, plaintext-friendly listing (toggle glyphs with `--no-icons`).
   - Auto-simple mode can kick in for non-TTY outputs via `DIRTREE_AUTO_SIMPLE`.
   - Prefer decorating or simplifying via environment? Set `DIRTREE_SIMPLE=1` or `DIRTREE_DECORATED=1` to force either mode without changing scripts.
@@ -36,37 +36,49 @@
   - `--test` hook to run the bash test suite.
   - `--no-icons`, `--no-color`, and `--no-hyperlinks` disable individual decorations (and persist that choice) when you truly need plain text.
 - **Safety niceties**
-  - Number of hidden directories/files logged to stderr so you know what’s filtered out.
-  - Conflicting rules (e.g., same path in open/close) surface as errors.
+  - Number of hidden directories/files logged to stderr so you know what's filtered out.
+  - Conflicting rules (e.g., same regex in open/close) surface as errors.
   - Unknown lines in the state file are preserved on rewrite.
+- **Cross-platform**
+  - Native Zig binary with zero runtime dependencies. Cross-compiles to macOS, Linux, and Windows from any host.
 
 ## Dependencies
 
-- [`eza`](https://github.com/eza-community/eza) – required for decorated output.
-- POSIX-ish shell utilities (`bash`, `find`, `sed`, `grep`, `mktemp`, etc.) that are present on most Unix-likes.
+**None at runtime.** `dirtree` is a self-contained native binary.
+
+Build dependencies:
+- [Zig](https://ziglang.org/) 0.15+ (or use the Nix flake)
 
 ## Getting started
 
 ```bash
-# Install eza first (example for macOS with Homebrew)
-brew install eza
-
-# Put dirtree somewhere on your PATH and mark executable
-chmod +x dirtree
+# Build from source
+./build
 
 # Generate a tree with defaults
 dirtree
 
 # Collapse vendor directory and hide .log files
-dirtree --close vendor --hide '/\\.log$/'
+dirtree --close vendor --hide '/\.log$/'
 
 # Temporarily show everything that is hidden
 dirtree --show-hidden
 ```
 
+### Using Nix
+
+```bash
+# Enter dev shell with Zig
+nix develop
+
+# Or build directly
+nix build
+./result/bin/dirtree
+```
+
 State lives in `.dirtree-state` at the root of whatever directory you run `dirtree` inside. Commit or share those files if you want collaborators (or your future self) to inherit the same view. `dirtree` never creates or edits a state file unless you explicitly ask it to persist changes (e.g., via `--default`, `--open`, `--hide`, etc.), so you can safely inspect trees without committing to a config.
 
-The repo includes `dirtree-state.suggested-default-home-dir`, a sample config you can copy to `$HOME/.dirtree-state` if you want global defaults that apply to every subdirectory beneath your home directory. Feel free to tweak it to match your own “baseline” structure before adopting it.
+The repo includes `dirtree-state.suggested-default-home-dir`, a sample config you can copy to `$HOME/.dirtree-state` if you want global defaults that apply to every subdirectory beneath your home directory. Feel free to tweak it to match your own "baseline" structure before adopting it.
 
 ### Sorting and depth (persistent)
 
@@ -76,22 +88,35 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 ### Mode environment variables
 
 - `DIRTREE_SIMPLE=1` forces simple mode without passing `--simple`.
-- `DIRTREE_DECORATED=1` behaves like `--decorated`, keeping colors, hyperlinks, and glyphs even when piping dirtree’s output.
-- `DIRTREE_AUTO_SIMPLE=1` automatically switches to simple mode whenever stdout isn’t a TTY.
-- `PIPED_STDOUT=0|1` lets you override dirtree’s TTY detection in non-interactive contexts (e.g., `PIPED_STDOUT=0` treats a pipe as if it were an interactive terminal, restoring hyperlinks and color for tests or automated runs).
+- `DIRTREE_DECORATED=1` behaves like `--decorated`, keeping colors, hyperlinks, and glyphs even when piping dirtree's output.
+- `DIRTREE_AUTO_SIMPLE=1` automatically switches to simple mode whenever stdout isn't a TTY.
+- `PIPED_STDOUT=0|1` lets you override dirtree's TTY detection in non-interactive contexts (e.g., `PIPED_STDOUT=0` treats a pipe as if it were an interactive terminal, restoring hyperlinks and color for tests or automated runs).
 
 ## Tests
 
-The repository includes bash-based integration tests under `test/dirtree_test`. Run them via:
+Run all tests (Zig unit tests + bash integration tests):
 
 ```bash
-./test/dirtree_test
-# or, from anywhere on your PATH:
-dirtree --test
+./run-tests
 ```
 
-`dirtree --test` intentionally stays quiet unless a failure occurs; running `./test/dirtree_test` directly prints each case so you can watch the progress.
+Or individually:
+
+```bash
+# Zig unit tests
+zig build test
+
+# Bash integration tests (103 tests)
+./test/dirtree_test
+
+# From anywhere on your PATH:
+dirtree --test
+```
 
 Both the CLI and the tests default `TMPDIR` to `/tmp` (unless you already set it) so every `mktemp` call lands on the RAM-backed volume—important on macOS, which might otherwise choose `/var/folders/...`.
 
 They cover CLI flags, persistence, migration, SCM overrides, hidden summaries, and interaction with the simple/decorated modes.
+
+## Legacy
+
+The original Bash implementation (which wrapped `eza`) is preserved as `bin/dirtree.bash` for reference. The current Zig implementation is a complete rewrite that renders trees natively without any external dependencies.
