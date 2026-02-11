@@ -2,3 +2,4 @@
 .codescan
 zig-out/
 .zig-cache/
+.serena
