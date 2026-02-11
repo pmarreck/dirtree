@@ -1,0 +1,117 @@
+const Strings = @import("strings.zig").Strings;
+const CliAliasEntry = @import("cli_aliases.zig").CliAliasEntry;
+const EnvAliasEntry = @import("cli_aliases.zig").EnvAliasEntry;
+const LocaleAliases = @import("cli_aliases.zig").LocaleAliases;
+
+pub const strings = Strings{
+    // ── ヘルプテキスト ──────────────────────────────────────────
+    .help_title = "dirtree - 人間とLLMのための状態管理ディレクトリツリー",
+    .help_usage = "使い方: dirtree [オプション] [パス]",
+    .help_options_header = "オプション:",
+    .help_opt_help = "  -h, --help         このヘルプメッセージを表示",
+    .help_opt_about = "  -a, --about        詳細な説明を表示",
+    .help_opt_depth = "  -d, --depth N      最大深度を設定 (デフォルト: 4)",
+    .help_opt_simple = "  --simple           シンプルなLLM向けステートフルツリーを出力",
+    .help_opt_decorated = "  --decorated        装飾付き出力を強制 (パイプ時も有効)",
+    .help_opt_no_icons = "  --no-icons         アイコンを無効化 (シンプルモード + 装飾ヘッダー)",
+    .help_opt_no_color = "  --no-color        ANSIカラーを無効化し設定を保存",
+    .help_opt_no_hyperlinks = "  --no-hyperlinks   OSC8ハイパーリンクを無効化し設定を保存",
+    .help_opt_default = "  --default X        デフォルト状態を保存: opened|closed",
+    .help_opt_open = "  -o, --open DIR...  1つ以上のサブディレクトリを開く (繰り返し指定可)",
+    .help_opt_close = "  -c, --close DIR... 1つ以上のサブディレクトリを閉じる (繰り返し指定可)",
+    .help_opt_show = "  --show PATH...     相対パスを強制表示; 正規表現は /pattern/ または !/pattern/",
+    .help_opt_hide = "  --hide PATH...     相対パスを非表示; 正規表現は /pattern/ または !/pattern/ (繰り返し可)",
+    .help_opt_sort = "  --sort MODE        ソートモード: modified|alpha (デフォルト: modified)",
+    .help_opt_asc = "  --asc              昇順ソート",
+    .help_opt_desc = "  --desc             降順ソート (デフォルト)",
+    .help_opt_show_hidden = "  --show-hidden      設定で非表示のパスを一時的に表示",
+    .help_opt_rewrite_settings = "  --rewrite-settings 現在の設定で状態ファイルを書き換え",
+    .help_opt_config = "  --config           計算された有効な設定を表示",
+        .help_opt_test = "  --test             関連テストを実行",
+    .help_opt_lang = "  --lang CODE        表示言語を設定 (例: en, de, fr, ja)",
+    .help_regex_note = "--open/--close/--show/--hide で /pattern/ または !/pattern/ を使うと正規表現ルールを追加できます。それ以外の引数はリテラルとして扱われます。",
+    .help_relative_note = "--show/--hide に渡すパスは相対パスでなければなりません (先頭に '/' 不可)。",
+    .help_behavior_header = "動作:",
+    .help_behavior_text = "デフォルトでは、stdoutがTTYでない場合 (パイプ時)、--decorated が指定されない限りカラー/アイコン/ハイパーリンクは無効化されます。",
+    .help_examples_header = "使用例:",
+    .help_example_1 = "  dirtree                       # カレントディレクトリのツリーを表示",
+    .help_example_2 = "  dirtree -d 3                  # 深度を3階層に設定",
+    .help_example_3 = "  dirtree --sort alpha --asc    # アルファベット順で昇順ソート",
+
+    // ── 概要テキスト ────────────────────────────────────────────
+    .about_text = "状態管理ディレクトリツリー (アイコン/カラー/リンク); --simple でLLM向け出力; .dirtree-state に永続化 (default/open/close/show/hide); 正規表現は /pattern/ または !/pattern/; リテラルは相対パス必須; 環境変数: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}。",
+
+    // ── 非表示カウント断片 ──────────────────────────────────────
+    .hidden_dir_singular = "ディレクトリ",
+    .hidden_dir_plural = "ディレクトリ",
+    .hidden_file_singular = "ファイル",
+    .hidden_file_plural = "ファイル",
+    .hidden_and = "と",
+    .hidden_is_hidden = "が非表示です。",
+    .hidden_are_hidden = "が非表示です。",
+
+    // ── エラーメッセージ ────────────────────────────────────────
+    .err_depth_requires_number = "エラー: --depth には数値引数が必要です",
+    .err_sort_requires_mode = "エラー: --sort には 'modified' または 'alpha' が必要です",
+    .err_default_requires_value = "エラー: --default には少なくとも1つの値が必要です",
+    .err_default_state_conflict = "エラー: --default 状態の競合",
+    .err_default_visibility_conflict = "エラー: --default 表示/非表示の競合",
+    .err_default_accepts = "エラー: --default は opened/closed/shown/hidden を受け付けます",
+    .err_open_requires_dir = "エラー: --open には少なくとも1つのディレクトリが必要です",
+    .err_close_requires_dir = "エラー: --close には少なくとも1つのディレクトリが必要です",
+    .err_show_requires_path = "エラー: --show には少なくとも1つのパスが必要です",
+    .err_hide_requires_path = "エラー: --hide には少なくとも1つのパスが必要です",
+    .err_unknown_option = "不明なオプション",
+    .err_not_a_directory = "エラー: '{s}' はディレクトリではありません",
+    .err_regex_empty = "エラー: 正規表現パターンは空にできません",
+    .err_paths_must_be_relative = "エラー: {s} のパスは相対パスでなければなりません (先頭に '/' 不可): {s}",
+    .err_out_of_memory = "メモリ不足",
+    .err_regex_conflict_path = "エラー: パス '{s}' がopenパターンとcloseパターンの両方に一致します",
+    .err_regex_conflict_open = "  openパターン: {s}",
+    .err_regex_conflict_close = "  closeパターン: {s}",
+    .err_unknown_lang = "エラー: 不明な言語コード '{s}'。利用可能: {s}",
+
+    // ── 警告メッセージ ─────────────────────────────────────────
+    .warn_persist_state = "警告: 状態を保存できませんでした: {}",
+
+    // ── テストモード ────────────────────────────────────────────
+    .test_mode_msg = "テストモード: Zigユニットテストは 'zig build test' で実行します",
+
+    // ── その他 ──────────────────────────────────────────────────
+    .err_test_bin_run = "エラー: DIRTREE_TEST_BIN を実行できませんでした: {s}",
+    .err_test_bin_wait = "エラー: DIRTREE_TEST_BIN の待機に失敗しました",
+    .err_render_tree = "ツリーの描画エラー: {}",
+};
+
+pub const aliases = LocaleAliases{
+    .cli = &[_]CliAliasEntry{
+        .{ .name = "--tasuke", .arg = .help },
+        .{ .name = "--shoosai", .arg = .about },
+        .{ .name = "--fukasa", .arg = .depth },
+        .{ .name = "--kantan", .arg = .simple },
+        .{ .name = "--sooshoku", .arg = .decorated },
+        .{ .name = "--aikon-nashi", .arg = .no_icons },
+        .{ .name = "--iro-nashi", .arg = .no_color },
+        .{ .name = "--link-nashi", .arg = .no_hyperlinks },
+        .{ .name = "--shotchi", .arg = .default },
+        .{ .name = "--hiraku", .arg = .open },
+        .{ .name = "--tojiru", .arg = .close },
+        .{ .name = "--hyooji", .arg = .show },
+        .{ .name = "--kakusu", .arg = .hide },
+        .{ .name = "--narabikae", .arg = .sort },
+        .{ .name = "--shoojun", .arg = .asc },
+        .{ .name = "--gyakujun", .arg = .desc },
+        .{ .name = "--kakusareta-hyooji", .arg = .show_hidden },
+        .{ .name = "--settei-kakikae", .arg = .rewrite_settings },
+        .{ .name = "--settei", .arg = .config },
+                .{ .name = "--tesuto", .arg = .@"test" },
+        .{ .name = "--gengo", .arg = .lang },
+    },
+    .env = &[_]EnvAliasEntry{
+        .{ .name = "DIRTREE_JA_SIMPLE", .var_id = .dirtree_simple },
+        .{ .name = "DIRTREE_JA_DECORATED", .var_id = .dirtree_decorated },
+        .{ .name = "DIRTREE_JA_AUTO_SIMPLE", .var_id = .dirtree_auto_simple },
+        .{ .name = "PIPED_STDOUT", .var_id = .piped_stdout },
+        .{ .name = "DIRTREE_JA_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED", .var_id = .dirtree_scm_changes_stay_hidden_or_closed },
+    },
+};

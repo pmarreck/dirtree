@@ -1175,7 +1175,7 @@ test_help_option() {
 	local actual_pb expected_pb expected_plain
 	actual_pb="$stdout_pb"
 	expected_plain=$(cat <<'EOF'
-dirtree - Display directory trees using eza
+dirtree - Stateful directory trees for humans and LLMs
 
 Usage: dirtree [OPTIONS] [PATH]
 
@@ -1184,7 +1184,7 @@ Options:
   -a, --about        Show detailed description
   -d, --depth N      Set maximum depth (default: 4)
   --simple           Output a simple, LLM-friendly stateful tree
-  --decorated        Force decorated eza output (even when piped)
+  --decorated        Force decorated output (even when piped)
   --no-icons         Disable icons (simple mode + decorated header)
   --no-color        Disable ANSI colors and persist preference
   --no-hyperlinks   Disable OSC8 hyperlinks and persist preference
@@ -1198,13 +1198,14 @@ Options:
   --desc             Sort descending (default)
   --show-hidden      Temporarily display paths hidden via config
   --rewrite-settings Rewrite state file using current settings
+  --config           Show computed effective configuration
   --test             Run associated tests
+  --lang CODE        Set display language (e.g. en, de, fr, ja)
 
 Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.
 Paths supplied to --show/--hide must be relative (no leading '/').
 
-Behavior: By default, when stdout is not a TTY (piped),
-  colors/icons/hyperlinks are disabled unless --decorated is given.
+Behavior: By default, when stdout is not a TTY (piped), colors/icons/hyperlinks are disabled unless --decorated is given.
 
 Examples:
   dirtree                       # Show tree of current directory
@@ -3353,6 +3354,84 @@ EOF
 	compare_printable "eza availability" "$stderr_pb" "$expected_pb"
 }
 
+test_config_shows_effective_state() {
+	local workspace parent child stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	parent="$workspace/parent"
+	child="$parent/child"
+	mkdir -p "$child"
+	# Write a parent .dirtree-state with a close regex
+	printf 'ver=1.1\nclose=[\n\t/.git$/\n]\n' > "$parent/.dirtree-state"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --config "$child"; then
+		echo "capture helper failed for --config test" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--config returned rc=$rc" >&2
+		return 1
+	fi
+	local actual_plain
+	decode_printable actual_plain "$stdout_pb"
+	# Check that output contains ver=1.1
+	if [[ "$actual_plain" != *"ver=1.1"* ]]; then
+		echo "Missing ver=1.1 in --config output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	# Check that output contains close=[ section
+	if [[ "$actual_plain" != *"close=["* ]]; then
+		echo "Missing close=[ in --config output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	# Check that the inherited regex pattern is present
+	if [[ "$actual_plain" != *"/.git$/"* ]]; then
+		echo "Missing inherited /.git$/ close pattern in --config output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	# Verify no tree output (no connector chars like ├ or └)
+	if [[ "$actual_plain" == *"├"* ]] || [[ "$actual_plain" == *"└"* ]]; then
+		echo "--config should not produce tree output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+}
+
+test_config_applies_cli_overrides() {
+	local workspace stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	mkdir -p "$workspace/target"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --config --close mydir --sort alpha "$workspace/target"; then
+		echo "capture helper failed for --config CLI override test" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--config with CLI overrides returned rc=$rc" >&2
+		return 1
+	fi
+	local actual_plain
+	decode_printable actual_plain "$stdout_pb"
+	# Check that close=[ section contains the CLI-specified literal
+	if [[ "$actual_plain" != *"mydir"* ]]; then
+		echo "Missing CLI-specified 'mydir' in --config close output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+	# Check that sort=alpha is shown
+	if [[ "$actual_plain" != *"sort=alpha"* ]]; then
+		echo "Missing sort=alpha in --config output" >&2
+		echo "Actual:" >&2
+		echo "$actual_plain" >&2
+		return 1
+	fi
+}
+
 run_all_tests() {
 	run_test "dirtree root resolves repo" \
 		test_dirtree_root_points_to_repo_root
@@ -3564,6 +3643,10 @@ run_all_tests() {
 		test_symlink_shows_target_with_spaces
 	run_test "eza availability" \
 		test_eza_availability
+	run_test "--config shows effective state" \
+		test_config_shows_effective_state
+	run_test "--config applies CLI overrides" \
+		test_config_applies_cli_overrides
 }
 
 run_all_tests

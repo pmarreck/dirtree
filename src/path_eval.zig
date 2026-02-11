@@ -455,6 +455,121 @@ pub fn buildEffectiveState(allocator: std.mem.Allocator, abs_dir: []const u8) !E
 	return rebuildEffectiveState(allocator, &inherited, if (local_state) |*ls| ls else null);
 }
 
+/// Dump the effective state in INI-MA format (same as .dirtree-state).
+/// Used by --config to show the computed effective configuration.
+pub fn dumpEffectiveState(writer: anytype, effective: *const EffectiveState) !void {
+	try writer.writeAll(state_mod.STATE_HEADER_COMMENT);
+	try writer.writeAll("\n");
+	try writer.writeAll(state_mod.STATE_VERSION_LABEL);
+	try writer.writeAll("\n");
+
+	var wrote_block = false;
+
+	// Default
+	var default_entries: [2][]const u8 = undefined;
+	var default_count: usize = 0;
+	if (effective.default_state) |ds| {
+		default_entries[default_count] = ds.toString();
+		default_count += 1;
+	}
+	if (effective.default_visibility) |dv| {
+		default_entries[default_count] = dv.toString();
+		default_count += 1;
+	}
+
+	if (default_count == 1) {
+		try writer.writeAll("default=");
+		try writer.writeAll(default_entries[0]);
+		try writer.writeAll("\n");
+		wrote_block = true;
+	} else if (default_count > 1) {
+		try writer.writeAll("default=[\n");
+		for (default_entries[0..default_count]) |entry| {
+			try writer.writeAll("\t");
+			try writer.writeAll(entry);
+			try writer.writeAll("\n");
+		}
+		try writer.writeAll("]\n");
+		wrote_block = true;
+	}
+
+	// Scalars
+	var scalar_count: usize = 0;
+	if (effective.depth != null) scalar_count += 1;
+	if (effective.sort_mode != null) scalar_count += 1;
+	if (effective.sort_direction != null) scalar_count += 1;
+	if (effective.color_preference != null) scalar_count += 1;
+	if (effective.hyperlink_preference != null) scalar_count += 1;
+
+	if (scalar_count > 0) {
+		if (wrote_block) try writer.writeAll("\n");
+		if (effective.depth) |d| {
+			var buf: [32]u8 = undefined;
+			const depth_str = std.fmt.bufPrint(&buf, "{}", .{d}) catch "4";
+			try writer.writeAll("depth=");
+			try writer.writeAll(depth_str);
+			try writer.writeAll("\n");
+		}
+		if (effective.sort_mode) |m| {
+			try writer.writeAll("sort=");
+			try writer.writeAll(m.toString());
+			try writer.writeAll("\n");
+		}
+		if (effective.sort_direction) |d| {
+			try writer.writeAll("sort_direction=");
+			try writer.writeAll(d.toString());
+			try writer.writeAll("\n");
+		}
+		if (effective.color_preference) |c| {
+			try writer.writeAll("color=");
+			try writer.writeAll(if (c) "true" else "false");
+			try writer.writeAll("\n");
+		}
+		if (effective.hyperlink_preference) |h| {
+			try writer.writeAll("hyperlink=");
+			try writer.writeAll(if (h) "true" else "false");
+			try writer.writeAll("\n");
+		}
+		wrote_block = true;
+	}
+
+	// Collections - open, close, show, hide
+	inline for (.{ "open", "close", "show", "hide" }) |key| {
+		const literals = @field(effective, key ++ "_literals");
+		const regexes = @field(effective, key ++ "_regexes");
+		const has_entries = literals.count() > 0 or regexes.items.len > 0;
+
+		if (has_entries) {
+			if (wrote_block) try writer.writeAll("\n");
+			try writer.writeAll(key);
+			try writer.writeAll("=[\n");
+
+			// Write literals
+			var lit_iter = literals.iterator();
+			while (lit_iter.next()) |entry| {
+				try writer.writeAll("\t");
+				try writer.writeAll(entry.key_ptr.*);
+				try writer.writeAll("\n");
+			}
+
+			// Write regexes
+			for (regexes.items) |r| {
+				try writer.writeAll("\t");
+				if (r.negated) {
+					try writer.writeAll("!/");
+				} else {
+					try writer.writeAll("/");
+				}
+				try writer.writeAll(r.pattern);
+				try writer.writeAll("/\n");
+			}
+
+			try writer.writeAll("]\n");
+			wrote_block = true;
+		}
+	}
+}
+
 /// Combine inherited state and local state into an EffectiveState.
 fn rebuildEffectiveState(
 	allocator: std.mem.Allocator,

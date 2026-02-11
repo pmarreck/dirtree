@@ -1,0 +1,117 @@
+const Strings = @import("strings.zig").Strings;
+const CliAliasEntry = @import("cli_aliases.zig").CliAliasEntry;
+const EnvAliasEntry = @import("cli_aliases.zig").EnvAliasEntry;
+const LocaleAliases = @import("cli_aliases.zig").LocaleAliases;
+
+pub const strings = Strings{
+    // ── 帮助文本 ───────────────────────────────────────────────
+    .help_title = "dirtree - 面向人类和LLM的有状态目录树",
+    .help_usage = "用法: dirtree [选项] [路径]",
+    .help_options_header = "选项:",
+    .help_opt_help = "  -h, --help         显示此帮助信息",
+    .help_opt_about = "  -a, --about        显示详细说明",
+    .help_opt_depth = "  -d, --depth N      设置最大深度 (默认: 4)",
+    .help_opt_simple = "  --simple           输出简洁的LLM友好型有状态树",
+    .help_opt_decorated = "  --decorated        强制装饰输出 (管道时也生效)",
+    .help_opt_no_icons = "  --no-icons         禁用图标 (简洁模式 + 装饰标题)",
+    .help_opt_no_color = "  --no-color        禁用ANSI颜色并保存设置",
+    .help_opt_no_hyperlinks = "  --no-hyperlinks   禁用OSC8超链接并保存设置",
+    .help_opt_default = "  --default X        保存默认状态: opened|closed",
+    .help_opt_open = "  -o, --open DIR...  打开一个或多个子目录 (可重复指定)",
+    .help_opt_close = "  -c, --close DIR... 关闭一个或多个子目录 (可重复指定)",
+    .help_opt_show = "  --show PATH...     强制显示相对路径; 正则表达式用 /pattern/ 或 !/pattern/",
+    .help_opt_hide = "  --hide PATH...     隐藏相对路径; 正则表达式用 /pattern/ 或 !/pattern/ (可重复)",
+    .help_opt_sort = "  --sort MODE        排序模式: modified|alpha (默认: modified)",
+    .help_opt_asc = "  --asc              升序排列",
+    .help_opt_desc = "  --desc             降序排列 (默认)",
+    .help_opt_show_hidden = "  --show-hidden      临时显示通过配置隐藏的路径",
+    .help_opt_rewrite_settings = "  --rewrite-settings 使用当前设置重写状态文件",
+    .help_opt_config = "  --config           显示计算后的有效配置",
+        .help_opt_test = "  --test             运行相关测试",
+    .help_opt_lang = "  --lang CODE        设置显示语言 (例如 en, de, fr, ja)",
+    .help_regex_note = "在 --open/--close/--show/--hide 中使用 /pattern/ 或 !/pattern/ 添加正则表达式规则；其他参数视为字面量。",
+    .help_relative_note = "传递给 --show/--hide 的路径必须是相对路径 (不能以 '/' 开头)。",
+    .help_behavior_header = "行为:",
+    .help_behavior_text = "默认情况下，当stdout不是TTY时 (管道)，除非指定 --decorated，否则颜色/图标/超链接将被禁用。",
+    .help_examples_header = "示例:",
+    .help_example_1 = "  dirtree                       # 显示当前目录的树",
+    .help_example_2 = "  dirtree -d 3                  # 设置深度为3层",
+    .help_example_3 = "  dirtree --sort alpha --asc    # 按字母升序排列",
+
+    // ── 关于文本 ───────────────────────────────────────────────
+    .about_text = "有状态目录树 (图标/颜色/链接); --simple 用于LLM; 持久化 .dirtree-state (default/open/close/show/hide); 正则表达式通过 /pattern/ 或 !/pattern/; 字面量必须是相对路径; 环境变量: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}。",
+
+    // ── 隐藏计数片段 ──────────────────────────────────────────
+    .hidden_dir_singular = "目录",
+    .hidden_dir_plural = "目录",
+    .hidden_file_singular = "文件",
+    .hidden_file_plural = "文件",
+    .hidden_and = "和",
+    .hidden_is_hidden = "被隐藏。",
+    .hidden_are_hidden = "被隐藏。",
+
+    // ── 错误信息 ───────────────────────────────────────────────
+    .err_depth_requires_number = "错误: --depth 需要一个数字参数",
+    .err_sort_requires_mode = "错误: --sort 需要 'modified' 或 'alpha'",
+    .err_default_requires_value = "错误: --default 至少需要一个值",
+    .err_default_state_conflict = "错误: --default 状态冲突",
+    .err_default_visibility_conflict = "错误: --default 可见性冲突",
+    .err_default_accepts = "错误: --default 接受 opened/closed/shown/hidden",
+    .err_open_requires_dir = "错误: --open 至少需要一个目录",
+    .err_close_requires_dir = "错误: --close 至少需要一个目录",
+    .err_show_requires_path = "错误: --show 至少需要一个路径",
+    .err_hide_requires_path = "错误: --hide 至少需要一个路径",
+    .err_unknown_option = "未知选项",
+    .err_not_a_directory = "错误: '{s}' 不是一个目录",
+    .err_regex_empty = "错误: 正则表达式模式不能为空",
+    .err_paths_must_be_relative = "错误: {s} 路径必须是相对路径 (不能以 '/' 开头): {s}",
+    .err_out_of_memory = "内存不足",
+    .err_regex_conflict_path = "错误: 路径 '{s}' 同时匹配open和close模式",
+    .err_regex_conflict_open = "  open模式: {s}",
+    .err_regex_conflict_close = "  close模式: {s}",
+    .err_unknown_lang = "错误: 未知语言代码 '{s}'。可用: {s}",
+
+    // ── 警告信息 ───────────────────────────────────────────────
+    .warn_persist_state = "警告: 无法保存状态: {}",
+
+    // ── 测试模式 ───────────────────────────────────────────────
+    .test_mode_msg = "测试模式: Zig单元测试通过 'zig build test' 运行",
+
+    // ── 其他 ───────────────────────────────────────────────────
+    .err_test_bin_run = "错误: 无法运行 DIRTREE_TEST_BIN: {s}",
+    .err_test_bin_wait = "错误: 无法等待 DIRTREE_TEST_BIN",
+    .err_render_tree = "树渲染错误: {}",
+};
+
+pub const aliases = LocaleAliases{
+    .cli = &[_]CliAliasEntry{
+        .{ .name = "--bangzhu", .arg = .help },
+        .{ .name = "--guanyu", .arg = .about },
+        .{ .name = "--shendu", .arg = .depth },
+        .{ .name = "--jiandan", .arg = .simple },
+        .{ .name = "--zhuangshi", .arg = .decorated },
+        .{ .name = "--wu-tubiao", .arg = .no_icons },
+        .{ .name = "--wu-yanse", .arg = .no_color },
+        .{ .name = "--wu-lianjie", .arg = .no_hyperlinks },
+        .{ .name = "--moren", .arg = .default },
+        .{ .name = "--dakai", .arg = .open },
+        .{ .name = "--guanbi", .arg = .close },
+        .{ .name = "--xianshi", .arg = .show },
+        .{ .name = "--yincang", .arg = .hide },
+        .{ .name = "--paixu", .arg = .sort },
+        .{ .name = "--shengxu", .arg = .asc },
+        .{ .name = "--jiangxu", .arg = .desc },
+        .{ .name = "--xianshi-yincang", .arg = .show_hidden },
+        .{ .name = "--chongxie-shezhi", .arg = .rewrite_settings },
+        .{ .name = "--peizhi", .arg = .config },
+                .{ .name = "--ceshi", .arg = .@"test" },
+        .{ .name = "--yuyan", .arg = .lang },
+    },
+    .env = &[_]EnvAliasEntry{
+        .{ .name = "DIRTREE_ZH_SIMPLE", .var_id = .dirtree_simple },
+        .{ .name = "DIRTREE_ZH_DECORATED", .var_id = .dirtree_decorated },
+        .{ .name = "DIRTREE_ZH_AUTO_SIMPLE", .var_id = .dirtree_auto_simple },
+        .{ .name = "PIPED_STDOUT", .var_id = .piped_stdout },
+        .{ .name = "DIRTREE_ZH_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED", .var_id = .dirtree_scm_changes_stay_hidden_or_closed },
+    },
+};

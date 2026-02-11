@@ -7,6 +7,7 @@ const scm_mod = @import("scm.zig");
 const tree_render = @import("tree_render.zig");
 const dir_scan = @import("dir_scan.zig");
 const ansi_mod = @import("ansi.zig");
+const i18n = @import("i18n/mod.zig");
 
 pub const SortMode = enum {
 	modified,
@@ -45,6 +46,7 @@ pub const CliConfig = struct {
 	no_hyperlinks: bool = false,
 	show_hidden: bool = false,
 	rewrite_settings: bool = false,
+	show_config: bool = false,
 	stdout_is_tty: bool = true,
 
 	// Depth
@@ -107,10 +109,38 @@ pub const ParseResult = union(enum) {
 	err: []const u8,
 };
 
+/// First pass: scan for --lang CODE and set the i18n locale.
+/// Also detects locale from environment if --lang is not present.
+fn applyLangArg(raw_args: []const [:0]const u8) void {
+	const args = if (raw_args.len > 0) raw_args[1..] else raw_args;
+	var i: usize = 0;
+	while (i < args.len) : (i += 1) {
+		const arg = args[i];
+		// Check short flag or long flag via i18n alias map
+		if (std.mem.eql(u8, arg, "--lang") or i18n.isFlag(arg, .lang)) {
+			i += 1;
+			if (i < args.len) {
+				if (i18n.parseLocaleCode(args[i])) |loc| {
+					i18n.setLocale(loc);
+					return;
+				}
+			}
+			return; // --lang was present but invalid code; error handled in second pass
+		}
+	}
+	// No --lang found; detect from environment
+	i18n.setLocale(i18n.detectLocaleFromEnv());
+}
+
 /// Parse CLI arguments into a CliConfig.
 /// Returns ParseResult which may be an early exit (help, about, test, error).
 pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) ParseResult {
 	var config = CliConfig{};
+
+	// First pass: set locale from --lang or environment
+	applyLangArg(raw_args);
+
+	const s = i18n.tr();
 
 	// Detect TTY
 	config.stdout_is_tty = detectTty();
@@ -127,29 +157,248 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 	while (i < args.len) {
 		const arg = args[i];
 
-		if (std.mem.eql(u8, arg, "-h") or std.mem.eql(u8, arg, "--help")) {
+		// Short flags (fixed, not localized)
+		if (std.mem.eql(u8, arg, "-h")) {
 			config.deinit(allocator);
 			return .help;
 		}
-		if (std.mem.eql(u8, arg, "-a") or std.mem.eql(u8, arg, "--about")) {
+		if (std.mem.eql(u8, arg, "-a")) {
 			config.deinit(allocator);
 			return .about;
 		}
-		if (std.mem.eql(u8, arg, "--test")) {
-			config.deinit(allocator);
-			return .test_mode;
+
+		// Long flags via i18n alias map
+		if (arg.len > 1 and arg[0] == '-' and arg[1] == '-') {
+			if (i18n.matchLongFlag(arg)) |cli_arg| {
+				switch (cli_arg) {
+					.help => {
+						config.deinit(allocator);
+						return .help;
+					},
+					.about => {
+						config.deinit(allocator);
+						return .about;
+					},
+					.@"test" => {
+						config.deinit(allocator);
+						return .test_mode;
+					},
+					.lang => {
+						// Already handled in first pass; skip the value
+						i += 1;
+						if (i < args.len) {
+							// Validate the lang code in second pass for error reporting
+							if (i18n.parseLocaleCode(args[i]) == null) {
+								config.deinit(allocator);
+								var err_buf: [256]u8 = undefined;
+								const msg = i18n.fmtRuntime(&err_buf, s.err_unknown_lang, &.{ args[i], i18n.available_codes });
+								// Copy to static buffer since err_buf is stack-local
+								@memcpy(lang_err_buf[0..msg.len], msg);
+								return .{ .err = lang_err_buf[0..msg.len] };
+							}
+						}
+						i += 1;
+						continue;
+					},
+					.depth => {
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_depth_requires_number };
+						}
+						const depth_str = args[i];
+						const depth = std.fmt.parseInt(u32, depth_str, 10) catch {
+							config.deinit(allocator);
+							return .{ .err = s.err_depth_requires_number };
+						};
+						config.depth = depth;
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.simple => {
+						config.simple_mode = true;
+						i += 1;
+						continue;
+					},
+					.decorated => {
+						config.force_decorated = true;
+						i += 1;
+						continue;
+					},
+					.no_icons => {
+						config.no_icons = true;
+						i += 1;
+						continue;
+					},
+					.no_color => {
+						config.no_color = true;
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.no_hyperlinks => {
+						config.no_hyperlinks = true;
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.show_hidden => {
+						config.show_hidden = true;
+						i += 1;
+						continue;
+					},
+					.rewrite_settings => {
+						config.rewrite_settings = true;
+						i += 1;
+						continue;
+					},
+					.config => {
+						config.show_config = true;
+						i += 1;
+						continue;
+					},
+					.asc => {
+						config.sort_direction = .asc;
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.desc => {
+						config.sort_direction = .desc;
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.sort => {
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_sort_requires_mode };
+						}
+						const mode_str = args[i];
+						if (std.mem.eql(u8, mode_str, "modified")) {
+							config.sort_mode = .modified;
+						} else if (std.mem.eql(u8, mode_str, "alpha")) {
+							config.sort_mode = .alpha;
+						} else {
+							config.deinit(allocator);
+							return .{ .err = s.err_sort_requires_mode };
+						}
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.default => {
+						i += 1;
+						const result = collectDefaultArgs(args[i..], &config);
+						switch (result) {
+							.ok => |count| {
+								if (count == 0) {
+									config.deinit(allocator);
+									return .{ .err = s.err_default_requires_value };
+								}
+								i += count;
+								config.state_modified = true;
+								continue;
+							},
+							.err => |msg| {
+								config.deinit(allocator);
+								return .{ .err = msg };
+							},
+						}
+					},
+					.open => {
+						i += 1;
+						const result = collectVariadicArgs(allocator, args[i..], &config.open_literals, &config.open_regexes, dir_pending, null, "open");
+						switch (result) {
+							.ok => |count| {
+								if (count == 0) {
+									config.deinit(allocator);
+									return .{ .err = s.err_open_requires_dir };
+								}
+								i += count;
+								config.state_modified = true;
+								continue;
+							},
+							.err => |msg| {
+								config.deinit(allocator);
+								return .{ .err = msg };
+							},
+						}
+					},
+					.close => {
+						i += 1;
+						const result = collectVariadicArgs(allocator, args[i..], &config.close_literals, &config.close_regexes, dir_pending, null, "close");
+						switch (result) {
+							.ok => |count| {
+								if (count == 0) {
+									config.deinit(allocator);
+									return .{ .err = s.err_close_requires_dir };
+								}
+								i += count;
+								config.state_modified = true;
+								continue;
+							},
+							.err => |msg| {
+								config.deinit(allocator);
+								return .{ .err = msg };
+							},
+						}
+					},
+					.show => {
+						i += 1;
+						const result = collectVariadicArgs(allocator, args[i..], &config.show_literals, &config.show_regexes, dir_pending, .reject_absolute, "--show");
+						switch (result) {
+							.ok => |count| {
+								if (count == 0) {
+									config.deinit(allocator);
+									return .{ .err = s.err_show_requires_path };
+								}
+								i += count;
+								config.state_modified = true;
+								continue;
+							},
+							.err => |msg| {
+								config.deinit(allocator);
+								return .{ .err = msg };
+							},
+						}
+					},
+					.hide => {
+						i += 1;
+						const result = collectVariadicArgs(allocator, args[i..], &config.hide_literals, &config.hide_regexes, dir_pending, .reject_absolute, "--hide");
+						switch (result) {
+							.ok => |count| {
+								if (count == 0) {
+									config.deinit(allocator);
+									return .{ .err = s.err_hide_requires_path };
+								}
+								i += count;
+								config.state_modified = true;
+								continue;
+							},
+							.err => |msg| {
+								config.deinit(allocator);
+								return .{ .err = msg };
+							},
+						}
+					},
+				}
+			}
 		}
 
-		if (std.mem.eql(u8, arg, "-d") or std.mem.eql(u8, arg, "--depth")) {
+		// Short flags with value args (fixed, not localized)
+		if (std.mem.eql(u8, arg, "-d")) {
 			i += 1;
 			if (i >= args.len) {
 				config.deinit(allocator);
-				return .{ .err = "Error: --depth requires a numeric argument" };
+				return .{ .err = s.err_depth_requires_number };
 			}
 			const depth_str = args[i];
 			const depth = std.fmt.parseInt(u32, depth_str, 10) catch {
 				config.deinit(allocator);
-				return .{ .err = "Error: --depth requires a numeric argument" };
+				return .{ .err = s.err_depth_requires_number };
 			};
 			config.depth = depth;
 			config.state_modified = true;
@@ -157,104 +406,14 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			continue;
 		}
 
-		if (std.mem.eql(u8, arg, "--simple")) {
-			config.simple_mode = true;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "--decorated")) {
-			config.force_decorated = true;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "--no-icons")) {
-			config.no_icons = true;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "--no-color")) {
-			config.no_color = true;
-			config.state_modified = true;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "--no-hyperlinks")) {
-			config.no_hyperlinks = true;
-			config.state_modified = true;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "--show-hidden")) {
-			config.show_hidden = true;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "--rewrite-settings")) {
-			config.rewrite_settings = true;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "--asc")) {
-			config.sort_direction = .asc;
-			config.state_modified = true;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "--desc")) {
-			config.sort_direction = .desc;
-			config.state_modified = true;
-			i += 1;
-			continue;
-		}
-
-		if (std.mem.eql(u8, arg, "--sort")) {
-			i += 1;
-			if (i >= args.len) {
-				config.deinit(allocator);
-				return .{ .err = "Error: --sort requires 'modified' or 'alpha'" };
-			}
-			const mode_str = args[i];
-			if (std.mem.eql(u8, mode_str, "modified")) {
-				config.sort_mode = .modified;
-			} else if (std.mem.eql(u8, mode_str, "alpha")) {
-				config.sort_mode = .alpha;
-			} else {
-				config.deinit(allocator);
-				return .{ .err = "Error: --sort requires 'modified' or 'alpha'" };
-			}
-			config.state_modified = true;
-			i += 1;
-			continue;
-		}
-
-		if (std.mem.eql(u8, arg, "--default")) {
-			i += 1;
-			const result = collectDefaultArgs(args[i..], &config);
-			switch (result) {
-				.ok => |count| {
-					if (count == 0) {
-						config.deinit(allocator);
-						return .{ .err = "Error: --default requires at least one value" };
-					}
-					i += count;
-					config.state_modified = true;
-					continue;
-				},
-				.err => |msg| {
-					config.deinit(allocator);
-					return .{ .err = msg };
-				},
-			}
-		}
-
-		if (std.mem.eql(u8, arg, "-o") or std.mem.eql(u8, arg, "--open")) {
+		if (std.mem.eql(u8, arg, "-o")) {
 			i += 1;
 			const result = collectVariadicArgs(allocator, args[i..], &config.open_literals, &config.open_regexes, dir_pending, null, "open");
 			switch (result) {
 				.ok => |count| {
 					if (count == 0) {
 						config.deinit(allocator);
-						return .{ .err = "Error: --open requires at least one directory" };
+						return .{ .err = s.err_open_requires_dir };
 					}
 					i += count;
 					config.state_modified = true;
@@ -267,54 +426,14 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			}
 		}
 
-		if (std.mem.eql(u8, arg, "-c") or std.mem.eql(u8, arg, "--close")) {
+		if (std.mem.eql(u8, arg, "-c")) {
 			i += 1;
 			const result = collectVariadicArgs(allocator, args[i..], &config.close_literals, &config.close_regexes, dir_pending, null, "close");
 			switch (result) {
 				.ok => |count| {
 					if (count == 0) {
 						config.deinit(allocator);
-						return .{ .err = "Error: --close requires at least one directory" };
-					}
-					i += count;
-					config.state_modified = true;
-					continue;
-				},
-				.err => |msg| {
-					config.deinit(allocator);
-					return .{ .err = msg };
-				},
-			}
-		}
-
-		if (std.mem.eql(u8, arg, "--show")) {
-			i += 1;
-			const result = collectVariadicArgs(allocator, args[i..], &config.show_literals, &config.show_regexes, dir_pending, .reject_absolute, "--show");
-			switch (result) {
-				.ok => |count| {
-					if (count == 0) {
-						config.deinit(allocator);
-						return .{ .err = "Error: --show requires at least one path" };
-					}
-					i += count;
-					config.state_modified = true;
-					continue;
-				},
-				.err => |msg| {
-					config.deinit(allocator);
-					return .{ .err = msg };
-				},
-			}
-		}
-
-		if (std.mem.eql(u8, arg, "--hide")) {
-			i += 1;
-			const result = collectVariadicArgs(allocator, args[i..], &config.hide_literals, &config.hide_regexes, dir_pending, .reject_absolute, "--hide");
-			switch (result) {
-				.ok => |count| {
-					if (count == 0) {
-						config.deinit(allocator);
-						return .{ .err = "Error: --hide requires at least one path" };
+						return .{ .err = s.err_close_requires_dir };
 					}
 					i += count;
 					config.state_modified = true;
@@ -330,7 +449,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		// Unknown flag
 		if (arg.len > 0 and arg[0] == '-') {
 			config.deinit(allocator);
-			return .{ .err = "Unknown option" };
+			return .{ .err = s.err_unknown_option };
 		}
 
 		// Directory argument
@@ -342,6 +461,9 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 
 	return .{ .config = config };
 }
+
+// Static buffer for --lang error messages (must outlive parseArgs return)
+var lang_err_buf: [256]u8 = undefined;
 
 const PathValidation = enum {
 	reject_absolute,
@@ -364,6 +486,7 @@ fn collectVariadicArgs(
 	path_validation: ?PathValidation,
 	flag_name: []const u8,
 ) VariadicResult {
+	const s = i18n.tr();
 	var count: usize = 0;
 
 	for (args) |token| {
@@ -378,7 +501,7 @@ fn collectVariadicArgs(
 
 		// Try to parse as wrapped regex
 		const parsed = regex.parseWrappedRegexToken(token) catch {
-			return .{ .err = "Error: regex pattern must not be empty" };
+			return .{ .err = s.err_regex_empty };
 		};
 
 		if (parsed) |p| {
@@ -386,7 +509,7 @@ fn collectVariadicArgs(
 				.value = p.pattern,
 				.is_regex = true,
 				.negated = p.negated,
-			}) catch return .{ .err = "Out of memory" };
+			}) catch return .{ .err = s.err_out_of_memory };
 			count += 1;
 			continue;
 		}
@@ -396,10 +519,8 @@ fn collectVariadicArgs(
 			switch (pv) {
 				.reject_absolute => {
 					if (token.len > 0 and token[0] == '/') {
-						const written = std.fmt.bufPrint(&abs_path_err_buf, "Error: {s} paths must be relative (no leading '/'): {s}", .{ flag_name, token }) catch {
-							return .{ .err = "Error: paths must be relative (no leading '/')" };
-						};
-						return .{ .err = written };
+						const msg = i18n.fmtRuntime(&abs_path_err_buf, s.err_paths_must_be_relative, &.{ flag_name, token });
+						return .{ .err = msg };
 					}
 				},
 			}
@@ -408,20 +529,20 @@ fn collectVariadicArgs(
 		// Try as glob
 		if (regex.isGlobPattern(token)) {
 			const regex_pattern = regex.globToRegex(allocator, token) catch {
-				return .{ .err = "Out of memory" };
+				return .{ .err = s.err_out_of_memory };
 			};
 			regexes.append(allocator, .{
 				.value = regex_pattern,
 				.is_regex = true,
 				.negated = false,
 				.owned = true,
-			}) catch return .{ .err = "Out of memory" };
+			}) catch return .{ .err = s.err_out_of_memory };
 			count += 1;
 			continue;
 		}
 
 		// Treat as literal
-		literals.append(allocator, token) catch return .{ .err = "Out of memory" };
+		literals.append(allocator, token) catch return .{ .err = s.err_out_of_memory };
 		count += 1;
 	}
 
@@ -446,6 +567,7 @@ fn isDefaultToken(token: []const u8) bool {
 }
 
 fn collectDefaultArgs(args: []const [:0]const u8, config: *CliConfig) DefaultArgResult {
+	const s = i18n.tr();
 	var count: usize = 0;
 
 	for (args) |token| {
@@ -457,26 +579,26 @@ fn collectDefaultArgs(args: []const [:0]const u8, config: *CliConfig) DefaultArg
 		// Parse the default token
 		if (std.ascii.eqlIgnoreCase(token, "open") or std.ascii.eqlIgnoreCase(token, "opened")) {
 			if (config.default_state != null and config.default_state.? != .opened) {
-				return .{ .err = "Error: --default state conflict" };
+				return .{ .err = s.err_default_state_conflict };
 			}
 			config.default_state = .opened;
 		} else if (std.ascii.eqlIgnoreCase(token, "close") or std.ascii.eqlIgnoreCase(token, "closed")) {
 			if (config.default_state != null and config.default_state.? != .closed) {
-				return .{ .err = "Error: --default state conflict" };
+				return .{ .err = s.err_default_state_conflict };
 			}
 			config.default_state = .closed;
 		} else if (std.ascii.eqlIgnoreCase(token, "show") or std.ascii.eqlIgnoreCase(token, "shown")) {
 			if (config.default_visibility != null and config.default_visibility.? != .shown) {
-				return .{ .err = "Error: --default visibility conflict" };
+				return .{ .err = s.err_default_visibility_conflict };
 			}
 			config.default_visibility = .shown;
 		} else if (std.ascii.eqlIgnoreCase(token, "hide") or std.ascii.eqlIgnoreCase(token, "hidden")) {
 			if (config.default_visibility != null and config.default_visibility.? != .hidden) {
-				return .{ .err = "Error: --default visibility conflict" };
+				return .{ .err = s.err_default_visibility_conflict };
 			}
 			config.default_visibility = .hidden;
 		} else {
-			return .{ .err = "Error: --default accepts opened/closed/shown/hidden" };
+			return .{ .err = s.err_default_accepts };
 		}
 
 		count += 1;
@@ -486,8 +608,8 @@ fn collectDefaultArgs(args: []const [:0]const u8, config: *CliConfig) DefaultArg
 }
 
 fn detectTty() bool {
-	// Check PIPED_STDOUT env var first
-	if (std.posix.getenv("PIPED_STDOUT")) |val| {
+	// Check PIPED_STDOUT env var first (all locale aliases)
+	if (i18n.getEnvLocalized(.piped_stdout)) |val| {
 		if (std.ascii.eqlIgnoreCase(val, "0") or
 			std.ascii.eqlIgnoreCase(val, "false") or
 			std.ascii.eqlIgnoreCase(val, "no") or
@@ -507,13 +629,13 @@ fn detectTty() bool {
 }
 
 fn applyEnvVars(config: *CliConfig) void {
-	if (std.posix.getenv("DIRTREE_SIMPLE")) |val| {
+	if (i18n.getEnvLocalized(.dirtree_simple)) |val| {
 		if (isTruthyEnv(val)) config.simple_mode = true;
 	}
-	if (std.posix.getenv("DIRTREE_DECORATED")) |val| {
+	if (i18n.getEnvLocalized(.dirtree_decorated)) |val| {
 		if (isTruthyEnv(val)) config.force_decorated = true;
 	}
-	if (std.posix.getenv("DIRTREE_AUTO_SIMPLE")) |val| {
+	if (i18n.getEnvLocalized(.dirtree_auto_simple)) |val| {
 		if (isTruthyEnv(val) and !config.stdout_is_tty) {
 			config.simple_mode = true;
 		}
@@ -531,44 +653,71 @@ fn isTruthyEnv(val: []const u8) bool {
 }
 
 pub fn printHelp(writer: anytype) !void {
-	try writer.print(
-		\\dirtree - Stateful directory trees for humans and LLMs
-		\\
-		\\Usage: dirtree [OPTIONS] [PATH]
-		\\
-		\\Options:
-		\\  -h, --help         Show this help message
-		\\  -a, --about        Show detailed description
-		\\  -d, --depth N      Set maximum depth (default: 4)
-		\\  --simple           Output a simple, LLM-friendly stateful tree
-		\\  --decorated        Force decorated output (even when piped)
-		\\  --no-icons         Disable icons (simple mode + decorated header)
-		\\  --no-color        Disable ANSI colors and persist preference
-		\\  --no-hyperlinks   Disable OSC8 hyperlinks and persist preference
-		\\  --default X        Persist default state: opened|closed
-		\\  -o, --open DIR...  Open one or more subdirs (repeat flag to add more)
-		\\  -c, --close DIR... Close one or more subdirs (repeat flag to add more)
-		\\  --show PATH...     Force show relative paths; wrap regexes as /pattern/ or !/pattern/
-		\\  --hide PATH...     Hide relative paths; wrap regexes as /pattern/ or !/pattern/ (repeatable)
-		\\  --sort MODE        Sorting mode: modified|alpha (default: modified)
-		\\  --asc              Sort ascending
-		\\  --desc             Sort descending (default)
-		\\  --show-hidden      Temporarily display paths hidden via config
-		\\  --rewrite-settings Rewrite state file using current settings
-		\\  --test             Run associated tests
-		\\
-		\\Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.
-		\\Paths supplied to --show/--hide must be relative (no leading '/').
-		\\
-		\\Behavior: By default, when stdout is not a TTY (piped),
-		\\  colors/icons/hyperlinks are disabled unless --decorated is given.
-		\\
-		\\Examples:
-		\\  dirtree                       # Show tree of current directory
-		\\  dirtree -d 3                  # Set depth to 3 levels
-		\\  dirtree --sort alpha --asc    # Sorted alphabetically ascending
-		\\
-	, .{});
+	const s = i18n.tr();
+	try writer.writeAll(s.help_title);
+	try writer.writeAll("\n\n");
+	try writer.writeAll(s.help_usage);
+	try writer.writeAll("\n\n");
+	try writer.writeAll(s.help_options_header);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_help);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_about);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_depth);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_simple);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_decorated);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_no_icons);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_no_color);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_no_hyperlinks);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_default);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_open);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_close);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_show);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_hide);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_sort);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_asc);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_desc);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_show_hidden);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_rewrite_settings);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_config);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_test);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_lang);
+	try writer.writeAll("\n\n");
+	try writer.writeAll(s.help_regex_note);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_relative_note);
+	try writer.writeAll("\n\n");
+	try writer.writeAll(s.help_behavior_header);
+	try writer.writeAll(" ");
+	try writer.writeAll(s.help_behavior_text);
+	try writer.writeAll("\n\n");
+	try writer.writeAll(s.help_examples_header);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_example_1);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_example_2);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_example_3);
+	try writer.writeAll("\n");
 }
 
 pub fn main() !u8 {
@@ -593,11 +742,14 @@ pub fn main() !u8 {
 			return 0;
 		},
 		.about => {
-			try stdout.print("Stateful directory tree (icons/colors/links); --simple for LLMs; persists .dirtree-state (default/open/close/show/hide); regex via /pattern/ or !/pattern/; literals must be relative; env: DIRTREE_{{SIMPLE,DECORATED,AUTO_SIMPLE}}.\n", .{});
+			const s = i18n.tr();
+			try stdout.writeAll(s.about_text);
+			try stdout.writeAll("\n");
 			try stdout.flush();
 			return 0;
 		},
 		.test_mode => {
+			const s = i18n.tr();
 			// Check for DIRTREE_TEST_BIN to run external test binary
 			const test_bin = std.posix.getenv("DIRTREE_TEST_BIN");
 			if (test_bin) |bin| {
@@ -607,33 +759,43 @@ pub fn main() !u8 {
 				child.stdout_behavior = .Inherit;
 				child.stdin_behavior = .Inherit;
 				child.spawn() catch {
-					try stderr.print("Error: could not run DIRTREE_TEST_BIN: {s}\n", .{bin});
+					var err_buf: [512]u8 = undefined;
+					const msg = i18n.fmtRuntime(&err_buf, s.err_test_bin_run, &.{std.mem.sliceTo(bin, 0)});
+					try stderr.writeAll(msg);
+					try stderr.writeAll("\n");
 					try stderr.flush();
 					return 1;
 				};
 				const term = child.wait() catch {
-					try stderr.print("Error: could not wait for DIRTREE_TEST_BIN\n", .{});
+					try stderr.writeAll(s.err_test_bin_wait);
+					try stderr.writeAll("\n");
 					try stderr.flush();
 					return 1;
 				};
 				return term.Exited;
 			}
-			try stderr.print("Test mode: running zig unit tests is done via 'zig build test'\n", .{});
+			try stderr.writeAll(s.test_mode_msg);
+			try stderr.writeAll("\n");
 			try stderr.flush();
 			return 0;
 		},
 		.err => |msg| {
-			try stderr.print("{s}\n", .{msg});
+			try stderr.writeAll(msg);
+			try stderr.writeAll("\n");
 			try stderr.flush();
 			return 1;
 		},
 		.config => |config| {
+			const s = i18n.tr();
 			var cfg = config;
 			defer cfg.deinit(allocator);
 
 			// Resolve the target directory to an absolute path
 			const abs_dir = resolveAbsDir(allocator, cfg.dir) catch {
-				try stderr.print("Error: '{s}' is not a directory\n", .{cfg.dir});
+				var err_buf: [512]u8 = undefined;
+				const msg = i18n.fmtRuntime(&err_buf, s.err_not_a_directory, &.{cfg.dir});
+				try stderr.writeAll(msg);
+				try stderr.writeAll("\n");
 				try stderr.flush();
 				return 1;
 			};
@@ -654,11 +816,48 @@ pub fn main() !u8 {
 			// Apply CLI overrides to effective state
 			applyCliOverrides(allocator, &cfg, &effective) catch {};
 
+			// --config: dump effective state and exit
+			if (cfg.show_config) {
+				// Also apply CLI sort/depth/defaults to effective for display
+				if (cfg.sort_mode) |sm| {
+					effective.sort_mode = switch (sm) {
+						.modified => .modified,
+						.alpha => .alpha,
+					};
+				}
+				if (cfg.sort_direction) |sd| {
+					effective.sort_direction = switch (sd) {
+						.asc => .asc,
+						.desc => .desc,
+					};
+				}
+				if (cfg.depth) |d| {
+					effective.depth = d;
+				}
+				path_eval.dumpEffectiveState(stdout, &effective) catch |err| {
+					var err_buf2: [256]u8 = undefined;
+					const err_msg = std.fmt.bufPrint(&err_buf2, "Error writing config: {}", .{err}) catch "Error writing config";
+					try stderr.writeAll(err_msg);
+					try stderr.writeAll("\n");
+					try stderr.flush();
+					return 1;
+				};
+				try stdout.flush();
+				return 0;
+			}
+
 			// Check for regex conflicts (same pattern in both open+close)
 			if (checkRegexConflict(allocator, &effective, abs_dir, stderr)) |conflict| {
-				try stderr.print("Error: path '{s}' matches both open and close patterns\n", .{conflict.path});
-				try stderr.print("  open pattern: {s}\n", .{conflict.pattern});
-				try stderr.print("  close pattern: {s}\n", .{conflict.pattern});
+				var err_buf: [512]u8 = undefined;
+				var msg = i18n.fmtRuntime(&err_buf, s.err_regex_conflict_path, &.{conflict.path});
+				try stderr.writeAll(msg);
+				try stderr.writeAll("\n");
+				msg = i18n.fmtRuntime(&err_buf, s.err_regex_conflict_open, &.{conflict.pattern});
+				try stderr.writeAll(msg);
+				try stderr.writeAll("\n");
+				msg = i18n.fmtRuntime(&err_buf, s.err_regex_conflict_close, &.{conflict.pattern});
+				try stderr.writeAll(msg);
+				try stderr.writeAll("\n");
 				try stderr.flush();
 				allocator.free(conflict.path);
 				return 1;
@@ -1048,19 +1247,19 @@ fn persistState(
 
 /// Remove entries from a list that match a given value.
 fn removeEntryByValue(list: *std.ArrayListUnmanaged(state_mod.StateEntry), value: []const u8, is_regex: bool) void {
-	var i: usize = 0;
-	while (i < list.items.len) {
-		if (list.items[i].is_regex == is_regex and std.mem.eql(u8, list.items[i].value, value)) {
-			_ = list.orderedRemove(i);
+	var ii: usize = 0;
+	while (ii < list.items.len) {
+		if (list.items[ii].is_regex == is_regex and std.mem.eql(u8, list.items[ii].value, value)) {
+			_ = list.orderedRemove(ii);
 		} else {
-			i += 1;
+			ii += 1;
 		}
 	}
 }
 
 // Tests
 test "help output contains usage" {
-	var buf: [4096]u8 = undefined;
+	var buf: [8192]u8 = undefined;
 	var fbs = std.io.fixedBufferStream(&buf);
 	const writer = fbs.writer();
 	try printHelp(writer);
@@ -1240,6 +1439,18 @@ test "parseArgs: open with glob" {
 	}
 }
 
+test "parseArgs: --lang en accepted" {
+	const args = &[_][:0]const u8{ "dirtree", "--lang", "en", "--simple" };
+	var result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.config => |*cfg| {
+			defer cfg.deinit(std.testing.allocator);
+			try std.testing.expect(cfg.simple_mode);
+		},
+		else => return error.TestExpectedConfig,
+	}
+}
+
 // Pull in tests from other modules
 test {
 	_ = @import("regex.zig");
@@ -1250,4 +1461,5 @@ test {
 	_ = @import("path_eval.zig");
 	_ = @import("scm.zig");
 	_ = @import("tree_render.zig");
+	_ = @import("i18n/mod.zig");
 }

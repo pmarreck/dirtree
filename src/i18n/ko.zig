@@ -1,0 +1,117 @@
+const Strings = @import("strings.zig").Strings;
+const CliAliasEntry = @import("cli_aliases.zig").CliAliasEntry;
+const EnvAliasEntry = @import("cli_aliases.zig").EnvAliasEntry;
+const LocaleAliases = @import("cli_aliases.zig").LocaleAliases;
+
+pub const strings = Strings{
+    // ── 도움말 텍스트 ──────────────────────────────────────────
+    .help_title = "dirtree - 사람과 LLM을 위한 상태 기반 디렉토리 트리",
+    .help_usage = "사용법: dirtree [옵션] [경로]",
+    .help_options_header = "옵션:",
+    .help_opt_help = "  -h, --help         이 도움말 메시지 표시",
+    .help_opt_about = "  -a, --about        자세한 설명 표시",
+    .help_opt_depth = "  -d, --depth N      최대 깊이 설정 (기본값: 4)",
+    .help_opt_simple = "  --simple           간단한 LLM 친화적 상태 트리 출력",
+    .help_opt_decorated = "  --decorated        꾸며진 출력 강제 (파이프 시에도 유효)",
+    .help_opt_no_icons = "  --no-icons         아이콘 비활성화 (간단 모드 + 꾸며진 헤더)",
+    .help_opt_no_color = "  --no-color        ANSI 색상 비활성화 및 설정 저장",
+    .help_opt_no_hyperlinks = "  --no-hyperlinks   OSC8 하이퍼링크 비활성화 및 설정 저장",
+    .help_opt_default = "  --default X        기본 상태 저장: opened|closed",
+    .help_opt_open = "  -o, --open DIR...  하나 이상의 하위 디렉토리 열기 (반복 지정 가능)",
+    .help_opt_close = "  -c, --close DIR... 하나 이상의 하위 디렉토리 닫기 (반복 지정 가능)",
+    .help_opt_show = "  --show PATH...     상대 경로 강제 표시; 정규식은 /pattern/ 또는 !/pattern/",
+    .help_opt_hide = "  --hide PATH...     상대 경로 숨기기; 정규식은 /pattern/ 또는 !/pattern/ (반복 가능)",
+    .help_opt_sort = "  --sort MODE        정렬 모드: modified|alpha (기본값: modified)",
+    .help_opt_asc = "  --asc              오름차순 정렬",
+    .help_opt_desc = "  --desc             내림차순 정렬 (기본값)",
+    .help_opt_show_hidden = "  --show-hidden      설정으로 숨겨진 경로를 임시로 표시",
+    .help_opt_rewrite_settings = "  --rewrite-settings 현재 설정으로 상태 파일 다시 쓰기",
+    .help_opt_config = "  --config           계산된 유효 구성 표시",
+        .help_opt_test = "  --test             관련 테스트 실행",
+    .help_opt_lang = "  --lang CODE        표시 언어 설정 (예: en, de, fr, ja)",
+    .help_regex_note = "--open/--close/--show/--hide와 함께 /pattern/ 또는 !/pattern/을 사용하여 정규식 규칙을 추가할 수 있습니다. 그 외의 인수는 리터럴로 처리됩니다.",
+    .help_relative_note = "--show/--hide에 전달하는 경로는 상대 경로여야 합니다 (선행 '/' 불가).",
+    .help_behavior_header = "동작:",
+    .help_behavior_text = "기본적으로 stdout이 TTY가 아닌 경우 (파이프 시), --decorated가 지정되지 않으면 색상/아이콘/하이퍼링크가 비활성화됩니다.",
+    .help_examples_header = "사용 예:",
+    .help_example_1 = "  dirtree                       # 현재 디렉토리의 트리 표시",
+    .help_example_2 = "  dirtree -d 3                  # 깊이를 3단계로 설정",
+    .help_example_3 = "  dirtree --sort alpha --asc    # 알파벳 오름차순 정렬",
+
+    // ── 소개 텍스트 ────────────────────────────────────────────
+    .about_text = "상태 기반 디렉토리 트리 (아이콘/색상/링크); --simple로 LLM 친화적 출력; .dirtree-state에 영구 저장 (default/open/close/show/hide); 정규식은 /pattern/ 또는 !/pattern/; 리터럴은 상대 경로 필수; 환경변수: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",
+
+    // ── 숨김 카운트 조각 ───────────────────────────────────────
+    .hidden_dir_singular = "디렉토리",
+    .hidden_dir_plural = "디렉토리",
+    .hidden_file_singular = "파일",
+    .hidden_file_plural = "파일",
+    .hidden_and = "과 ",
+    .hidden_is_hidden = "이 숨겨져 있습니다.",
+    .hidden_are_hidden = "이 숨겨져 있습니다.",
+
+    // ── 오류 메시지 ────────────────────────────────────────────
+    .err_depth_requires_number = "오류: --depth에는 숫자 인수가 필요합니다",
+    .err_sort_requires_mode = "오류: --sort에는 'modified' 또는 'alpha'가 필요합니다",
+    .err_default_requires_value = "오류: --default에는 최소 하나의 값이 필요합니다",
+    .err_default_state_conflict = "오류: --default 상태 충돌",
+    .err_default_visibility_conflict = "오류: --default 표시/숨김 충돌",
+    .err_default_accepts = "오류: --default는 opened/closed/shown/hidden을 받습니다",
+    .err_open_requires_dir = "오류: --open에는 최소 하나의 디렉토리가 필요합니다",
+    .err_close_requires_dir = "오류: --close에는 최소 하나의 디렉토리가 필요합니다",
+    .err_show_requires_path = "오류: --show에는 최소 하나의 경로가 필요합니다",
+    .err_hide_requires_path = "오류: --hide에는 최소 하나의 경로가 필요합니다",
+    .err_unknown_option = "알 수 없는 옵션",
+    .err_not_a_directory = "오류: '{s}'은(는) 디렉토리가 아닙니다",
+    .err_regex_empty = "오류: 정규식 패턴은 비어 있을 수 없습니다",
+    .err_paths_must_be_relative = "오류: {s} 경로는 상대 경로여야 합니다 (선행 '/' 불가): {s}",
+    .err_out_of_memory = "메모리 부족",
+    .err_regex_conflict_path = "오류: 경로 '{s}'이(가) open 패턴과 close 패턴 모두에 일치합니다",
+    .err_regex_conflict_open = "  open 패턴: {s}",
+    .err_regex_conflict_close = "  close 패턴: {s}",
+    .err_unknown_lang = "오류: 알 수 없는 언어 코드 '{s}'. 사용 가능: {s}",
+
+    // ── 경고 메시지 ────────────────────────────────────────────
+    .warn_persist_state = "경고: 상태를 저장할 수 없습니다: {}",
+
+    // ── 테스트 모드 ────────────────────────────────────────────
+    .test_mode_msg = "테스트 모드: Zig 유닛 테스트는 'zig build test'로 실행합니다",
+
+    // ── 기타 ───────────────────────────────────────────────────
+    .err_test_bin_run = "오류: DIRTREE_TEST_BIN을 실행할 수 없습니다: {s}",
+    .err_test_bin_wait = "오류: DIRTREE_TEST_BIN 대기에 실패했습니다",
+    .err_render_tree = "트리 렌더링 오류: {}",
+};
+
+pub const aliases = LocaleAliases{
+    .cli = &[_]CliAliasEntry{
+        .{ .name = "--dowum", .arg = .help },
+        .{ .name = "--jeonbo", .arg = .about },
+        .{ .name = "--gipgi", .arg = .depth },
+        .{ .name = "--gandanhan", .arg = .simple },
+        .{ .name = "--jangsikin", .arg = .decorated },
+        .{ .name = "--aikon-eopsi", .arg = .no_icons },
+        .{ .name = "--saek-eopsi", .arg = .no_color },
+        .{ .name = "--link-eopsi", .arg = .no_hyperlinks },
+        .{ .name = "--gichon", .arg = .default },
+        .{ .name = "--yeolgi", .arg = .open },
+        .{ .name = "--datgi", .arg = .close },
+        .{ .name = "--bogi", .arg = .show },
+        .{ .name = "--sumgigi", .arg = .hide },
+        .{ .name = "--jeongnyeol", .arg = .sort },
+        .{ .name = "--olimchason", .arg = .asc },
+        .{ .name = "--naerimchason", .arg = .desc },
+        .{ .name = "--sumgin-geo-bogi", .arg = .show_hidden },
+        .{ .name = "--seoljeong-dasi-sseugi", .arg = .rewrite_settings },
+        .{ .name = "--guseong", .arg = .config },
+                .{ .name = "--teseuteu", .arg = .@"test" },
+        .{ .name = "--eoneo", .arg = .lang },
+    },
+    .env = &[_]EnvAliasEntry{
+        .{ .name = "DIRTREE_KO_SIMPLE", .var_id = .dirtree_simple },
+        .{ .name = "DIRTREE_KO_DECORATED", .var_id = .dirtree_decorated },
+        .{ .name = "DIRTREE_KO_AUTO_SIMPLE", .var_id = .dirtree_auto_simple },
+        .{ .name = "PIPED_STDOUT", .var_id = .piped_stdout },
+        .{ .name = "DIRTREE_KO_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED", .var_id = .dirtree_scm_changes_stay_hidden_or_closed },
+    },
+};

@@ -1,0 +1,117 @@
+const Strings = @import("strings.zig").Strings;
+const CliAliasEntry = @import("cli_aliases.zig").CliAliasEntry;
+const EnvAliasEntry = @import("cli_aliases.zig").EnvAliasEntry;
+const LocaleAliases = @import("cli_aliases.zig").LocaleAliases;
+
+pub const strings = Strings{
+    // ── متن راهنما ───────────────────────────────────────────
+    .help_title = "dirtree - درخت پوشه‌های دارای وضعیت برای انسان‌ها و مدل‌های زبانی بزرگ",
+    .help_usage = "کاربرد: dirtree [گزینه‌ها] [مسیر]",
+    .help_options_header = "گزینه‌ها:",
+    .help_opt_help = "  -h, --help         نمایش این پیام راهنما",
+    .help_opt_about = "  -a, --about        نمایش توضیحات تفصیلی",
+    .help_opt_depth = "  -d, --depth N      تنظیم عمق بیشینه (پیش‌فرض: 4)",
+    .help_opt_simple = "  --simple           خروجی ساده و سازگار با مدل‌های زبانی بزرگ",
+    .help_opt_decorated = "  --decorated        خروجی آراسته اجباری (حتی در حالت لوله)",
+    .help_opt_no_icons = "  --no-icons         غیرفعال‌سازی نمادها (حالت ساده + سرآیند آراسته)",
+    .help_opt_no_color = "  --no-color        غیرفعال‌سازی رنگ‌های ANSI و ذخیره ترجیح",
+    .help_opt_no_hyperlinks = "  --no-hyperlinks   غیرفعال‌سازی پیوندهای OSC8 و ذخیره ترجیح",
+    .help_opt_default = "  --default X        ذخیره وضعیت پیش‌فرض: opened|closed",
+    .help_opt_open = "  -o, --open DIR...  بازکردن یک یا چند زیرپوشه (تکرار پرچم برای افزودن)",
+    .help_opt_close = "  -c, --close DIR... بستن یک یا چند زیرپوشه (تکرار پرچم برای افزودن)",
+    .help_opt_show = "  --show PATH...     نمایش اجباری مسیرهای نسبی؛ عبارات باقاعده به صورت /الگو/ یا !/الگو/",
+    .help_opt_hide = "  --hide PATH...     پنهان‌سازی مسیرهای نسبی؛ عبارات باقاعده به صورت /الگو/ یا !/الگو/ (قابل تکرار)",
+    .help_opt_sort = "  --sort MODE        حالت مرتب‌سازی: modified|alpha (پیش‌فرض: modified)",
+    .help_opt_asc = "  --asc              مرتب‌سازی صعودی",
+    .help_opt_desc = "  --desc             مرتب‌سازی نزولی (پیش‌فرض)",
+    .help_opt_show_hidden = "  --show-hidden      نمایش موقت مسیرهای پنهان‌شده از طریق پیکربندی",
+    .help_opt_rewrite_settings = "  --rewrite-settings بازنویسی فایل وضعیت با تنظیمات فعلی",
+    .help_opt_config = "  --config           نمایش پیکربندی مؤثر محاسبه‌شده",
+        .help_opt_test = "  --test             اجرای آزمون‌های مرتبط",
+    .help_opt_lang = "  --lang CODE        تنظیم زبان نمایش (مثلاً en، de، fr، ja)",
+    .help_regex_note = "از /الگو/ یا !/الگو/ با --open/--close/--show/--hide برای قواعد عبارات باقاعده استفاده کنید؛ سایر آرگومان‌ها به عنوان متن حرفی تلقی می‌شوند.",
+    .help_relative_note = "مسیرهای ارائه‌شده به --show/--hide باید نسبی باشند (بدون '/' ابتدایی).",
+    .help_behavior_header = "رفتار:",
+    .help_behavior_text = "به طور پیش‌فرض، وقتی stdout ترمینال نیست (لوله)، رنگ‌ها/نمادها/پیوندها غیرفعال می‌شوند مگر اینکه --decorated مشخص شده باشد.",
+    .help_examples_header = "مثال‌ها:",
+    .help_example_1 = "  dirtree                       # نمایش درخت پوشه فعلی",
+    .help_example_2 = "  dirtree -d 3                  # تنظیم عمق به 3 سطح",
+    .help_example_3 = "  dirtree --sort alpha --asc    # مرتب‌سازی الفبایی صعودی",
+
+    // ── متن درباره ───────────────────────────────────────────
+    .about_text = "درخت پوشه دارای وضعیت (نمادها/رنگ‌ها/پیوندها)؛ --simple برای مدل‌های زبانی بزرگ؛ ذخیره .dirtree-state (default/open/close/show/hide)؛ عبارات باقاعده از طریق /الگو/ یا !/الگو/؛ متن‌های حرفی باید نسبی باشند؛ متغیرهای محیطی: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",
+
+    // ── اجزای شمارش پنهان‌ها ─────────────────────────────────
+    .hidden_dir_singular = "پوشه",
+    .hidden_dir_plural = "پوشه",
+    .hidden_file_singular = "فایل",
+    .hidden_file_plural = "فایل",
+    .hidden_and = " و ",
+    .hidden_is_hidden = " پنهان است.",
+    .hidden_are_hidden = " پنهان هستند.",
+
+    // ── پیام‌های خطا ─────────────────────────────────────────
+    .err_depth_requires_number = "خطا: --depth به یک آرگومان عددی نیاز دارد",
+    .err_sort_requires_mode = "خطا: --sort به 'modified' یا 'alpha' نیاز دارد",
+    .err_default_requires_value = "خطا: --default حداقل به یک مقدار نیاز دارد",
+    .err_default_state_conflict = "خطا: تعارض وضعیت --default",
+    .err_default_visibility_conflict = "خطا: تعارض دیداری --default",
+    .err_default_accepts = "خطا: --default فقط opened/closed/shown/hidden را می‌پذیرد",
+    .err_open_requires_dir = "خطا: --open حداقل به یک پوشه نیاز دارد",
+    .err_close_requires_dir = "خطا: --close حداقل به یک پوشه نیاز دارد",
+    .err_show_requires_path = "خطا: --show حداقل به یک مسیر نیاز دارد",
+    .err_hide_requires_path = "خطا: --hide حداقل به یک مسیر نیاز دارد",
+    .err_unknown_option = "گزینه ناشناخته",
+    .err_not_a_directory = "خطا: '{s}' یک پوشه نیست",
+    .err_regex_empty = "خطا: الگوی عبارت باقاعده نباید خالی باشد",
+    .err_paths_must_be_relative = "خطا: مسیرهای {s} باید نسبی باشند (بدون '/' ابتدایی): {s}",
+    .err_out_of_memory = "حافظه کافی نیست",
+    .err_regex_conflict_path = "خطا: مسیر '{s}' با هر دو الگوی بازکردن و بستن مطابقت دارد",
+    .err_regex_conflict_open = "  الگوی بازکردن: {s}",
+    .err_regex_conflict_close = "  الگوی بستن: {s}",
+    .err_unknown_lang = "خطا: کد زبان ناشناخته '{s}'. موجود: {s}",
+
+    // ── هشدارها ──────────────────────────────────────────────
+    .warn_persist_state = "هشدار: ذخیره وضعیت ممکن نشد: {}",
+
+    // ── حالت آزمون ───────────────────────────────────────────
+    .test_mode_msg = "حالت آزمون: آزمون‌های واحد Zig از طریق 'zig build test' اجرا می‌شوند",
+
+    // ── متفرقه ───────────────────────────────────────────────
+    .err_test_bin_run = "خطا: اجرای DIRTREE_TEST_BIN ممکن نشد: {s}",
+    .err_test_bin_wait = "خطا: انتظار برای DIRTREE_TEST_BIN ممکن نشد",
+    .err_render_tree = "خطا در رسم درخت: {}",
+};
+
+pub const aliases = LocaleAliases{
+    .cli = &[_]CliAliasEntry{
+        .{ .name = "--rahnama", .arg = .help },
+        .{ .name = "--darbare", .arg = .about },
+        .{ .name = "--omgh", .arg = .depth },
+        .{ .name = "--sade", .arg = .simple },
+        .{ .name = "--arasteh", .arg = .decorated },
+        .{ .name = "--bedun-nemad", .arg = .no_icons },
+        .{ .name = "--bedun-rang", .arg = .no_color },
+        .{ .name = "--bedun-link", .arg = .no_hyperlinks },
+        .{ .name = "--pishfarz", .arg = .default },
+        .{ .name = "--baz-kardan", .arg = .open },
+        .{ .name = "--bastan", .arg = .close },
+        .{ .name = "--namayesh", .arg = .show },
+        .{ .name = "--penhan", .arg = .hide },
+        .{ .name = "--morattab", .arg = .sort },
+        .{ .name = "--soudi", .arg = .asc },
+        .{ .name = "--nozooli", .arg = .desc },
+        .{ .name = "--namayesh-penhan", .arg = .show_hidden },
+        .{ .name = "--baznevisi-tanzimate", .arg = .rewrite_settings },
+        .{ .name = "--pikarband", .arg = .config },
+                .{ .name = "--azmayesh", .arg = .@"test" },
+        .{ .name = "--zaban", .arg = .lang },
+    },
+    .env = &[_]EnvAliasEntry{
+        .{ .name = "DERAKHT_SADE", .var_id = .dirtree_simple },
+        .{ .name = "DERAKHT_ARASTEH", .var_id = .dirtree_decorated },
+        .{ .name = "DERAKHT_AUTO_SADE", .var_id = .dirtree_auto_simple },
+        .{ .name = "PIPED_STDOUT", .var_id = .piped_stdout },
+        .{ .name = "DERAKHT_SCM_TAGHYIRAT_PENHAN_YA_BASTEH", .var_id = .dirtree_scm_changes_stay_hidden_or_closed },
+    },
+};

@@ -1,4 +1,5 @@
 const std = @import("std");
+const i18n = @import("i18n/mod.zig");
 
 /// Priority paths collected from SCM (git/jj) for changed files/dirs.
 /// These override hide/close for paths with uncommitted changes.
@@ -59,8 +60,8 @@ pub fn collectPriorityPaths(allocator: std.mem.Allocator, abs_dir: []const u8) !
 	var priority = PriorityPaths{ .allocator = allocator };
 	errdefer priority.deinit();
 
-	// Check if SCM priority is disabled
-	if (std.posix.getenv("DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED")) |val| {
+	// Check if SCM priority is disabled (all locale aliases)
+	if (i18n.getEnvLocalized(.dirtree_scm_changes_stay_hidden_or_closed)) |val| {
 		if (isTruthy(val)) {
 			return priority;
 		}

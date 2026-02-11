@@ -1,4 +1,5 @@
 const std = @import("std");
+const i18n = @import("i18n/mod.zig");
 
 // ANSI color codes
 pub const reset = "\x1b[0m";
@@ -107,6 +108,8 @@ pub fn writeFileName(writer: anytype, name: []const u8, is_executable: bool, is_
 pub fn writeHiddenCount(writer: anytype, dir_count: u32, file_count: u32, simple_mode: bool) !void {
 	if (dir_count == 0 and file_count == 0) return;
 
+	const s = i18n.tr();
+
 	var parts_buf: [2][]const u8 = undefined;
 	var parts_count: usize = 0;
 	var msg_buf: [128]u8 = undefined;
@@ -114,12 +117,11 @@ pub fn writeHiddenCount(writer: anytype, dir_count: u32, file_count: u32, simple
 
 	if (dir_count > 0) {
 		if (dir_count == 1) {
-			const s = "1 directory";
-			@memcpy(msg_buf[msg_pos .. msg_pos + s.len], s);
-			parts_buf[parts_count] = msg_buf[msg_pos .. msg_pos + s.len];
-			msg_pos += s.len;
+			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "1 {s}", .{s.hidden_dir_singular}) catch return;
+			parts_buf[parts_count] = written;
+			msg_pos += written.len;
 		} else {
-			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "{} directories", .{dir_count}) catch return;
+			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "{} {s}", .{ dir_count, s.hidden_dir_plural }) catch return;
 			parts_buf[parts_count] = written;
 			msg_pos += written.len;
 		}
@@ -127,12 +129,11 @@ pub fn writeHiddenCount(writer: anytype, dir_count: u32, file_count: u32, simple
 	}
 	if (file_count > 0) {
 		if (file_count == 1) {
-			const s = "1 file";
-			@memcpy(msg_buf[msg_pos .. msg_pos + s.len], s);
-			parts_buf[parts_count] = msg_buf[msg_pos .. msg_pos + s.len];
-			msg_pos += s.len;
+			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "1 {s}", .{s.hidden_file_singular}) catch return;
+			parts_buf[parts_count] = written;
+			msg_pos += written.len;
 		} else {
-			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "{} files", .{file_count}) catch return;
+			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "{} {s}", .{ file_count, s.hidden_file_plural }) catch return;
 			parts_buf[parts_count] = written;
 			msg_pos += written.len;
 		}
@@ -147,15 +148,15 @@ pub fn writeHiddenCount(writer: anytype, dir_count: u32, file_count: u32, simple
 	for (parts_buf[0..parts_count], 0..) |part, idx| {
 		try writer.writeAll(part);
 		if (idx < parts_count - 1) {
-			try writer.writeAll(" and ");
+			try writer.writeAll(s.hidden_and);
 		}
 	}
 
 	const total = dir_count + file_count;
 	if (total == 1) {
-		try writer.writeAll(" is hidden.");
+		try writer.writeAll(s.hidden_is_hidden);
 	} else {
-		try writer.writeAll(" are hidden.");
+		try writer.writeAll(s.hidden_are_hidden);
 	}
 
 	if (!simple_mode) {

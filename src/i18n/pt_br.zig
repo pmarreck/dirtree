@@ -1,0 +1,117 @@
+const Strings = @import("strings.zig").Strings;
+const CliAliasEntry = @import("cli_aliases.zig").CliAliasEntry;
+const EnvAliasEntry = @import("cli_aliases.zig").EnvAliasEntry;
+const LocaleAliases = @import("cli_aliases.zig").LocaleAliases;
+
+pub const strings = Strings{
+    // ── Texto de ajuda ──────────────────────────────────────────
+    .help_title = "dirtree - \xc3\x81rvores de diret\xc3\xb3rios com estado para humanos e LLMs",
+    .help_usage = "Uso: dirtree [OP\xc3\x87\xc3\x95ES] [CAMINHO]",
+    .help_options_header = "Op\xc3\xa7\xc3\xb5es:",
+    .help_opt_help = "  -h, --help         Mostrar esta mensagem de ajuda",
+    .help_opt_about = "  -a, --about        Mostrar descri\xc3\xa7\xc3\xa3o detalhada",
+    .help_opt_depth = "  -d, --depth N      Definir profundidade m\xc3\xa1xima (padr\xc3\xa3o: 4)",
+    .help_opt_simple = "  --simple           Sa\xc3\xadda simples, amig\xc3\xa1vel para LLMs",
+    .help_opt_decorated = "  --decorated        For\xc3\xa7ar sa\xc3\xadda decorada (mesmo em pipe)",
+    .help_opt_no_icons = "  --no-icons         Desativar \xc3\xadcones (modo simples + cabe\xc3\xa7alho decorado)",
+    .help_opt_no_color = "  --no-color        Desativar cores ANSI e persistir prefer\xc3\xaancia",
+    .help_opt_no_hyperlinks = "  --no-hyperlinks   Desativar hiperlinks OSC8 e persistir prefer\xc3\xaancia",
+    .help_opt_default = "  --default X        Persistir estado padr\xc3\xa3o: opened|closed",
+    .help_opt_open = "  -o, --open DIR...  Abrir um ou mais subdiret\xc3\xb3rios",
+    .help_opt_close = "  -c, --close DIR... Fechar um ou mais subdiret\xc3\xb3rios",
+    .help_opt_show = "  --show CAMINHO...  For\xc3\xa7ar exibi\xc3\xa7\xc3\xa3o de caminhos relativos; regex como /padr\xc3\xa3o/ ou !/padr\xc3\xa3o/",
+    .help_opt_hide = "  --hide CAMINHO...  Esconder caminhos relativos; regex como /padr\xc3\xa3o/ ou !/padr\xc3\xa3o/",
+    .help_opt_sort = "  --sort MODO        Modo de ordena\xc3\xa7\xc3\xa3o: modified|alpha (padr\xc3\xa3o: modified)",
+    .help_opt_asc = "  --asc              Ordem crescente",
+    .help_opt_desc = "  --desc             Ordem decrescente (padr\xc3\xa3o)",
+    .help_opt_show_hidden = "  --show-hidden      Exibir temporariamente caminhos escondidos pela configura\xc3\xa7\xc3\xa3o",
+    .help_opt_rewrite_settings = "  --rewrite-settings Reescrever arquivo de estado com configura\xc3\xa7\xc3\xb5es atuais",
+    .help_opt_config = "  --config           Mostrar a configura\xc3\xa7\xc3\xa3o efetiva calculada",
+        .help_opt_test = "  --test             Executar os testes associados",
+    .help_opt_lang = "  --lang C\xc3\x93DIGO     Definir idioma de exibi\xc3\xa7\xc3\xa3o (ex. en, de, fr, ja)",
+    .help_regex_note = "Use /padr\xc3\xa3o/ ou !/padr\xc3\xa3o/ com --open/--close/--show/--hide para regras regex; outros argumentos s\xc3\xa3o tratados como literais.",
+    .help_relative_note = "Caminhos fornecidos a --show/--hide devem ser relativos (sem '/' inicial).",
+    .help_behavior_header = "Comportamento:",
+    .help_behavior_text = "Por padr\xc3\xa3o, quando stdout n\xc3\xa3o \xc3\xa9 um TTY (pipe), cores/\xc3\xadcones/hiperlinks s\xc3\xa3o desativados a menos que --decorated seja especificado.",
+    .help_examples_header = "Exemplos:",
+    .help_example_1 = "  dirtree                       # Mostrar \xc3\xa1rvore do diret\xc3\xb3rio atual",
+    .help_example_2 = "  dirtree -d 3                  # Profundidade limitada a 3 n\xc3\xadveis",
+    .help_example_3 = "  dirtree --sort alpha --asc    # Ordenado alfabeticamente de forma crescente",
+
+    // ── Texto sobre ──────────────────────────────────────────────
+    .about_text = "\xc3\x81rvore de diret\xc3\xb3rios com estado (\xc3\xadcones/cores/links); --simple para LLMs; persiste .dirtree-state (default/open/close/show/hide); regex via /padr\xc3\xa3o/ ou !/padr\xc3\xa3o/; literais devem ser relativos; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",
+
+    // ── Fragmentos de contagem oculta ───────────────────────────
+    .hidden_dir_singular = "diret\xc3\xb3rio",
+    .hidden_dir_plural = "diret\xc3\xb3rios",
+    .hidden_file_singular = "arquivo",
+    .hidden_file_plural = "arquivos",
+    .hidden_and = " e ",
+    .hidden_is_hidden = " est\xc3\xa1 oculto.",
+    .hidden_are_hidden = " est\xc3\xa3o ocultos.",
+
+    // ── Mensagens de erro ──────────────────────────────────────
+    .err_depth_requires_number = "Erro: --depth requer um argumento num\xc3\xa9rico",
+    .err_sort_requires_mode = "Erro: --sort requer 'modified' ou 'alpha'",
+    .err_default_requires_value = "Erro: --default requer pelo menos um valor",
+    .err_default_state_conflict = "Erro: conflito de estado em --default",
+    .err_default_visibility_conflict = "Erro: conflito de visibilidade em --default",
+    .err_default_accepts = "Erro: --default aceita opened/closed/shown/hidden",
+    .err_open_requires_dir = "Erro: --open requer pelo menos um diret\xc3\xb3rio",
+    .err_close_requires_dir = "Erro: --close requer pelo menos um diret\xc3\xb3rio",
+    .err_show_requires_path = "Erro: --show requer pelo menos um caminho",
+    .err_hide_requires_path = "Erro: --hide requer pelo menos um caminho",
+    .err_unknown_option = "Op\xc3\xa7\xc3\xa3o desconhecida",
+    .err_not_a_directory = "Erro: '{s}' n\xc3\xa3o \xc3\xa9 um diret\xc3\xb3rio",
+    .err_regex_empty = "Erro: o padr\xc3\xa3o regex n\xc3\xa3o deve estar vazio",
+    .err_paths_must_be_relative = "Erro: os caminhos {s} devem ser relativos (sem '/' inicial): {s}",
+    .err_out_of_memory = "Mem\xc3\xb3ria insuficiente",
+    .err_regex_conflict_path = "Erro: o caminho '{s}' corresponde aos padr\xc3\xb5es open e close",
+    .err_regex_conflict_open = "  padr\xc3\xa3o open: {s}",
+    .err_regex_conflict_close = "  padr\xc3\xa3o close: {s}",
+    .err_unknown_lang = "Erro: c\xc3\xb3digo de idioma desconhecido '{s}'. Dispon\xc3\xadveis: {s}",
+
+    // ── Avisos ──────────────────────────────────────────────────
+    .warn_persist_state = "Aviso: n\xc3\xa3o foi poss\xc3\xadvel persistir o estado: {}",
+
+    // ── Modo de teste ──────────────────────────────────────────
+    .test_mode_msg = "Modo teste: os testes unit\xc3\xa1rios Zig s\xc3\xa3o executados com 'zig build test'",
+
+    // ── Diversos ──────────────────────────────────────────────────
+    .err_test_bin_run = "Erro: n\xc3\xa3o foi poss\xc3\xadvel executar DIRTREE_TEST_BIN: {s}",
+    .err_test_bin_wait = "Erro: n\xc3\xa3o foi poss\xc3\xadvel aguardar DIRTREE_TEST_BIN",
+    .err_render_tree = "Erro ao renderizar a \xc3\xa1rvore: {}",
+};
+
+pub const aliases = LocaleAliases{
+    .cli = &[_]CliAliasEntry{
+        .{ .name = "--ajuda", .arg = .help },
+        .{ .name = "--sobre", .arg = .about },
+        .{ .name = "--profundidade", .arg = .depth },
+        .{ .name = "--simples", .arg = .simple },
+        .{ .name = "--enfeitado", .arg = .decorated },
+        .{ .name = "--sem-icones", .arg = .no_icons },
+        .{ .name = "--sem-cor", .arg = .no_color },
+        .{ .name = "--sem-hiperlinks", .arg = .no_hyperlinks },
+        .{ .name = "--padrao", .arg = .default },
+        .{ .name = "--expandir", .arg = .open },
+        .{ .name = "--fechar", .arg = .close },
+        .{ .name = "--exibir", .arg = .show },
+        .{ .name = "--esconder", .arg = .hide },
+        .{ .name = "--classificar", .arg = .sort },
+        .{ .name = "--subindo", .arg = .asc },
+        .{ .name = "--descendo", .arg = .desc },
+        .{ .name = "--exibir-escondidos", .arg = .show_hidden },
+        .{ .name = "--reescrever-configuracoes", .arg = .rewrite_settings },
+        .{ .name = "--configuracao", .arg = .config },
+                .{ .name = "--testar", .arg = .@"test" },
+        .{ .name = "--linguagem", .arg = .lang },
+    },
+    .env = &[_]EnvAliasEntry{
+        .{ .name = "ARVORE_SIMPLES", .var_id = .dirtree_simple },
+        .{ .name = "ARVORE_ENFEITADO", .var_id = .dirtree_decorated },
+        .{ .name = "ARVORE_AUTO_SIMPLES", .var_id = .dirtree_auto_simple },
+        .{ .name = "PIPED_STDOUT", .var_id = .piped_stdout },
+        .{ .name = "ARVORE_SCM_MUDANCAS_OCULTAS_OU_FECHADAS", .var_id = .dirtree_scm_changes_stay_hidden_or_closed },
+    },
+};

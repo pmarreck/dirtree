@@ -1,0 +1,117 @@
+const Strings = @import("strings.zig").Strings;
+const CliAliasEntry = @import("cli_aliases.zig").CliAliasEntry;
+const EnvAliasEntry = @import("cli_aliases.zig").EnvAliasEntry;
+const LocaleAliases = @import("cli_aliases.zig").LocaleAliases;
+
+pub const strings = Strings{
+    // ── Tekst pomocy ───────────────────────────────────────────
+    .help_title = "dirtree - Stanowe drzewa katalogów dla ludzi i LLM",
+    .help_usage = "Użycie: dirtree [OPCJE] [ŚCIEŻKA]",
+    .help_options_header = "Opcje:",
+    .help_opt_help = "  -h, --help         Pokaż ten komunikat pomocy",
+    .help_opt_about = "  -a, --about        Pokaż szczegółowy opis",
+    .help_opt_depth = "  -d, --depth N      Ustaw maksymalną głębokość (domyślnie: 4)",
+    .help_opt_simple = "  --simple           Prosty format wyjściowy, przyjazny dla LLM",
+    .help_opt_decorated = "  --decorated        Wymuś ozdobne wyjście (nawet przy przekierowaniu)",
+    .help_opt_no_icons = "  --no-icons         Wyłącz ikony (tryb prosty + ozdobny nagłówek)",
+    .help_opt_no_color = "  --no-color        Wyłącz kolory ANSI i zapisz ustawienie",
+    .help_opt_no_hyperlinks = "  --no-hyperlinks   Wyłącz hiperłącza OSC8 i zapisz ustawienie",
+    .help_opt_default = "  --default X        Zapisz domyślny stan: opened|closed",
+    .help_opt_open = "  -o, --open KAT...  Otwórz jeden lub więcej podkatalogów (powtarzalna flaga)",
+    .help_opt_close = "  -c, --close KAT... Zamknij jeden lub więcej podkatalogów (powtarzalna flaga)",
+    .help_opt_show = "  --show ŚCIEŻKA...  Pokaż ścieżki względne; wyrażenia regularne jako /wzorzec/ lub !/wzorzec/",
+    .help_opt_hide = "  --hide ŚCIEŻKA...  Ukryj ścieżki względne; wyrażenia regularne jako /wzorzec/ lub !/wzorzec/ (powtarzalna)",
+    .help_opt_sort = "  --sort TRYB        Tryb sortowania: modified|alpha (domyślnie: modified)",
+    .help_opt_asc = "  --asc              Sortowanie rosnąco",
+    .help_opt_desc = "  --desc             Sortowanie malejąco (domyślnie)",
+    .help_opt_show_hidden = "  --show-hidden      Tymczasowo pokaż ścieżki ukryte w konfiguracji",
+    .help_opt_rewrite_settings = "  --rewrite-settings Nadpisz plik stanu bieżącymi ustawieniami",
+    .help_opt_config = "  --config           Poka\xc5\xbc obliczon\xc4\x85 efektywn\xc4\x85 konfiguracj\xc4\x99",
+        .help_opt_test = "  --test             Uruchom powiązane testy",
+    .help_opt_lang = "  --lang KOD         Ustaw język wyświetlania (np. en, de, fr, ja)",
+    .help_regex_note = "Użyj /wzorzec/ lub !/wzorzec/ z --open/--close/--show/--hide aby dodać reguły wyrażeń regularnych; pozostałe argumenty są traktowane jako literały.",
+    .help_relative_note = "Ścieżki podane do --show/--hide muszą być względne (bez początkowego '/').",
+    .help_behavior_header = "Zachowanie:",
+    .help_behavior_text = "Domyślnie, gdy stdout nie jest TTY (przekierowanie), kolory/ikony/hiperłącza są wyłączane, chyba że podano --decorated.",
+    .help_examples_header = "Przykłady:",
+    .help_example_1 = "  dirtree                       # Pokaż drzewo bieżącego katalogu",
+    .help_example_2 = "  dirtree -d 3                  # Ustaw głębokość na 3 poziomy",
+    .help_example_3 = "  dirtree --sort alpha --asc    # Sortowanie alfabetyczne rosnąco",
+
+    // ── Tekst «O programie» ────────────────────────────────────
+    .about_text = "Stanowe drzewo katalogów (ikony/kolory/linki); --simple dla LLM; zapisuje .dirtree-state (default/open/close/show/hide); wyrażenia regularne przez /wzorzec/ lub !/wzorzec/; literały muszą być względne; zmienne środowiskowe: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",
+
+    // ── Fragmenty zliczania ukrytych ───────────────────────────
+    .hidden_dir_singular = "katalog",
+    .hidden_dir_plural = "katalogów",
+    .hidden_file_singular = "plik",
+    .hidden_file_plural = "plików",
+    .hidden_and = " i ",
+    .hidden_is_hidden = " jest ukryty.",
+    .hidden_are_hidden = " jest ukrytych.",
+
+    // ── Komunikaty o błędach ────────────────────────────────────
+    .err_depth_requires_number = "Błąd: --depth wymaga argumentu liczbowego",
+    .err_sort_requires_mode = "Błąd: --sort wymaga 'modified' lub 'alpha'",
+    .err_default_requires_value = "Błąd: --default wymaga co najmniej jednej wartości",
+    .err_default_state_conflict = "Błąd: konflikt stanu --default",
+    .err_default_visibility_conflict = "Błąd: konflikt widoczności --default",
+    .err_default_accepts = "Błąd: --default akceptuje opened/closed/shown/hidden",
+    .err_open_requires_dir = "Błąd: --open wymaga co najmniej jednego katalogu",
+    .err_close_requires_dir = "Błąd: --close wymaga co najmniej jednego katalogu",
+    .err_show_requires_path = "Błąd: --show wymaga co najmniej jednej ścieżki",
+    .err_hide_requires_path = "Błąd: --hide wymaga co najmniej jednej ścieżki",
+    .err_unknown_option = "Nieznana opcja",
+    .err_not_a_directory = "Błąd: '{s}' nie jest katalogiem",
+    .err_regex_empty = "Błąd: wzorzec wyrażenia regularnego nie może być pusty",
+    .err_paths_must_be_relative = "Błąd: ścieżki {s} muszą być względne (bez początkowego '/'): {s}",
+    .err_out_of_memory = "Brak pamięci",
+    .err_regex_conflict_path = "Błąd: ścieżka '{s}' pasuje zarówno do wzorca otwarcia, jak i zamknięcia",
+    .err_regex_conflict_open = "  wzorzec otwarcia: {s}",
+    .err_regex_conflict_close = "  wzorzec zamknięcia: {s}",
+    .err_unknown_lang = "Błąd: nieznany kod języka '{s}'. Dostępne: {s}",
+
+    // ── Ostrzeżenia ─────────────────────────────────────────────
+    .warn_persist_state = "Ostrzeżenie: nie udało się zapisać stanu: {}",
+
+    // ── Tryb testowy ────────────────────────────────────────────
+    .test_mode_msg = "Tryb testowy: testy jednostkowe Zig uruchamia się przez 'zig build test'",
+
+    // ── Różne ───────────────────────────────────────────────────
+    .err_test_bin_run = "Błąd: nie udało się uruchomić DIRTREE_TEST_BIN: {s}",
+    .err_test_bin_wait = "Błąd: nie udało się poczekać na zakończenie DIRTREE_TEST_BIN",
+    .err_render_tree = "Błąd renderowania drzewa: {}",
+};
+
+pub const aliases = LocaleAliases{
+    .cli = &[_]CliAliasEntry{
+        .{ .name = "--pomoc", .arg = .help },
+        .{ .name = "--o-programie", .arg = .about },
+        .{ .name = "--glebokosc", .arg = .depth },
+        .{ .name = "--prosty", .arg = .simple },
+        .{ .name = "--ozdobny", .arg = .decorated },
+        .{ .name = "--bez-ikon", .arg = .no_icons },
+        .{ .name = "--bez-kolorow", .arg = .no_color },
+        .{ .name = "--bez-linkow", .arg = .no_hyperlinks },
+        .{ .name = "--domyslny", .arg = .default },
+        .{ .name = "--otworz", .arg = .open },
+        .{ .name = "--zamknij", .arg = .close },
+        .{ .name = "--pokaz", .arg = .show },
+        .{ .name = "--ukryj", .arg = .hide },
+        .{ .name = "--sortuj", .arg = .sort },
+        .{ .name = "--rosnaco", .arg = .asc },
+        .{ .name = "--malejaco", .arg = .desc },
+        .{ .name = "--pokaz-ukryte", .arg = .show_hidden },
+        .{ .name = "--nadpisz-ustawienia", .arg = .rewrite_settings },
+        .{ .name = "--konfiguracja", .arg = .config },
+                .{ .name = "--testuj", .arg = .@"test" },
+        .{ .name = "--jezyk", .arg = .lang },
+    },
+    .env = &[_]EnvAliasEntry{
+        .{ .name = "DRZEWO_PROSTY", .var_id = .dirtree_simple },
+        .{ .name = "DRZEWO_OZDOBNY", .var_id = .dirtree_decorated },
+        .{ .name = "DRZEWO_AUTO_PROSTY", .var_id = .dirtree_auto_simple },
+        .{ .name = "PIPED_STDOUT", .var_id = .piped_stdout },
+        .{ .name = "DRZEWO_SCM_ZMIANY_UKRYTE_LUB_ZAMKNIETE", .var_id = .dirtree_scm_changes_stay_hidden_or_closed },
+    },
+};

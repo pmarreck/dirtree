@@ -1,0 +1,117 @@
+const Strings = @import("strings.zig").Strings;
+const CliAliasEntry = @import("cli_aliases.zig").CliAliasEntry;
+const EnvAliasEntry = @import("cli_aliases.zig").EnvAliasEntry;
+const LocaleAliases = @import("cli_aliases.zig").LocaleAliases;
+
+pub const strings = Strings{
+    // ── Yard\xc4\xb1m metni ──────────────────────────────────────────────
+    .help_title = "dirtree - \xc4\xb0nsanlar ve LLM'ler i\xc3\xa7in durumlu dizin a\xc4\x9fa\xc3\xa7lar\xc4\xb1",
+    .help_usage = "Kullan\xc4\xb1m: dirtree [SE\xc3\x87ENEKLER] [YOL]",
+    .help_options_header = "Se\xc3\xa7enekler:",
+    .help_opt_help = "  -h, --help         Bu yard\xc4\xb1m mesaj\xc4\xb1n\xc4\xb1 g\xc3\xb6ster",
+    .help_opt_about = "  -a, --about        Ayr\xc4\xb1nt\xc4\xb1l\xc4\xb1 a\xc3\xa7\xc4\xb1klamay\xc4\xb1 g\xc3\xb6ster",
+    .help_opt_depth = "  -d, --depth N      Azami derinli\xc4\x9fi ayarla (varsay\xc4\xb1lan: 4)",
+    .help_opt_simple = "  --simple           Basit, LLM dostu durumlu a\xc4\x9fa\xc3\xa7 \xc3\xa7\xc4\xb1kt\xc4\xb1s\xc4\xb1",
+    .help_opt_decorated = "  --decorated        S\xc3\xbcsl\xc3\xbc \xc3\xa7\xc4\xb1kt\xc4\xb1y\xc4\xb1 zorla (pipe durumunda bile)",
+    .help_opt_no_icons = "  --no-icons         Simgeleri devre d\xc4\xb1\xc5\x9f\xc4\xb1 b\xc4\xb1rak (basit mod + s\xc3\xbcsl\xc3\xbc ba\xc5\x9fl\xc4\xb1k)",
+    .help_opt_no_color = "  --no-color        ANSI renklerini devre d\xc4\xb1\xc5\x9f\xc4\xb1 b\xc4\xb1rak ve tercihi kaydet",
+    .help_opt_no_hyperlinks = "  --no-hyperlinks   OSC8 ba\xc4\x9flant\xc4\xb1lar\xc4\xb1n\xc4\xb1 devre d\xc4\xb1\xc5\x9f\xc4\xb1 b\xc4\xb1rak ve tercihi kaydet",
+    .help_opt_default = "  --default X        Varsay\xc4\xb1lan durumu kaydet: opened|closed",
+    .help_opt_open = "  -o, --open D\xc4\xb0Z...  Bir veya daha fazla alt dizini a\xc3\xa7 (tekrarlanabilir)",
+    .help_opt_close = "  -c, --close D\xc4\xb0Z... Bir veya daha fazla alt dizini kapat (tekrarlanabilir)",
+    .help_opt_show = "  --show YOL...      G\xc3\xb6reli yollar\xc4\xb1 g\xc3\xb6ster; regex /kal\xc4\xb1p/ veya !/kal\xc4\xb1p/",
+    .help_opt_hide = "  --hide YOL...      G\xc3\xb6reli yollar\xc4\xb1 gizle; regex /kal\xc4\xb1p/ veya !/kal\xc4\xb1p/ (tekrarlanabilir)",
+    .help_opt_sort = "  --sort MOD         S\xc4\xb1ralama modu: modified|alpha (varsay\xc4\xb1lan: modified)",
+    .help_opt_asc = "  --asc              Y\xc3\xbckselen s\xc4\xb1ralama",
+    .help_opt_desc = "  --desc             Azalan s\xc4\xb1ralama (varsay\xc4\xb1lan)",
+    .help_opt_show_hidden = "  --show-hidden      Yap\xc4\xb1land\xc4\xb1rma ile gizlenmi\xc5\x9f yollar\xc4\xb1 ge\xc3\xa7ici g\xc3\xb6ster",
+    .help_opt_rewrite_settings = "  --rewrite-settings Durum dosyas\xc4\xb1n\xc4\xb1 g\xc3\xbcncel ayarlarla yeniden yaz",
+    .help_opt_config = "  --config           Hesaplanan etkin yap\xc4\xb1land\xc4\xb1rmay\xc4\xb1 g\xc3\xb6ster",
+        .help_opt_test = "  --test             \xc4\xb0li\xc5\x9fkili testleri \xc3\xa7al\xc4\xb1\xc5\x9ft\xc4\xb1r",
+    .help_opt_lang = "  --lang KOD         G\xc3\xb6r\xc3\xbcnt\xc3\xbcleme dilini ayarla (\xc3\xb6r. en, de, fr, ja)",
+    .help_regex_note = "--open/--close/--show/--hide ile /kal\xc4\xb1p/ veya !/kal\xc4\xb1p/ kullanarak regex kurallar\xc4\xb1 ekleyin; di\xc4\x9fer arg\xc3\xbcmanlar de\xc4\x9fi\xc5\x9fmez de\xc4\x9fer olarak i\xc5\x9flenir.",
+    .help_relative_note = "--show/--hide i\xc3\xa7in verilen yollar g\xc3\xb6reli olmal\xc4\xb1d\xc4\xb1r (ba\xc5\x9f\xc4\xb1nda '/' olmadan).",
+    .help_behavior_header = "Davran\xc4\xb1\xc5\x9f:",
+    .help_behavior_text = "Varsay\xc4\xb1lan olarak, stdout bir TTY de\xc4\x9filse (pipe), --decorated belirtilmedik\xc3\xa7e renkler/simgeler/ba\xc4\x9flant\xc4\xb1lar devre d\xc4\xb1\xc5\x9f\xc4\xb1 kal\xc4\xb1r.",
+    .help_examples_header = "\xc3\x96rnekler:",
+    .help_example_1 = "  dirtree                       # Mevcut dizinin a\xc4\x9fac\xc4\xb1n\xc4\xb1 g\xc3\xb6ster",
+    .help_example_2 = "  dirtree -d 3                  # Derinli\xc4\x9fi 3 seviyeye ayarla",
+    .help_example_3 = "  dirtree --sort alpha --asc    # Alfabetik y\xc3\xbckselen s\xc4\xb1ralama",
+
+    // ── Hakk\xc4\xb1nda metni ─────────────────────────────────────────────
+    .about_text = "Durumlu dizin a\xc4\x9fac\xc4\xb1 (simgeler/renkler/ba\xc4\x9flant\xc4\xb1lar); --simple LLM'ler i\xc3\xa7in; .dirtree-state dosyas\xc4\xb1na kaydeder (default/open/close/show/hide); regex /kal\xc4\xb1p/ veya !/kal\xc4\xb1p/ ile; de\xc4\x9fi\xc5\x9fmez de\xc4\x9ferler g\xc3\xb6reli olmal\xc4\xb1; ortam: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",
+
+    // ── Gizli say\xc4\xb1 par\xc3\xa7alar\xc4\xb1 ──────────────────────────────────────
+    .hidden_dir_singular = "dizin",
+    .hidden_dir_plural = "dizin",
+    .hidden_file_singular = "dosya",
+    .hidden_file_plural = "dosya",
+    .hidden_and = " ve ",
+    .hidden_is_hidden = " gizlidir.",
+    .hidden_are_hidden = " gizlidir.",
+
+    // ── Hata mesajlar\xc4\xb1 ──────────────────────────────────────────────
+    .err_depth_requires_number = "Hata: --depth say\xc4\xb1sal bir arg\xc3\xbcman gerektirir",
+    .err_sort_requires_mode = "Hata: --sort 'modified' veya 'alpha' gerektirir",
+    .err_default_requires_value = "Hata: --default en az bir de\xc4\x9fer gerektirir",
+    .err_default_state_conflict = "Hata: --default durum \xc3\xa7at\xc4\xb1\xc5\x9fmas\xc4\xb1",
+    .err_default_visibility_conflict = "Hata: --default g\xc3\xb6r\xc3\xbcn\xc3\xbcrl\xc3\xbck \xc3\xa7at\xc4\xb1\xc5\x9fmas\xc4\xb1",
+    .err_default_accepts = "Hata: --default opened/closed/shown/hidden kabul eder",
+    .err_open_requires_dir = "Hata: --open en az bir dizin gerektirir",
+    .err_close_requires_dir = "Hata: --close en az bir dizin gerektirir",
+    .err_show_requires_path = "Hata: --show en az bir yol gerektirir",
+    .err_hide_requires_path = "Hata: --hide en az bir yol gerektirir",
+    .err_unknown_option = "Bilinmeyen se\xc3\xa7enek",
+    .err_not_a_directory = "Hata: '{s}' bir dizin de\xc4\x9fil",
+    .err_regex_empty = "Hata: regex kal\xc4\xb1b\xc4\xb1 bo\xc5\x9f olamaz",
+    .err_paths_must_be_relative = "Hata: {s} yollar\xc4\xb1 g\xc3\xb6reli olmal\xc4\xb1d\xc4\xb1r (ba\xc5\x9f\xc4\xb1nda '/' olmadan): {s}",
+    .err_out_of_memory = "Bellek yetersiz",
+    .err_regex_conflict_path = "Hata: '{s}' yolu hem a\xc3\xa7\xc4\xb1k hem kapal\xc4\xb1 kal\xc4\xb1plara uyuyor",
+    .err_regex_conflict_open = "  a\xc3\xa7\xc4\xb1k kal\xc4\xb1b\xc4\xb1: {s}",
+    .err_regex_conflict_close = "  kapal\xc4\xb1 kal\xc4\xb1b\xc4\xb1: {s}",
+    .err_unknown_lang = "Hata: bilinmeyen dil kodu '{s}'. Mevcut: {s}",
+
+    // ── Uyar\xc4\xb1lar ───────────────────────────────────────────────────
+    .warn_persist_state = "Uyar\xc4\xb1: durum kaydedilemedi: {}",
+
+    // ── Test modu ───────────────────────────────────────────────────
+    .test_mode_msg = "Test modu: Zig birim testleri 'zig build test' ile \xc3\xa7al\xc4\xb1\xc5\x9ft\xc4\xb1r\xc4\xb1l\xc4\xb1r",
+
+    // ── Di\xc4\x9fer ─────────────────────────────────────────────────────
+    .err_test_bin_run = "Hata: DIRTREE_TEST_BIN \xc3\xa7al\xc4\xb1\xc5\x9ft\xc4\xb1r\xc4\xb1lamad\xc4\xb1: {s}",
+    .err_test_bin_wait = "Hata: DIRTREE_TEST_BIN beklenemedi",
+    .err_render_tree = "A\xc4\x9fa\xc3\xa7 \xc3\xa7izim hatas\xc4\xb1: {}",
+};
+
+pub const aliases = LocaleAliases{
+    .cli = &[_]CliAliasEntry{
+        .{ .name = "--yardim", .arg = .help },
+        .{ .name = "--hakkinda", .arg = .about },
+        .{ .name = "--kalinlik", .arg = .depth },
+        .{ .name = "--basit", .arg = .simple },
+        .{ .name = "--suslu", .arg = .decorated },
+        .{ .name = "--simgesiz", .arg = .no_icons },
+        .{ .name = "--renksizce", .arg = .no_color },
+        .{ .name = "--baglantisiz", .arg = .no_hyperlinks },
+        .{ .name = "--varsayilan", .arg = .default },
+        .{ .name = "--ac", .arg = .open },
+        .{ .name = "--kapat", .arg = .close },
+        .{ .name = "--gosterme", .arg = .show },
+        .{ .name = "--gizleme", .arg = .hide },
+        .{ .name = "--dizme", .arg = .sort },
+        .{ .name = "--yukari", .arg = .asc },
+        .{ .name = "--asagi", .arg = .desc },
+        .{ .name = "--gizlileri-gosterme", .arg = .show_hidden },
+        .{ .name = "--ayarlari-yeniden-yazma", .arg = .rewrite_settings },
+        .{ .name = "--yapilandirma", .arg = .config },
+                .{ .name = "--deneme", .arg = .@"test" },
+        .{ .name = "--lisan", .arg = .lang },
+    },
+    .env = &[_]EnvAliasEntry{
+        .{ .name = "DIZIN_AGACI_BASIT", .var_id = .dirtree_simple },
+        .{ .name = "DIZIN_AGACI_SUSLU", .var_id = .dirtree_decorated },
+        .{ .name = "DIZIN_AGACI_OTOMATIK_BASIT", .var_id = .dirtree_auto_simple },
+        .{ .name = "PIPED_STDOUT", .var_id = .piped_stdout },
+        .{ .name = "DIZIN_AGACI_SCM_DEGISIKLIKLER_GIZLI_VEYA_KAPALI", .var_id = .dirtree_scm_changes_stay_hidden_or_closed },
+    },
+};

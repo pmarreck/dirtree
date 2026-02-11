@@ -1,0 +1,117 @@
+const Strings = @import("strings.zig").Strings;
+const CliAliasEntry = @import("cli_aliases.zig").CliAliasEntry;
+const EnvAliasEntry = @import("cli_aliases.zig").EnvAliasEntry;
+const LocaleAliases = @import("cli_aliases.zig").LocaleAliases;
+
+pub const strings = Strings{
+    // ── Help text ──────────────────────────────────────────────
+    .help_title = "dirtree - Stateful directory trees for humans and LLMs",
+    .help_usage = "Usage: dirtree [OPTIONS] [PATH]",
+    .help_options_header = "Options:",
+    .help_opt_help = "  -h, --help         Show this help message",
+    .help_opt_about = "  -a, --about        Show detailed description",
+    .help_opt_depth = "  -d, --depth N      Set maximum depth (default: 4)",
+    .help_opt_simple = "  --simple           Output a simple, LLM-friendly stateful tree",
+    .help_opt_decorated = "  --decorated        Force decorated output (even when piped)",
+    .help_opt_no_icons = "  --no-icons         Disable icons (simple mode + decorated header)",
+    .help_opt_no_color = "  --no-color        Disable ANSI colors and persist preference",
+    .help_opt_no_hyperlinks = "  --no-hyperlinks   Disable OSC8 hyperlinks and persist preference",
+    .help_opt_default = "  --default X        Persist default state: opened|closed",
+    .help_opt_open = "  -o, --open DIR...  Open one or more subdirs (repeat flag to add more)",
+    .help_opt_close = "  -c, --close DIR... Close one or more subdirs (repeat flag to add more)",
+    .help_opt_show = "  --show PATH...     Force show relative paths; wrap regexes as /pattern/ or !/pattern/",
+    .help_opt_hide = "  --hide PATH...     Hide relative paths; wrap regexes as /pattern/ or !/pattern/ (repeatable)",
+    .help_opt_sort = "  --sort MODE        Sorting mode: modified|alpha (default: modified)",
+    .help_opt_asc = "  --asc              Sort ascending",
+    .help_opt_desc = "  --desc             Sort descending (default)",
+    .help_opt_show_hidden = "  --show-hidden      Temporarily display paths hidden via config",
+    .help_opt_rewrite_settings = "  --rewrite-settings Rewrite state file using current settings",
+    .help_opt_config = "  --config           Show computed effective configuration",
+    .help_opt_test = "  --test             Run associated tests",
+    .help_opt_lang = "  --lang CODE        Set display language (e.g. en, de, fr, ja)",
+    .help_regex_note = "Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.",
+    .help_relative_note = "Paths supplied to --show/--hide must be relative (no leading '/').",
+    .help_behavior_header = "Behavior:",
+    .help_behavior_text = "By default, when stdout is not a TTY (piped), colors/icons/hyperlinks are disabled unless --decorated is given.",
+    .help_examples_header = "Examples:",
+    .help_example_1 = "  dirtree                       # Show tree of current directory",
+    .help_example_2 = "  dirtree -d 3                  # Set depth to 3 levels",
+    .help_example_3 = "  dirtree --sort alpha --asc    # Sorted alphabetically ascending",
+
+    // ── About text ─────────────────────────────────────────────
+    .about_text = "Stateful directory tree (icons/colors/links); --simple for LLMs; persists .dirtree-state (default/open/close/show/hide); regex via /pattern/ or !/pattern/; literals must be relative; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",
+
+    // ── Hidden count fragments ─────────────────────────────────
+    .hidden_dir_singular = "directory",
+    .hidden_dir_plural = "directories",
+    .hidden_file_singular = "file",
+    .hidden_file_plural = "files",
+    .hidden_and = " and ",
+    .hidden_is_hidden = " is hidden.",
+    .hidden_are_hidden = " are hidden.",
+
+    // ── Error messages ─────────────────────────────────────────
+    .err_depth_requires_number = "Error: --depth requires a numeric argument",
+    .err_sort_requires_mode = "Error: --sort requires 'modified' or 'alpha'",
+    .err_default_requires_value = "Error: --default requires at least one value",
+    .err_default_state_conflict = "Error: --default state conflict",
+    .err_default_visibility_conflict = "Error: --default visibility conflict",
+    .err_default_accepts = "Error: --default accepts opened/closed/shown/hidden",
+    .err_open_requires_dir = "Error: --open requires at least one directory",
+    .err_close_requires_dir = "Error: --close requires at least one directory",
+    .err_show_requires_path = "Error: --show requires at least one path",
+    .err_hide_requires_path = "Error: --hide requires at least one path",
+    .err_unknown_option = "Unknown option",
+    .err_not_a_directory = "Error: '{s}' is not a directory",
+    .err_regex_empty = "Error: regex pattern must not be empty",
+    .err_paths_must_be_relative = "Error: {s} paths must be relative (no leading '/'): {s}",
+    .err_out_of_memory = "Out of memory",
+    .err_regex_conflict_path = "Error: path '{s}' matches both open and close patterns",
+    .err_regex_conflict_open = "  open pattern: {s}",
+    .err_regex_conflict_close = "  close pattern: {s}",
+    .err_unknown_lang = "Error: unknown language code '{s}'. Available: {s}",
+
+    // ── Warning messages ───────────────────────────────────────
+    .warn_persist_state = "Warning: could not persist state: {}",
+
+    // ── Test mode ──────────────────────────────────────────────
+    .test_mode_msg = "Test mode: running zig unit tests is done via 'zig build test'",
+
+    // ── Misc ───────────────────────────────────────────────────
+    .err_test_bin_run = "Error: could not run DIRTREE_TEST_BIN: {s}",
+    .err_test_bin_wait = "Error: could not wait for DIRTREE_TEST_BIN",
+    .err_render_tree = "Error rendering tree: {}",
+};
+
+pub const aliases = LocaleAliases{
+    .cli = &[_]CliAliasEntry{
+        .{ .name = "--help", .arg = .help },
+        .{ .name = "--about", .arg = .about },
+        .{ .name = "--depth", .arg = .depth },
+        .{ .name = "--simple", .arg = .simple },
+        .{ .name = "--decorated", .arg = .decorated },
+        .{ .name = "--no-icons", .arg = .no_icons },
+        .{ .name = "--no-color", .arg = .no_color },
+        .{ .name = "--no-hyperlinks", .arg = .no_hyperlinks },
+        .{ .name = "--default", .arg = .default },
+        .{ .name = "--open", .arg = .open },
+        .{ .name = "--close", .arg = .close },
+        .{ .name = "--show", .arg = .show },
+        .{ .name = "--hide", .arg = .hide },
+        .{ .name = "--sort", .arg = .sort },
+        .{ .name = "--asc", .arg = .asc },
+        .{ .name = "--desc", .arg = .desc },
+        .{ .name = "--show-hidden", .arg = .show_hidden },
+        .{ .name = "--rewrite-settings", .arg = .rewrite_settings },
+        .{ .name = "--config", .arg = .config },
+        .{ .name = "--test", .arg = .@"test" },
+        .{ .name = "--lang", .arg = .lang },
+    },
+    .env = &[_]EnvAliasEntry{
+        .{ .name = "DIRTREE_SIMPLE", .var_id = .dirtree_simple },
+        .{ .name = "DIRTREE_DECORATED", .var_id = .dirtree_decorated },
+        .{ .name = "DIRTREE_AUTO_SIMPLE", .var_id = .dirtree_auto_simple },
+        .{ .name = "PIPED_STDOUT", .var_id = .piped_stdout },
+        .{ .name = "DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED", .var_id = .dirtree_scm_changes_stay_hidden_or_closed },
+    },
+};
