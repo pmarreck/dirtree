@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Install dirtree to a directory on your PATH
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+ZIG_BIN="$SCRIPT_DIR/zig-out/bin/dirtree"
+
+# Default install directory
+DEFAULT_INSTALL_DIR="$HOME/.local/bin"
+
+# Parse arguments
+INSTALL_DIR="${1:-$DEFAULT_INSTALL_DIR}"
+
+# Show help
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+	echo "Usage: ./install [INSTALL_DIR]"
+	echo ""
+	echo "Install dirtree binary to a directory on your PATH."
+	echo ""
+	echo "Arguments:"
+	echo "  INSTALL_DIR    Directory to install to (default: ~/.local/bin)"
+	echo ""
+	echo "Examples:"
+	echo "  ./install                    # Install to ~/.local/bin"
+	echo "  ./install /usr/local/bin     # Install to /usr/local/bin"
+	echo "  ./install ~/bin              # Install to ~/bin"
+	exit 0
+fi
+
+# Check if binary exists
+if [[ ! -f "$ZIG_BIN" ]]; then
+	echo "Error: dirtree binary not found at $ZIG_BIN" >&2
+	echo "Run './build' first to compile the Zig binary." >&2
+	exit 1
+fi
+
+# Expand tilde in path
+INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+
+# Show directories on PATH
+echo "Directories on your PATH:"
+echo "$PATH" | tr ':' '\n' | nl
+echo ""
+
+# Prompt for confirmation
+echo "Install location: $INSTALL_DIR/dirtree"
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+	echo "⚠ Warning: $INSTALL_DIR is not on your PATH"
+fi
+echo ""
+read -p "Install to this location? [y/N/path] " -r REPLY
+echo ""
+
+if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+	# User accepted
+	:
+elif [[ -z "$REPLY" ]] || [[ "$REPLY" =~ ^[Nn]$ ]]; then
+	echo "Installation cancelled."
+	exit 0
+else
+	# User provided a different path
+	INSTALL_DIR="${REPLY/#\~/$HOME}"
+	echo "Using install location: $INSTALL_DIR/dirtree"
+	echo ""
+fi
+
+# Create install directory if it doesn't exist
+if [[ ! -d "$INSTALL_DIR" ]]; then
+	echo "Creating directory: $INSTALL_DIR"
+	mkdir -p "$INSTALL_DIR"
+fi
+
+# Check if directory is writable
+if [[ ! -w "$INSTALL_DIR" ]]; then
+	echo "Error: Cannot write to $INSTALL_DIR" >&2
+	echo "Try running with sudo or choose a different directory." >&2
+	exit 1
+fi
+
+# Copy binary
+echo "Installing dirtree to $INSTALL_DIR/dirtree"
+cp "$ZIG_BIN" "$INSTALL_DIR/dirtree"
+chmod +x "$INSTALL_DIR/dirtree"
+
+echo "✓ Successfully installed dirtree to $INSTALL_DIR/dirtree"
+echo ""
+
+# Check if directory is on PATH
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+	echo "⚠ Warning: $INSTALL_DIR is not on your PATH"
+	echo "Add this line to your ~/.zshrc or ~/.bashrc:"
+	echo ""
+	echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
+	echo ""
+fi
+
+# Test installation
+if command -v dirtree &> /dev/null; then
+	echo "You can now run 'dirtree' from anywhere!"
+else
+	echo "After adding $INSTALL_DIR to your PATH, run 'dirtree' from anywhere."
+fi
