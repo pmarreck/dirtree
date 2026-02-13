@@ -3,3 +3,4 @@
 zig-out/
 .zig-cache/
 .serena
+ZIG_RECENT_API_CHANGES_2025.md

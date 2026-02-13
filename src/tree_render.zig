@@ -17,6 +17,7 @@ pub const RenderConfig = struct {
 	sort_mode: dir_scan.SortMode = .modified,
 	sort_direction: dir_scan.SortDirection = .desc,
 	head_lines: ?u32 = null,
+	tail_lines: ?u32 = null,
 	only_paths: []const []const u8 = &.{},
 };
 
@@ -37,6 +38,30 @@ pub const TreeStats = struct {
 };
 
 /// Render a complete directory tree.
+/// Writer adapter that appends to an ArrayListUnmanaged(u8).
+const BufListWriter = struct {
+	buf: *std.ArrayListUnmanaged(u8),
+	allocator: std.mem.Allocator,
+
+	pub fn writeAll(self: *BufListWriter, data: []const u8) !void {
+		try self.buf.appendSlice(self.allocator, data);
+	}
+
+	pub fn print(self: *BufListWriter, comptime fmt: []const u8, args: anytype) !void {
+		var count_writer = std.io.countingWriter(self);
+		try std.fmt.format(&count_writer, fmt, args);
+	}
+
+	pub fn write(self: *BufListWriter, data: []const u8) !usize {
+		try self.buf.appendSlice(self.allocator, data);
+		return data.len;
+	}
+
+	pub fn flush(self: *BufListWriter) !void {
+		_ = self;
+	}
+};
+
 pub fn renderTree(
 	allocator: std.mem.Allocator,
 	stdout: anytype,
@@ -47,10 +72,58 @@ pub fn renderTree(
 	priority_files: ?*const std.StringHashMapUnmanaged(void),
 	config: RenderConfig,
 ) !void {
-	// Print root header
+	// When --tail is set, render into a buffer then emit last N lines
+	if (config.tail_lines) |tail_n| {
+		var buf: std.ArrayListUnmanaged(u8) = .{};
+		defer buf.deinit(allocator);
+
+		// Render into buffer using a writer adapter
+		var buf_writer = BufListWriter{ .buf = &buf, .allocator = allocator };
+
+		// Render root header to buffer
+		try renderRootHeader(allocator, &buf_writer, abs_dir, config);
+
+		var stats = TreeStats{};
+		stats.total_lines = 1;
+
+		if (config.only_paths.len > 0) {
+			var focus = try buildFocusSet(allocator, config.only_paths);
+			defer focus.deinit();
+			try renderDirFocused(allocator, &buf_writer, abs_dir, "", config.max_depth, false, "", effective, priority_dirs, priority_files, config, &stats, &focus);
+		} else {
+			try renderDir(allocator, &buf_writer, abs_dir, "", config.max_depth, false, "", effective, priority_dirs, priority_files, config, &stats);
+		}
+
+		// Emit last N lines from buffer
+		const data = buf.items;
+		if (tail_n == 0 or data.len == 0) {
+			// Nothing to output
+		} else {
+			// Find the start position of the last N lines
+			var lines_found: u32 = 0;
+			var pos: usize = data.len;
+			// Skip trailing newline if present
+			if (pos > 0 and data[pos - 1] == '\n') pos -= 1;
+			while (pos > 0 and lines_found < tail_n) {
+				pos -= 1;
+				if (data[pos] == '\n') {
+					lines_found += 1;
+				}
+			}
+			const start = if (pos == 0 and lines_found < tail_n) 0 else if (pos == 0) 0 else pos + 1;
+			try stdout.writeAll(data[start..]);
+		}
+
+		// Stats go to stderr regardless
+		if (config.report_hidden) {
+			try ansi.writeStatsMessage(stderr, stats.shown_dirs, stats.shown_files, stats.total_lines, stats.hidden_dirs, stats.hidden_files, config.simple_mode);
+		}
+		return;
+	}
+
+	// Normal (non-tail) rendering path
 	try renderRootHeader(allocator, stdout, abs_dir, config);
 
-	// Render tree recursively
 	var stats = TreeStats{};
 	stats.total_lines = 1; // root header line
 
@@ -59,34 +132,13 @@ pub fn renderTree(
 		var focus = try buildFocusSet(allocator, config.only_paths);
 		defer focus.deinit();
 		try renderDirFocused(
-			allocator,
-			stdout,
-			abs_dir,
-			"",
-			config.max_depth,
-			false,
-			"",
-			effective,
-			priority_dirs,
-			priority_files,
-			config,
-			&stats,
-			&focus,
+			allocator, stdout, abs_dir, "", config.max_depth, false, "",
+			effective, priority_dirs, priority_files, config, &stats, &focus,
 		);
 	} else {
 		try renderDir(
-			allocator,
-			stdout,
-			abs_dir,
-			"",
-			config.max_depth,
-			false,
-			"",
-			effective,
-			priority_dirs,
-			priority_files,
-			config,
-			&stats,
+			allocator, stdout, abs_dir, "", config.max_depth, false, "",
+			effective, priority_dirs, priority_files, config, &stats,
 		);
 	}
 
@@ -224,7 +276,7 @@ fn renderDir(
 		);
 
 		if (eval_result.is_hidden) {
-			// Don't count .dirtree-state in hidden totals (silently excluded like eza --ignore-glob)
+			// Don't count .dirtree-state in hidden totals (silently excluded)
 			if (!std.mem.eql(u8, entry.name, ".dirtree-state")) {
 				if (entry.kind == .directory) {
 					stats.hidden_dirs += 1;
@@ -424,14 +476,14 @@ pub const FocusSet = struct {
 
 	/// Check if rel is under any target (i.e., a target is a prefix of rel)
 	pub fn isUnderTarget(self: *const FocusSet, rel: []const u8) bool {
-		var it = self.targets.keyIterator();
-		while (it.next()) |key| {
-			const target = key.*;
-			if (rel.len > target.len and
-				std.mem.startsWith(u8, rel, target) and
-				rel[target.len] == '/')
-			{
-				return true;
+		// Walk up path components checking if any parent is a target.
+		// This is O(depth) instead of O(targets) since depth is bounded
+		// by max_depth (typically 4-8), making it effectively O(1).
+		var i: usize = rel.len;
+		while (i > 0) {
+			i -= 1;
+			if (rel[i] == '/') {
+				if (self.targets.contains(rel[0..i])) return true;
 			}
 		}
 		return false;

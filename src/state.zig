@@ -16,18 +16,6 @@ pub const DefaultState = enum {
 	}
 };
 
-pub const DefaultVisibility = enum {
-	shown,
-	hidden,
-
-	pub fn toString(self: DefaultVisibility) []const u8 {
-		return switch (self) {
-			.shown => "shown",
-			.hidden => "hidden",
-		};
-	}
-};
-
 pub const SortMode = enum {
 	modified,
 	alpha,
@@ -77,9 +65,6 @@ pub const StateFile = struct {
 	// Defaults
 	default_state: ?DefaultState = null,
 	default_state_set: bool = false,
-	default_visibility: ?DefaultVisibility = null,
-	default_visibility_set: bool = false,
-
 	// Scalars
 	depth: ?u32 = null,
 	sort_mode: ?SortMode = null,
@@ -123,27 +108,29 @@ pub const StateFile = struct {
 		try list.append(self.allocator, entry);
 	}
 
-	/// Check if a literal already exists in a collection.
+	/// Check if an entry with matching kind, value, and negation already exists.
+	/// Unifies the former hasLiteral/hasRegex/hasGlob functions.
+	/// Note: O(n) scan but acceptable for typical state file sizes (< 50 entries).
+	pub fn hasEntry(entries: []const StateEntry, kind: PatternKind, value: []const u8, negated: bool) bool {
+		for (entries) |e| {
+			if (e.kind == kind and e.negated == negated and std.mem.eql(u8, e.value, value)) return true;
+		}
+		return false;
+	}
+
+	/// Convenience wrapper: check if a literal entry exists (literals are never negated).
 	pub fn hasLiteral(entries: []const StateEntry, value: []const u8) bool {
-		for (entries) |e| {
-			if (e.kind == .literal and std.mem.eql(u8, e.value, value)) return true;
-		}
-		return false;
+		return hasEntry(entries, .literal, value, false);
 	}
 
-	/// Check if a regex already exists in a collection.
+	/// Convenience wrapper: check if a regex entry exists.
 	pub fn hasRegex(entries: []const StateEntry, value: []const u8, negated: bool) bool {
-		for (entries) |e| {
-			if (e.kind == .regex and e.negated == negated and std.mem.eql(u8, e.value, value)) return true;
-		}
-		return false;
+		return hasEntry(entries, .regex, value, negated);
 	}
 
+	/// Convenience wrapper: check if a glob entry exists.
 	pub fn hasGlob(entries: []const StateEntry, value: []const u8, negated: bool) bool {
-		for (entries) |e| {
-			if (e.kind == .glob and e.negated == negated and std.mem.eql(u8, e.value, value)) return true;
-		}
-		return false;
+		return hasEntry(entries, .glob, value, negated);
 	}
 };
 
@@ -464,35 +451,13 @@ pub fn writeStateFile(state: *const StateFile, writer: anytype) !void {
 	var wrote_block = false;
 
 	// Default
-	var default_entries: [2][]const u8 = undefined;
-	var default_count: usize = 0;
 	if (state.default_state_set) {
 		if (state.default_state) |ds| {
-			default_entries[default_count] = ds.toString();
-			default_count += 1;
+			try writer.print("default={s}\n", .{ds.toString()});
+			wrote_block = true;
 		}
-	}
-	if (state.default_visibility_set) {
-		if (state.default_visibility) |dv| {
-			default_entries[default_count] = dv.toString();
-			default_count += 1;
-		}
-	}
-	// Fallback: if we have a default_state but not explicitly set
-	if (default_count == 0 and state.default_state != null) {
-		default_entries[0] = state.default_state.?.toString();
-		default_count = 1;
-	}
-
-	if (default_count == 1) {
-		try writer.print("default={s}\n", .{default_entries[0]});
-		wrote_block = true;
-	} else if (default_count > 1) {
-		try writer.print("default=[\n", .{});
-		for (default_entries[0..default_count]) |entry| {
-			try writer.print("\t{s}\n", .{entry});
-		}
-		try writer.print("]\n", .{});
+	} else if (state.default_state != null) {
+		try writer.print("default={s}\n", .{state.default_state.?.toString()});
 		wrote_block = true;
 	}
 
@@ -712,14 +677,6 @@ fn processDefaultToken(state: *StateFile, token: []const u8) void {
 		state.default_state = .closed;
 		state.default_state_set = true;
 		if (std.ascii.eqlIgnoreCase(token, "close")) state.needs_migration = true;
-	} else if (std.ascii.eqlIgnoreCase(token, "show") or std.ascii.eqlIgnoreCase(token, "shown")) {
-		state.default_visibility = .shown;
-		state.default_visibility_set = true;
-		if (std.ascii.eqlIgnoreCase(token, "show")) state.needs_migration = true;
-	} else if (std.ascii.eqlIgnoreCase(token, "hide") or std.ascii.eqlIgnoreCase(token, "hidden")) {
-		state.default_visibility = .hidden;
-		state.default_visibility_set = true;
-		if (std.ascii.eqlIgnoreCase(token, "hide")) state.needs_migration = true;
 	}
 }
 
@@ -976,11 +933,10 @@ test "parse state with default" {
 }
 
 test "parse state with default array" {
-	const content = "ver=1.1\ndefault=[\n\tclosed\n\thidden\n]";
+	const content = "ver=1.1\ndefault=[\n\tclosed\n]";
 	var state = try parseStateFile(std.testing.allocator, content);
 	defer state.deinit();
 	try std.testing.expectEqual(DefaultState.closed, state.default_state.?);
-	try std.testing.expectEqual(DefaultVisibility.hidden, state.default_visibility.?);
 }
 
 test "round-trip: parse then write produces equivalent output" {
@@ -1086,8 +1042,6 @@ test "write state file with all fields" {
 
 	state.default_state = .closed;
 	state.default_state_set = true;
-	state.default_visibility = .hidden;
-	state.default_visibility_set = true;
 	state.depth = 5;
 	state.sort_mode = .alpha;
 	state.sort_direction = .asc;
@@ -1102,9 +1056,7 @@ test "write state file with all fields" {
 	try writeStateFile(&state, fbs.writer());
 	const output = fbs.getWritten();
 
-	try std.testing.expect(std.mem.indexOf(u8, output, "default=[") != null);
-	try std.testing.expect(std.mem.indexOf(u8, output, "\tclosed") != null);
-	try std.testing.expect(std.mem.indexOf(u8, output, "\thidden") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "default=closed") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "depth=5") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "sort=alpha") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "sort_direction=asc") != null);
@@ -1117,7 +1069,7 @@ test "write state file with all fields" {
 test "legacy state sort order matches bash" {
 	const allocator = std.testing.allocator;
 	const input =
-		\\default=open hide
+		\\default=open
 		\\open=src;lib
 		\\open_regex=^docs
 		\\close=logs

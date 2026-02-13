@@ -54,7 +54,6 @@ pub const EffectiveState = struct {
 
 	// Defaults
 	default_state: ?state_mod.DefaultState = null,
-	default_visibility: ?state_mod.DefaultVisibility = null,
 
 	// Scalars
 	depth: ?u32 = null,
@@ -251,8 +250,6 @@ const InheritedState = struct {
 	// Defaults
 	default_state: ?state_mod.DefaultState = null,
 	default_state_set: bool = false,
-	default_visibility: ?state_mod.DefaultVisibility = null,
-	default_visibility_set: bool = false,
 
 	// Scalars
 	depth: ?u32 = null,
@@ -327,12 +324,6 @@ const InheritedState = struct {
 			if (sf.default_state) |ds| {
 				self.default_state = ds;
 				self.default_state_set = true;
-			}
-		}
-		if (sf.default_visibility_set) {
-			if (sf.default_visibility) |dv| {
-				self.default_visibility = dv;
-				self.default_visibility_set = true;
 			}
 		}
 		if (sf.depth != null) {
@@ -523,30 +514,10 @@ pub fn dumpEffectiveState(writer: anytype, effective: *const EffectiveState) !vo
 	var wrote_block = false;
 
 	// Default
-	var default_entries: [2][]const u8 = undefined;
-	var default_count: usize = 0;
 	if (effective.default_state) |ds| {
-		default_entries[default_count] = ds.toString();
-		default_count += 1;
-	}
-	if (effective.default_visibility) |dv| {
-		default_entries[default_count] = dv.toString();
-		default_count += 1;
-	}
-
-	if (default_count == 1) {
 		try writer.writeAll("default=");
-		try writer.writeAll(default_entries[0]);
+		try writer.writeAll(ds.toString());
 		try writer.writeAll("\n");
-		wrote_block = true;
-	} else if (default_count > 1) {
-		try writer.writeAll("default=[\n");
-		for (default_entries[0..default_count]) |entry| {
-			try writer.writeAll("\t");
-			try writer.writeAll(entry);
-			try writer.writeAll("\n");
-		}
-		try writer.writeAll("]\n");
 		wrote_block = true;
 	}
 
@@ -676,11 +647,6 @@ fn rebuildEffectiveState(
 			effective.default_state = inherited.default_state;
 		}
 
-		if (sf.default_visibility_set) {
-			effective.default_visibility = sf.default_visibility;
-		} else if (inherited.default_visibility_set) {
-			effective.default_visibility = inherited.default_visibility;
-		}
 
 		effective.depth = sf.depth orelse inherited.depth;
 		effective.sort_mode = sf.sort_mode orelse inherited.sort_mode;
@@ -691,7 +657,6 @@ fn rebuildEffectiveState(
 		effective.needs_migration = sf.needs_migration;
 	} else {
 		effective.default_state = inherited.default_state;
-		effective.default_visibility = inherited.default_visibility;
 		effective.depth = inherited.depth;
 		effective.sort_mode = inherited.sort_mode;
 		effective.sort_direction = inherited.sort_direction;

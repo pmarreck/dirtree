@@ -24,11 +24,6 @@ pub const DefaultState = enum {
 	closed,
 };
 
-pub const DefaultVisibility = enum {
-	shown,
-	hidden,
-};
-
 pub const ArgEntry = struct {
 	value: []const u8,
 	kind: state_mod.PatternKind,
@@ -58,7 +53,6 @@ pub const CliConfig = struct {
 
 	// Defaults
 	default_state: ?DefaultState = null,
-	default_visibility: ?DefaultVisibility = null,
 
 	// Variadic args (literals and regex patterns)
 	open_literals: std.ArrayListUnmanaged([]const u8) = .{},
@@ -637,7 +631,7 @@ const DefaultArgResult = union(enum) {
 
 /// Valid tokens for --default argument
 const default_tokens = [_][]const u8{
-	"open", "opened", "close", "closed", "show", "shown", "hide", "hidden",
+	"open", "opened", "close", "closed",
 };
 
 fn isDefaultToken(token: []const u8) bool {
@@ -668,16 +662,6 @@ fn collectDefaultArgs(args: []const [:0]const u8, config: *CliConfig) DefaultArg
 				return .{ .err = s.err_default_state_conflict };
 			}
 			config.default_state = .closed;
-		} else if (std.ascii.eqlIgnoreCase(token, "show") or std.ascii.eqlIgnoreCase(token, "shown")) {
-			if (config.default_visibility != null and config.default_visibility.? != .shown) {
-				return .{ .err = s.err_default_visibility_conflict };
-			}
-			config.default_visibility = .shown;
-		} else if (std.ascii.eqlIgnoreCase(token, "hide") or std.ascii.eqlIgnoreCase(token, "hidden")) {
-			if (config.default_visibility != null and config.default_visibility.? != .hidden) {
-				return .{ .err = s.err_default_visibility_conflict };
-			}
-			config.default_visibility = .hidden;
 		} else {
 			return .{ .err = s.err_default_accepts };
 		}
@@ -820,9 +804,11 @@ pub fn main() !u8 {
 	var stderr_writer = std.fs.File.stderr().writer(&stderr_buf);
 	const stderr = &stderr_writer.interface;
 
-	const allocator = std.heap.page_allocator;
+	var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+	defer arena.deinit();
+	const allocator = arena.allocator();
 	const raw_args = try std.process.argsAlloc(allocator);
-	defer std.process.argsFree(allocator, raw_args);
+	// No need for argsFree - arena handles cleanup
 
 	const result = parseArgs(allocator, raw_args);
 
@@ -1002,6 +988,7 @@ pub fn main() !u8 {
 				.sort_mode = sort_mode,
 				.sort_direction = sort_direction,
 				.head_lines = cfg.head_lines,
+				.tail_lines = cfg.tail_lines,
 				.only_paths = cfg.only_paths.items,
 			};
 
@@ -1101,13 +1088,6 @@ fn applyCliOverrides(allocator: std.mem.Allocator, cfg: *const CliConfig, effect
 			.closed => .closed,
 		};
 	}
-	if (cfg.default_visibility) |dv| {
-		effective.default_visibility = switch (dv) {
-			.shown => .shown,
-			.hidden => .hidden,
-		};
-	}
-
 	// Apply CLI open/close/show/hide literals
 	for (cfg.open_literals.items) |lit| {
 		const key = try effective.dupeStr(lit);
@@ -1183,32 +1163,42 @@ const RegexConflict = struct {
 
 /// Check if any regex pattern appears in both open and close lists.
 /// If found, scan the directory for a matching path and return conflict info.
+/// Uses HashSets for O(open + close) instead of O(open * close).
 fn checkRegexConflict(
 	allocator: std.mem.Allocator,
 	effective: *path_eval.EffectiveState,
 	abs_dir: []const u8,
 	_: anytype,
 ) ?RegexConflict {
-	// Check each open regex against each close regex for same pattern
+	// Build HashSets of close regex patterns for O(1) lookup.
+	// Separate sets for negated vs non-negated patterns.
+	var close_patterns = std.StringHashMapUnmanaged(void){};
+	defer close_patterns.deinit(allocator);
+	var close_patterns_negated = std.StringHashMapUnmanaged(void){};
+	defer close_patterns_negated.deinit(allocator);
+
+	for (effective.close_regexes.items) |*close_re| {
+		const set = if (close_re.negated) &close_patterns_negated else &close_patterns;
+		set.put(allocator, close_re.pattern, {}) catch return null;
+	}
+
+	// Check each open regex against the appropriate HashSet
 	for (effective.open_regexes.items) |*open_re| {
-		for (effective.close_regexes.items) |*close_re| {
-			if (std.mem.eql(u8, open_re.pattern, close_re.pattern) and
-				open_re.negated == close_re.negated)
-			{
-				// Found matching pattern - scan directory for a concrete example
-				if (findMatchingEntry(allocator, abs_dir, open_re)) |entry_name| {
-					return RegexConflict{
-						.path = entry_name,
-						.pattern = open_re.pattern,
-					};
-				}
-				// Even without a matching entry, report the conflict
-				// Use the pattern itself as the path example
+		const set = if (open_re.negated) &close_patterns_negated else &close_patterns;
+		if (set.contains(open_re.pattern)) {
+			// Found matching pattern - scan directory for a concrete example
+			if (findMatchingEntry(allocator, abs_dir, open_re)) |entry_name| {
 				return RegexConflict{
-					.path = allocator.dupe(u8, open_re.pattern) catch return null,
+					.path = entry_name,
 					.pattern = open_re.pattern,
 				};
 			}
+			// Even without a matching entry, report the conflict
+			// Use the pattern itself as the path example
+			return RegexConflict{
+				.path = allocator.dupe(u8, open_re.pattern) catch return null,
+				.pattern = open_re.pattern,
+			};
 		}
 	}
 	return null;
@@ -1266,13 +1256,6 @@ fn persistState(
 		};
 		sf.default_state_set = true;
 	}
-	if (cfg.default_visibility) |dv| {
-		sf.default_visibility = switch (dv) {
-			.shown => .shown,
-			.hidden => .hidden,
-		};
-		sf.default_visibility_set = true;
-	}
 	if (cfg.depth) |d| {
 		sf.depth = d;
 	}
@@ -1309,7 +1292,7 @@ fn persistState(
 	}
 	for (cfg.open_regexes.items) |re| {
 		removeEntryByValue(&sf.close_entries, re.value, re.kind);
-		const has = if (re.kind == .glob) state_mod.StateFile.hasGlob(sf.open_entries.items, re.value, re.negated) else state_mod.StateFile.hasRegex(sf.open_entries.items, re.value, re.negated);
+		const has = state_mod.StateFile.hasEntry(sf.open_entries.items, re.kind, re.value, re.negated);
 		if (!has) {
 			const val = try sf.dupeStr(re.value);
 			try sf.addEntry(&sf.open_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
@@ -1324,7 +1307,7 @@ fn persistState(
 	}
 	for (cfg.close_regexes.items) |re| {
 		removeEntryByValue(&sf.open_entries, re.value, re.kind);
-		const has = if (re.kind == .glob) state_mod.StateFile.hasGlob(sf.close_entries.items, re.value, re.negated) else state_mod.StateFile.hasRegex(sf.close_entries.items, re.value, re.negated);
+		const has = state_mod.StateFile.hasEntry(sf.close_entries.items, re.kind, re.value, re.negated);
 		if (!has) {
 			const val = try sf.dupeStr(re.value);
 			try sf.addEntry(&sf.close_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
@@ -1339,7 +1322,7 @@ fn persistState(
 	}
 	for (cfg.show_regexes.items) |re| {
 		removeEntryByValue(&sf.hide_entries, re.value, re.kind);
-		const has = if (re.kind == .glob) state_mod.StateFile.hasGlob(sf.show_entries.items, re.value, re.negated) else state_mod.StateFile.hasRegex(sf.show_entries.items, re.value, re.negated);
+		const has = state_mod.StateFile.hasEntry(sf.show_entries.items, re.kind, re.value, re.negated);
 		if (!has) {
 			const val = try sf.dupeStr(re.value);
 			try sf.addEntry(&sf.show_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
@@ -1354,7 +1337,7 @@ fn persistState(
 	}
 	for (cfg.hide_regexes.items) |re| {
 		removeEntryByValue(&sf.show_entries, re.value, re.kind);
-		const has = if (re.kind == .glob) state_mod.StateFile.hasGlob(sf.hide_entries.items, re.value, re.negated) else state_mod.StateFile.hasRegex(sf.hide_entries.items, re.value, re.negated);
+		const has = state_mod.StateFile.hasEntry(sf.hide_entries.items, re.kind, re.value, re.negated);
 		if (!has) {
 			const val = try sf.dupeStr(re.value);
 			try sf.addEntry(&sf.hide_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
@@ -1377,13 +1360,16 @@ fn persistState(
 	try std.fs.cwd().rename(tmp_path, state_path);
 	_ = effective; // used in caller for needs_migration check
 }
-
 /// Remove entries from a list that match a given value.
+/// Uses swapRemove instead of orderedRemove to avoid O(n) shifts per removal.
+/// Order doesn't matter here since entries are sorted later in writeStateFile
+/// via sortEntriesForOutput.
 fn removeEntryByValue(list: *std.ArrayListUnmanaged(state_mod.StateEntry), value: []const u8, kind: state_mod.PatternKind) void {
 	var ii: usize = 0;
 	while (ii < list.items.len) {
 		if (list.items[ii].kind == kind and std.mem.eql(u8, list.items[ii].value, value)) {
-			_ = list.orderedRemove(ii);
+			_ = list.swapRemove(ii);
+			// Don't increment ii - the swapped element needs checking
 		} else {
 			ii += 1;
 		}
@@ -1487,14 +1473,13 @@ test "parseArgs: default opened" {
 	}
 }
 
-test "parseArgs: default closed hidden" {
-	const args = &[_][:0]const u8{ "dirtree", "--default", "closed", "hidden" };
+test "parseArgs: default closed" {
+	const args = &[_][:0]const u8{ "dirtree", "--default", "closed" };
 	var result = parseArgs(std.testing.allocator, args);
 	switch (result) {
 		.config => |*cfg| {
 			defer cfg.deinit(std.testing.allocator);
 			try std.testing.expectEqual(DefaultState.closed, cfg.default_state.?);
-			try std.testing.expectEqual(DefaultVisibility.hidden, cfg.default_visibility.?);
 		},
 		else => return error.TestExpectedConfig,
 	}

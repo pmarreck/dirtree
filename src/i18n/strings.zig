@@ -75,7 +75,6 @@ pub const Strings = struct {
     err_sort_requires_mode: [:0]const u8,
     err_default_requires_value: [:0]const u8,
     err_default_state_conflict: [:0]const u8,
-    err_default_visibility_conflict: [:0]const u8,
     err_default_accepts: [:0]const u8,
     err_open_requires_dir: [:0]const u8,
     err_close_requires_dir: [:0]const u8,

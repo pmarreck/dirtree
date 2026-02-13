@@ -117,6 +117,6 @@ Both the CLI and the tests default `TMPDIR` to `/tmp` (unless you already set it
 
 They cover CLI flags, persistence, migration, SCM overrides, hidden summaries, and interaction with the simple/decorated modes.
 
-## Legacy
+## Architecture
 
-The original Bash implementation (which wrapped `eza`) is preserved as `bin/dirtree.bash` for reference. The current Zig implementation is a complete rewrite that renders trees natively without any external dependencies.
+The current Zig implementation renders trees natively without any external dependencies.

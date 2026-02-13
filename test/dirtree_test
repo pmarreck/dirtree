@@ -17,7 +17,6 @@
 # [x] hyperlinks present when forced with --decorated — Ensures hyperlinks present when forced with --decorated.
 # [x] PIPED_STDOUT=0 treats pipe as TTY for hyperlinks — Ensures PIPED_STDOUT=0 treats pipe as TTY for hyperlinks.
 # [x] --no-hyperlinks suppresses OSC8 sequences — Ensures --no-hyperlinks suppresses OSC8 sequences.
-# [x] eza availability — Ensures eza availability.
 # [x] depth parameter validation — Ensures depth parameter validation.
 # [x] directory validation — Ensures directory validation.
 # [x] persist default via --default only — Ensures persist default via --default only.
@@ -1327,36 +1326,20 @@ test_persist_default_via_default_only() {
 	compare_printable "persist default via --default only" "$actual_pb" "$expected_pb"
 }
 
-test_persist_default_visibility_via_default_hide() {
-	local workspace target state_file actual_pb expected_plain expected_pb
-	workspace=$(new_tmpdir)
-	target="$workspace/default-visibility"
-	mkdir -p "$target"
-	state_file="$target/.dirtree-state"
-	if ! run_quiet "$DIRTREE_BIN" --default hide "$target"; then
-		echo "dirtree --default hide failed" >&2
-		return 1
-	fi
-	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=hidden\n'
-	encode_printable expected_pb "$expected_plain"
-	compare_printable "persist default visibility via --default hide" "$actual_pb" "$expected_pb"
-}
-
 test_persist_default_array_via_multiple_tokens() {
 	local workspace target state_file actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
 	target="$workspace/default-array"
 	mkdir -p "$target"
 	state_file="$target/.dirtree-state"
-	if ! run_quiet "$DIRTREE_BIN" --default opened hidden "$target"; then
-		echo "dirtree --default opened hidden failed" >&2
+	if ! run_quiet "$DIRTREE_BIN" --default opened "$target"; then
+		echo "dirtree --default opened failed" >&2
 		return 1
 	fi
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=[\n\topened\n\thidden\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=opened\n'
 	encode_printable expected_pb "$expected_plain"
-	compare_printable "persist default array via multiple --default tokens" "$actual_pb" "$expected_pb"
+	compare_printable "persist default via --default opened" "$actual_pb" "$expected_pb"
 }
 
 test_depth_flag_persists_and_applies() {
@@ -2318,7 +2301,7 @@ test_legacy_state_migrates_to_ini_ma() {
 	mkdir -p "$target"
 	state_file="$target/.dirtree-state"
 	cat >"$state_file" <<'STATE'
-default=open hide
+default=open
 open=src;lib
 open_regex=^docs
 close=logs
@@ -2330,7 +2313,7 @@ hide_regex=\.log$
 STATE
 	run_quiet "$DIRTREE_BIN" "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=[\n\topened\n\thidden\n]\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\t/temp$/\n\tlogs\n]\n\nshow=[\n\tREADME.md\n\tdocs/**/index\n\tdocs/index.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=opened\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\t/temp$/\n\tlogs\n]\n\nshow=[\n\tREADME.md\n\tdocs/**/index\n\tdocs/index.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "legacy state migrates to INI-MA" "$actual_pb" "$expected_pb"
 }
@@ -3292,67 +3275,6 @@ test_symlink_shows_target_with_spaces() {
 	fi
 }
 
-test_eza_availability() {
-	# Zig binary doesn't use eza - skip this test for compiled binaries
-	if is_compiled_binary; then
-		return 0
-	fi
-	local workspace
-	workspace=$(new_tmpdir)
-	local target="$workspace/eza-check"
-	mkdir -p "$target"
-	local fake_path
-	fake_path=$(new_tmpdir)
-	cat >"$fake_path/eza" <<'EOF'
-#!/usr/bin/env bash
-exit 0
-EOF
-	chmod +x "$fake_path/eza"
-	local original_path="$PATH"
-	local cnf_env path_log
-	cnf_env=$(new_tmpfile)
-	path_log=$(new_tmpfile)
-cat >"$cnf_env" <<'EOF'
-command_not_found_handle() {
-	return 127
-}
-command() {
-	if [[ "$1" == "-v" && "$2" == "eza" ]]; then
-		return 1
-	fi
-	builtin command "$@"
-}
-echo "$PATH" >"$DIRTREE_PATH_LOG"
-EOF
-	local stdout_pb="" stderr_pb="" rc=0
-	if ! capture_command_printable stdout_pb stderr_pb rc \
-		env PATH="$fake_path:$original_path" \
-		DIRTREE_PATH_LOG="$path_log" \
-		BASH_ENV="$cnf_env" \
-		"$DIRTREE_BIN" "$target"; then
-		echo "capture_command_printable failed for eza availability" >&2
-		return 1
-	fi
-	if [[ "$rc" -eq 0 ]]; then
-		echo "Expected eza availability failure" >&2
-		return 1
-	fi
-	local recorded_path
-	recorded_path=$(<"$path_log")
-	if [[ "$recorded_path" != "$fake_path:$original_path" ]]; then
-		echo "PATH inside dirtree did not match expected value" >&2
-		return 1
-	fi
-	if [[ -n "$stdout_pb" ]]; then
-		echo "Expected empty stdout for eza failure" >&2
-		return 1
-	fi
-	local expected_plain expected_pb
-	expected_plain=$'Error: eza is not installed. Please install eza first.\n'
-	encode_printable expected_pb "$expected_plain"
-	compare_printable "eza availability" "$stderr_pb" "$expected_pb"
-}
-
 test_config_shows_effective_state() {
 	local workspace parent child stdout_pb="" stderr_pb="" rc=0
 	workspace=$(new_tmpdir)
@@ -3647,6 +3569,38 @@ test_override_warning_suppresses_warning() {
 	fi
 }
 
+test_tail_shows_last_n_lines() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/tail-test"
+	mkdir -p "$target/aaa" "$target/bbb" "$target/ccc"
+	touch "$target/file1.txt" "$target/file2.txt" "$target/file3.txt"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --tail 2 "$target"; then
+		echo "capture helper failed for --tail" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--tail run failed with rc=$rc" >&2
+		return 1
+	fi
+	local plain=""
+	decode_printable plain "$stdout_pb"
+	# Should only have 2 lines (the last two entries)
+	local line_count
+	line_count=$(printf '%s\n' "$plain" | grep -c '')
+	if [[ "$line_count" -ne 2 ]]; then
+		echo "Expected 2 lines but got $line_count" >&2
+		printf '%s' "$plain" >&2
+		return 1
+	fi
+	# The last line should use the "last item" connector
+	if [[ "$plain" != *"└── "* ]]; then
+		echo "Expected last-item connector in tail output" >&2
+		printf '%s' "$plain" >&2
+		return 1
+	fi
+}
+
 test_only_focuses_subtree() {
 	local workspace target stdout_pb="" stderr_pb="" rc=0
 	workspace=$(new_tmpdir)
@@ -3849,8 +3803,6 @@ run_all_tests() {
 		test_files_and_directories_both_listed
 	run_test "persist default via --default only" \
 		test_persist_default_via_default_only
-	run_test "persist default visibility via --default hide" \
-		test_persist_default_visibility_via_default_hide
 	run_test "persist default array via multiple --default tokens" \
 		test_persist_default_array_via_multiple_tokens
 	run_test "depth flag persists and applies" \
@@ -4001,8 +3953,6 @@ run_all_tests() {
 		test_symlink_shows_target
 	run_test "symlink target with spaces is quoted" \
 		test_symlink_shows_target_with_spaces
-	run_test "eza availability" \
-		test_eza_availability
 	run_test "--config shows effective state" \
 		test_config_shows_effective_state
 	run_test "--config applies CLI overrides" \
@@ -4023,6 +3973,8 @@ run_all_tests() {
 		test_large_output_warning_appears
 	run_test "--override-warning suppresses warning" \
 		test_override_warning_suppresses_warning
+	run_test "--tail shows last N lines" \
+		test_tail_shows_last_n_lines
 	run_test "--only focuses subtree" \
 		test_only_focuses_subtree
 	run_test "--only deep path expands ancestors" \
