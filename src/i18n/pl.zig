@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " i ",
     .hidden_is_hidden = " jest ukryty.",
     .hidden_are_hidden = " jest ukrytych.",
+    .stats_shown = " wyświetlonych",
+    .stats_hidden = " ukrytych.",
+    .stats_line_singular = "linia",
+    .stats_line_plural = "linii",
+    .stats_separator = "; ",
 
     // ── Komunikaty o błędach ────────────────────────────────────
     .err_depth_requires_number = "Błąd: --depth wymaga argumentu liczbowego",

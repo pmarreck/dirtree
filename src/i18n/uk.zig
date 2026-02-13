@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " та ",
     .hidden_is_hidden = " сховано.",
     .hidden_are_hidden = " сховані.",
+    .stats_shown = " показано",
+    .stats_hidden = " приховано.",
+    .stats_line_singular = "рядок",
+    .stats_line_plural = "рядків",
+    .stats_separator = "; ",
 
     // ── Повідомлення про помилки ────────────────────────────────
     .err_depth_requires_number = "Помилка: --depth потребує числовий аргумент",

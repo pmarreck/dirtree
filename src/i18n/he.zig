@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " ו-",
     .hidden_is_hidden = " מוסתר.",
     .hidden_are_hidden = " מוסתרים.",
+    .stats_shown = " מוצגים",
+    .stats_hidden = " מוסתרים.",
+    .stats_line_singular = "שורה",
+    .stats_line_plural = "שורות",
+    .stats_separator = "; ",
 
     // ── הודעות שגיאה ─────────────────────────────────────────
     .err_depth_requires_number = "שגיאה: --depth דורש ארגומנט מספרי",

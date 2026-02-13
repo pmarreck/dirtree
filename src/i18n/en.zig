@@ -41,7 +41,7 @@ pub const strings = Strings{
     // ── About text ─────────────────────────────────────────────
     .about_text = "Stateful directory tree (icons/colors/links); --simple for LLMs; persists .dirtree-state (default/open/close/show/hide); regex via /pattern/ or !/pattern/; literals must be relative; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",
 
-    // ── Hidden count fragments ─────────────────────────────────
+    // ── Stats count fragments ──────────────────────────────────
     .hidden_dir_singular = "directory",
     .hidden_dir_plural = "directories",
     .hidden_file_singular = "file",
@@ -49,8 +49,31 @@ pub const strings = Strings{
     .hidden_and = " and ",
     .hidden_is_hidden = " is hidden.",
     .hidden_are_hidden = " are hidden.",
+    .stats_shown = " shown",
+    .stats_hidden = " hidden.",
+    .stats_line_singular = "line",
+    .stats_line_plural = "lines",
+    .stats_separator = "; ",
+
+    // ── Help text (new flags) ──────────────────────────────────
+    .help_opt_max_lines = "  --max-lines N      Set large output warning threshold (default: 500)",
+    .help_opt_override_warning = "  --override-warning Suppress the large output warning",
+    .help_opt_head = "  --head N           Stop output after N lines",
+    .help_opt_tail = "  --tail N           Show only the last N lines (prefer piping to tail -N)",
+    .help_opt_only = "  --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)",
+
+    // ── Warning messages (large output) ────────────────────────
+    .warn_large_output_prefix = "Warning: output is ~",
+    .warn_large_output_mid = " lines (threshold: ",
+    .warn_large_output_suffix = "). Consider: --depth N, --head N, or --hide patterns.",
+    .warn_truncated_head_prefix = "(Output truncated after ",
+    .warn_truncated_head_suffix = " lines by --head)",
 
     // ── Error messages ─────────────────────────────────────────
+    .err_max_lines_requires_number = "Error: --max-lines requires a numeric argument",
+    .err_head_requires_number = "Error: --head requires a numeric argument",
+    .err_tail_requires_number = "Error: --tail requires a numeric argument",
+    .err_only_requires_path = "Error: --only requires a path argument",
     .err_depth_requires_number = "Error: --depth requires a numeric argument",
     .err_sort_requires_mode = "Error: --sort requires 'modified' or 'alpha'",
     .err_default_requires_value = "Error: --default requires at least one value",
@@ -106,6 +129,11 @@ pub const aliases = LocaleAliases{
         .{ .name = "--config", .arg = .config },
         .{ .name = "--test", .arg = .@"test" },
         .{ .name = "--lang", .arg = .lang },
+        .{ .name = "--max-lines", .arg = .max_lines },
+        .{ .name = "--override-warning", .arg = .override_warning },
+        .{ .name = "--head", .arg = .head },
+        .{ .name = "--tail", .arg = .tail },
+        .{ .name = "--only", .arg = .only },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DIRTREE_SIMPLE", .var_id = .dirtree_simple },

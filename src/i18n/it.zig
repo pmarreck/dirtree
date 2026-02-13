@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " e ",
     .hidden_is_hidden = " \xc3\xa8 nascosto.",
     .hidden_are_hidden = " sono nascosti.",
+    .stats_shown = " mostrati",
+    .stats_hidden = " nascosti.",
+    .stats_line_singular = "riga",
+    .stats_line_plural = "righe",
+    .stats_separator = "; ",
 
     // ── Messaggi di errore ──────────────────────────────────────
     .err_depth_requires_number = "Errore: --depth richiede un argomento numerico",

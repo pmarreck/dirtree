@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = "と",
     .hidden_is_hidden = "が非表示です。",
     .hidden_are_hidden = "が非表示です。",
+    .stats_shown = "表示",
+    .stats_hidden = "非表示。",
+    .stats_line_singular = "行",
+    .stats_line_plural = "行",
+    .stats_separator = "；",
 
     // ── エラーメッセージ ────────────────────────────────────────
     .err_depth_requires_number = "エラー: --depth には数値引数が必要です",

@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " ve ",
     .hidden_is_hidden = " gizlidir.",
     .hidden_are_hidden = " gizlidir.",
+    .stats_shown = " gösteriliyor",
+    .stats_hidden = " gizli.",
+    .stats_line_singular = "satır",
+    .stats_line_plural = "satır",
+    .stats_separator = "; ",
 
     // ── Hata mesajlar\xc4\xb1 ──────────────────────────────────────────────
     .err_depth_requires_number = "Hata: --depth say\xc4\xb1sal bir arg\xc3\xbcman gerektirir",

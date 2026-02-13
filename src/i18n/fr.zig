@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " et ",
     .hidden_is_hidden = " est masqu\xc3\xa9.",
     .hidden_are_hidden = " sont masqu\xc3\xa9s.",
+    .stats_shown = " affichés",
+    .stats_hidden = " masqués.",
+    .stats_line_singular = "ligne",
+    .stats_line_plural = "lignes",
+    .stats_separator = " ; ",
 
     // ── Messages d'erreur ──────────────────────────────────────
     .err_depth_requires_number = "Erreur : --depth n\xc3\xa9cessite un argument num\xc3\xa9rique",

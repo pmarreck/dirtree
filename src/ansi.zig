@@ -105,58 +105,66 @@ pub fn writeFileName(writer: anytype, name: []const u8, is_executable: bool, is_
 }
 
 /// Write the hidden count message to stderr.
-pub fn writeHiddenCount(writer: anytype, dir_count: u32, file_count: u32, simple_mode: bool) !void {
-	if (dir_count == 0 and file_count == 0) return;
+pub fn writeStatsMessage(writer: anytype, shown_dirs: u32, shown_files: u32, total_lines: u32, hidden_dirs: u32, hidden_files: u32, simple_mode: bool) !void {
+	const has_hidden = hidden_dirs > 0 or hidden_files > 0;
+	if (!has_hidden) return;
+	const has_shown = shown_dirs > 0 or shown_files > 0;
 
 	const s = i18n.tr();
-
-	var parts_buf: [2][]const u8 = undefined;
-	var parts_count: usize = 0;
-	var msg_buf: [128]u8 = undefined;
-	var msg_pos: usize = 0;
-
-	if (dir_count > 0) {
-		if (dir_count == 1) {
-			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "1 {s}", .{s.hidden_dir_singular}) catch return;
-			parts_buf[parts_count] = written;
-			msg_pos += written.len;
-		} else {
-			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "{} {s}", .{ dir_count, s.hidden_dir_plural }) catch return;
-			parts_buf[parts_count] = written;
-			msg_pos += written.len;
-		}
-		parts_count += 1;
-	}
-	if (file_count > 0) {
-		if (file_count == 1) {
-			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "1 {s}", .{s.hidden_file_singular}) catch return;
-			parts_buf[parts_count] = written;
-			msg_pos += written.len;
-		} else {
-			const written = std.fmt.bufPrint(msg_buf[msg_pos..], "{} {s}", .{ file_count, s.hidden_file_plural }) catch return;
-			parts_buf[parts_count] = written;
-			msg_pos += written.len;
-		}
-		parts_count += 1;
-	}
 
 	try writer.writeAll("\n");
 	if (!simple_mode) {
 		try writer.writeAll(dim_italic);
 	}
 
-	for (parts_buf[0..parts_count], 0..) |part, idx| {
-		try writer.writeAll(part);
-		if (idx < parts_count - 1) {
-			try writer.writeAll(s.hidden_and);
+	// Shown section: "N directories and M files shown (L lines)"
+	if (has_shown) {
+		var wrote_part = false;
+		if (shown_dirs > 0) {
+			if (shown_dirs == 1) {
+				try writer.print("1 {s}", .{s.hidden_dir_singular});
+			} else {
+				try writer.print("{} {s}", .{ shown_dirs, s.hidden_dir_plural });
+			}
+			wrote_part = true;
+		}
+		if (shown_files > 0) {
+			if (wrote_part) try writer.writeAll(s.hidden_and);
+			if (shown_files == 1) {
+				try writer.print("1 {s}", .{s.hidden_file_singular});
+			} else {
+				try writer.print("{} {s}", .{ shown_files, s.hidden_file_plural });
+			}
+		}
+		try writer.writeAll(s.stats_shown);
+		// Line count
+		if (total_lines > 0) {
+			const line_word = if (total_lines == 1) s.stats_line_singular else s.stats_line_plural;
+			try writer.print(" ({} {s})", .{ total_lines, line_word });
 		}
 	}
 
-	const total = dir_count + file_count;
-	if (total == 1) {
-		try writer.writeAll(s.hidden_is_hidden);
-	} else {
-		try writer.writeAll(s.hidden_are_hidden);
+	// Hidden section: "N directories and M files hidden."
+	if (has_hidden) {
+		if (has_shown) try writer.writeAll(s.stats_separator);
+		var wrote_part = false;
+		if (hidden_dirs > 0) {
+			if (hidden_dirs == 1) {
+				try writer.print("1 {s}", .{s.hidden_dir_singular});
+			} else {
+				try writer.print("{} {s}", .{ hidden_dirs, s.hidden_dir_plural });
+			}
+			wrote_part = true;
+		}
+		if (hidden_files > 0) {
+			if (wrote_part) try writer.writeAll(s.hidden_and);
+			if (hidden_files == 1) {
+				try writer.print("1 {s}", .{s.hidden_file_singular});
+			} else {
+				try writer.print("{} {s}", .{ hidden_files, s.hidden_file_plural });
+			}
+		}
+		try writer.writeAll(s.stats_hidden);
 	}
 
 	if (!simple_mode) {
@@ -190,18 +198,19 @@ test "buildFileUrl: path with spaces" {
 	try std.testing.expect(std.mem.indexOf(u8, url, "%20") != null);
 }
 
-test "writeHiddenCount: single file" {
+test "writeStatsMessage: hidden only" {
 	var buf: [256]u8 = undefined;
 	var fbs = std.io.fixedBufferStream(&buf);
-	try writeHiddenCount(fbs.writer(), 0, 1, true);
+	try writeStatsMessage(fbs.writer(), 0, 0, 0, 0, 1, true);
 	const output = fbs.getWritten();
-	try std.testing.expect(std.mem.indexOf(u8, output, "1 file is hidden.") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "1 file hidden.") != null);
 }
 
-test "writeHiddenCount: mixed" {
-	var buf: [256]u8 = undefined;
+test "writeStatsMessage: shown and hidden" {
+	var buf: [512]u8 = undefined;
 	var fbs = std.io.fixedBufferStream(&buf);
-	try writeHiddenCount(fbs.writer(), 2, 3, true);
+	try writeStatsMessage(fbs.writer(), 3, 10, 42, 2, 3, true);
 	const output = fbs.getWritten();
-	try std.testing.expect(std.mem.indexOf(u8, output, "2 directories and 3 files are hidden.") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "3 directories and 10 files shown (42 lines)") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "2 directories and 3 files hidden.") != null);
 }

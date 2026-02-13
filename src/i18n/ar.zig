@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " و",
     .hidden_is_hidden = " مخفي.",
     .hidden_are_hidden = " مخفية.",
+    .stats_shown = " معروض",
+    .stats_hidden = " مخفي.",
+    .stats_line_singular = "سطر",
+    .stats_line_plural = "أسطر",
+    .stats_separator = "؛ ",
 
     // ── رسائل الخطأ ──────────────────────────────────────────
     .err_depth_requires_number = "خطأ: --depth يتطلب معاملاً رقمياً",

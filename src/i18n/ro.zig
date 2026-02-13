@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " \xc8\x99i ",
     .hidden_is_hidden = " este ascuns.",
     .hidden_are_hidden = " sunt ascunse.",
+    .stats_shown = " afișate",
+    .stats_hidden = " ascunse.",
+    .stats_line_singular = "linie",
+    .stats_line_plural = "linii",
+    .stats_separator = "; ",
 
     // ── Mesaje de eroare ──────────────────────────────────────
     .err_depth_requires_number = "Eroare: --depth necesit\xc4\x83 un argument numeric",

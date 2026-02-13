@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " \xc3\xa9s ",
     .hidden_is_hidden = " rejtett.",
     .hidden_are_hidden = " rejtettek.",
+    .stats_shown = " megjelenítve",
+    .stats_hidden = " rejtve.",
+    .stats_line_singular = "sor",
+    .stats_line_plural = "sor",
+    .stats_separator = "; ",
 
     // ── Hiba\xc3\xbczenetek ──────────────────────────────────────────────
     .err_depth_requires_number = "Hiba: --depth sz\xc3\xa1mszer\xc5\xb1 argumentumot ig\xc3\xa9nyel",

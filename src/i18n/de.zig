@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " und ",
     .hidden_is_hidden = " ist verborgen.",
     .hidden_are_hidden = " sind verborgen.",
+    .stats_shown = " angezeigt",
+    .stats_hidden = " versteckt.",
+    .stats_line_singular = "Zeile",
+    .stats_line_plural = "Zeilen",
+    .stats_separator = "; ",
 
     // ── Fehlermeldungen ────────────────────────────────────────
     .err_depth_requires_number = "Fehler: --depth erfordert ein numerisches Argument",

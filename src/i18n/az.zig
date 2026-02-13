@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " v\xc9\x99 ",
     .hidden_is_hidden = " gizlidir.",
     .hidden_are_hidden = " gizlidir.",
+    .stats_shown = " göstərilir",
+    .stats_hidden = " gizlidir.",
+    .stats_line_singular = "sətir",
+    .stats_line_plural = "sətir",
+    .stats_separator = "; ",
 
     // ── X\xc9\x99ta mesajlar\xc4\xb1 ──────────────────────────────────────────
     .err_depth_requires_number = "X\xc9\x99ta: --depth r\xc9\x99q\xc9\x99mli arqument t\xc9\x99l\xc9\x99b edir",

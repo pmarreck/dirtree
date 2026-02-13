@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " و ",
     .hidden_is_hidden = " پنهان است.",
     .hidden_are_hidden = " پنهان هستند.",
+    .stats_shown = " نمایش داده شده",
+    .stats_hidden = " پنهان.",
+    .stats_line_singular = "خط",
+    .stats_line_plural = "خط",
+    .stats_separator = "؛ ",
 
     // ── پیام‌های خطا ─────────────────────────────────────────
     .err_depth_requires_number = "خطا: --depth به یک آرگومان عددی نیاز دارد",

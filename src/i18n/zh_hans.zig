@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = "和",
     .hidden_is_hidden = "被隐藏。",
     .hidden_are_hidden = "被隐藏。",
+    .stats_shown = "已显示",
+    .stats_hidden = "已隐藏。",
+    .stats_line_singular = "行",
+    .stats_line_plural = "行",
+    .stats_separator = "；",
 
     // ── 错误信息 ───────────────────────────────────────────────
     .err_depth_requires_number = "错误: --depth 需要一个数字参数",

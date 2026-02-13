@@ -22,6 +22,11 @@ pub const CliArg = enum {
     config,
     @"test",
     lang,
+    max_lines,
+    override_warning,
+    head,
+    tail,
+    only,
 };
 
 /// Per-locale CLI aliases: array of (string, CliArg) pairs.

@@ -3,6 +3,7 @@ const ansi = @import("ansi.zig");
 const icons = @import("icons.zig");
 const dir_scan = @import("dir_scan.zig");
 const path_eval = @import("path_eval.zig");
+const i18n = @import("i18n/mod.zig");
 
 /// Configuration for the tree renderer.
 pub const RenderConfig = struct {
@@ -15,6 +16,8 @@ pub const RenderConfig = struct {
 	show_hidden: bool = false,
 	sort_mode: dir_scan.SortMode = .modified,
 	sort_direction: dir_scan.SortDirection = .desc,
+	head_lines: ?u32 = null,
+	only_paths: []const []const u8 = &.{},
 };
 
 /// Tree connector characters.
@@ -22,6 +25,16 @@ const BRANCH = "├── ";
 const LAST = "└── ";
 const VERT = "│   ";
 const SPACE = "    ";
+
+/// Aggregated statistics from tree rendering.
+pub const TreeStats = struct {
+	hidden_dirs: u32 = 0,
+	hidden_files: u32 = 0,
+	shown_dirs: u32 = 0,
+	shown_files: u32 = 0,
+	total_lines: u32 = 0,
+	head_reached: bool = false,
+};
 
 /// Render a complete directory tree.
 pub fn renderTree(
@@ -38,27 +51,60 @@ pub fn renderTree(
 	try renderRootHeader(allocator, stdout, abs_dir, config);
 
 	// Render tree recursively
-	var hidden_dirs: u32 = 0;
-	var hidden_files: u32 = 0;
-	try renderDir(
-		allocator,
-		stdout,
-		abs_dir,
-		"",
-		config.max_depth,
-		false,
-		"",
-		effective,
-		priority_dirs,
-		priority_files,
-		config,
-		&hidden_dirs,
-		&hidden_files,
-	);
+	var stats = TreeStats{};
+	stats.total_lines = 1; // root header line
 
-	// Report hidden counts to stderr (only in decorated mode)
+	if (config.only_paths.len > 0) {
+		// Focused rendering mode
+		var focus = try buildFocusSet(allocator, config.only_paths);
+		defer focus.deinit();
+		try renderDirFocused(
+			allocator,
+			stdout,
+			abs_dir,
+			"",
+			config.max_depth,
+			false,
+			"",
+			effective,
+			priority_dirs,
+			priority_files,
+			config,
+			&stats,
+			&focus,
+		);
+	} else {
+		try renderDir(
+			allocator,
+			stdout,
+			abs_dir,
+			"",
+			config.max_depth,
+			false,
+			"",
+			effective,
+			priority_dirs,
+			priority_files,
+			config,
+			&stats,
+		);
+	}
+
+	// Report head truncation on stderr
+	if (stats.head_reached) {
+		const s = i18n.tr();
+		try stderr.writeAll("\n");
+		if (!config.simple_mode) try stderr.writeAll("\x1b[2;3m");
+		try stderr.writeAll(s.warn_truncated_head_prefix);
+		try stderr.print("{}", .{config.head_lines.?});
+		try stderr.writeAll(s.warn_truncated_head_suffix);
+		if (!config.simple_mode) try stderr.writeAll("\x1b[0m");
+		try stderr.writeAll("\n");
+	}
+
+	// Report stats to stderr (only in decorated mode)
 	if (config.report_hidden) {
-		try ansi.writeHiddenCount(stderr, hidden_dirs, hidden_files, config.simple_mode);
+		try ansi.writeStatsMessage(stderr, stats.shown_dirs, stats.shown_files, stats.total_lines, stats.hidden_dirs, stats.hidden_files, config.simple_mode);
 	}
 }
 
@@ -136,8 +182,7 @@ fn renderDir(
 	priority_dirs: ?*const std.StringHashMapUnmanaged(void),
 	priority_files: ?*const std.StringHashMapUnmanaged(void),
 	config: RenderConfig,
-	hidden_dirs: *u32,
-	hidden_files: *u32,
+	stats: *TreeStats,
 ) !void {
 	if (depth_left == 0) return;
 
@@ -182,12 +227,19 @@ fn renderDir(
 			// Don't count .dirtree-state in hidden totals (silently excluded like eza --ignore-glob)
 			if (!std.mem.eql(u8, entry.name, ".dirtree-state")) {
 				if (entry.kind == .directory) {
-					hidden_dirs.* += 1;
+					stats.hidden_dirs += 1;
 				} else {
-					hidden_files.* += 1;
+					stats.hidden_files += 1;
 				}
 			}
 			continue;
+		}
+
+		// Track shown counts
+		if (entry.kind == .directory) {
+			stats.shown_dirs += 1;
+		} else {
+			stats.shown_files += 1;
 		}
 
 		try visible.append(allocator, .{
@@ -202,6 +254,14 @@ fn renderDir(
 
 	// Second pass: render visible entries
 	for (visible.items, 0..) |vis, idx| {
+		// Check --head limit before rendering each entry
+		if (config.head_lines) |hl| {
+			if (stats.total_lines >= hl) {
+				stats.head_reached = true;
+				return;
+			}
+		}
+
 		const is_last = idx == visible.items.len - 1;
 		const connector = if (is_last) LAST else BRANCH;
 		const next_prefix_ext = if (is_last) SPACE else VERT;
@@ -227,6 +287,7 @@ fn renderDir(
 			}
 
 			try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config);
+			stats.total_lines += 1;
 
 			// Recurse into non-closed directories
 			if (!vis.is_closed and depth_left > 1) {
@@ -242,9 +303,9 @@ fn renderDir(
 					priority_dirs,
 					priority_files,
 					config,
-					hidden_dirs,
-					hidden_files,
+					stats,
 				);
+				if (stats.head_reached) return;
 			}
 		} else {
 			// Check if file is executable or symlink
@@ -252,6 +313,328 @@ fn renderDir(
 			const is_symlink = vis.entry.kind == .symlink;
 
 			try renderFileEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, is_executable, is_symlink, config);
+			stats.total_lines += 1;
+		}
+	}
+}
+
+/// Lightweight pre-scan to estimate the number of visible lines without rendering.
+/// Used to warn when piped output may be too large for LLM context windows.
+pub fn countVisibleEntries(
+	allocator: std.mem.Allocator,
+	abs_dir: []const u8,
+	rel_dir: []const u8,
+	depth_left: u32,
+	parent_closed: bool,
+	effective: *path_eval.EffectiveState,
+	priority_dirs: ?*const std.StringHashMapUnmanaged(void),
+	priority_files: ?*const std.StringHashMapUnmanaged(void),
+	show_hidden: bool,
+) u32 {
+	if (depth_left == 0) return 0;
+
+	const scan_path = if (rel_dir.len == 0)
+		abs_dir
+	else blk: {
+		const p = std.fs.path.join(allocator, &.{ abs_dir, rel_dir }) catch return 0;
+		break :blk p;
+	};
+	defer if (rel_dir.len > 0) allocator.free(scan_path);
+
+	const entries = dir_scan.scanDir(allocator, scan_path, .alpha, .asc) catch return 0;
+	defer dir_scan.freeEntries(allocator, entries);
+
+	var count: u32 = 0;
+	for (entries) |entry| {
+		if (std.mem.eql(u8, entry.name, ".") or std.mem.eql(u8, entry.name, "..")) continue;
+
+		const child_rel = if (rel_dir.len == 0)
+			allocator.dupe(u8, entry.name) catch return count
+		else
+			std.fs.path.join(allocator, &.{ rel_dir, entry.name }) catch return count;
+		defer allocator.free(child_rel);
+
+		const eval_result = effective.evaluatePath(
+			child_rel,
+			parent_closed,
+			show_hidden,
+			priority_dirs,
+			priority_files,
+		);
+
+		if (eval_result.is_hidden) continue;
+
+		count += 1;
+
+		if (entry.kind == .directory and !eval_result.is_closed and depth_left > 1) {
+			count += countVisibleEntries(
+				allocator,
+				abs_dir,
+				child_rel,
+				depth_left - 1,
+				eval_result.is_closed,
+				effective,
+				priority_dirs,
+				priority_files,
+				show_hidden,
+			);
+		}
+	}
+	return count;
+}
+
+/// Focus set for --only mode. Tracks which relative paths are ancestors of targets,
+/// which are the targets themselves, and provides query methods.
+pub const FocusSet = struct {
+	/// Directories that are ancestors of target paths (need focused recursion)
+	ancestors: std.StringHashMapUnmanaged(void) = .{},
+	/// The target directories themselves (get full-depth normal rendering)
+	targets: std.StringHashMapUnmanaged(void) = .{},
+	allocator: std.mem.Allocator,
+
+	pub fn init(allocator: std.mem.Allocator) FocusSet {
+		return .{ .allocator = allocator };
+	}
+
+	pub fn deinit(self: *FocusSet) void {
+		// Free all duped keys
+		{
+			var it = self.ancestors.keyIterator();
+			while (it.next()) |key| {
+				self.allocator.free(key.*);
+			}
+			self.ancestors.deinit(self.allocator);
+		}
+		{
+			var it = self.targets.keyIterator();
+			while (it.next()) |key| {
+				self.allocator.free(key.*);
+			}
+			self.targets.deinit(self.allocator);
+		}
+	}
+
+	pub fn isAncestor(self: *const FocusSet, rel: []const u8) bool {
+		return self.ancestors.contains(rel);
+	}
+
+	pub fn isTarget(self: *const FocusSet, rel: []const u8) bool {
+		return self.targets.contains(rel);
+	}
+
+	/// Check if rel is under any target (i.e., a target is a prefix of rel)
+	pub fn isUnderTarget(self: *const FocusSet, rel: []const u8) bool {
+		var it = self.targets.keyIterator();
+		while (it.next()) |key| {
+			const target = key.*;
+			if (rel.len > target.len and
+				std.mem.startsWith(u8, rel, target) and
+				rel[target.len] == '/')
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+};
+
+/// Build a FocusSet from a list of --only paths.
+/// For each path like "src/lib", decomposes into ancestors {src} and targets {src/lib}.
+pub fn buildFocusSet(allocator: std.mem.Allocator, only_paths: []const []const u8) !FocusSet {
+	var fs = FocusSet.init(allocator);
+	errdefer fs.deinit();
+
+	for (only_paths) |path| {
+		// Add the target itself
+		if (!fs.targets.contains(path)) {
+			const duped = try allocator.dupe(u8, path);
+			try fs.targets.put(allocator, duped, {});
+		}
+
+		// Decompose into ancestor prefixes
+		var i: usize = 0;
+		while (i < path.len) : (i += 1) {
+			if (path[i] == '/') {
+				const prefix = path[0..i];
+				if (!fs.ancestors.contains(prefix) and !fs.targets.contains(prefix)) {
+					const duped = try allocator.dupe(u8, prefix);
+					try fs.ancestors.put(allocator, duped, {});
+				}
+			}
+		}
+	}
+	return fs;
+}
+
+/// Focused rendering: like renderDir but focus-aware.
+/// - Ancestor dirs: rendered + recursed via renderDirFocused
+/// - Target dirs: rendered + recursed via normal renderDir (full depth)
+/// - Under-target: rendered via normal renderDir
+/// - Other sibling dirs: rendered as collapsed single-line (no recursion)
+/// - Files: always rendered
+fn renderDirFocused(
+	allocator: std.mem.Allocator,
+	writer: anytype,
+	abs_dir: []const u8,
+	rel_dir: []const u8,
+	depth_left: u32,
+	parent_closed: bool,
+	prefix: []const u8,
+	effective: *path_eval.EffectiveState,
+	priority_dirs: ?*const std.StringHashMapUnmanaged(void),
+	priority_files: ?*const std.StringHashMapUnmanaged(void),
+	config: RenderConfig,
+	stats: *TreeStats,
+	focus: *const FocusSet,
+) !void {
+	if (depth_left == 0) return;
+
+	const scan_path = if (rel_dir.len == 0)
+		abs_dir
+	else blk: {
+		const p = try std.fs.path.join(allocator, &.{ abs_dir, rel_dir });
+		break :blk p;
+	};
+	defer if (rel_dir.len > 0) allocator.free(scan_path);
+
+	const entries = try dir_scan.scanDir(allocator, scan_path, config.sort_mode, config.sort_direction);
+	defer dir_scan.freeEntries(allocator, entries);
+
+	// First pass: evaluate and filter entries
+	var visible = std.ArrayListUnmanaged(VisibleEntry){};
+	defer visible.deinit(allocator);
+
+	for (entries) |entry| {
+		if (std.mem.eql(u8, entry.name, ".") or std.mem.eql(u8, entry.name, "..")) continue;
+
+		const child_rel = if (rel_dir.len == 0)
+			try allocator.dupe(u8, entry.name)
+		else
+			try std.fs.path.join(allocator, &.{ rel_dir, entry.name });
+		defer allocator.free(child_rel);
+
+		const eval_result = effective.evaluatePath(
+			child_rel,
+			parent_closed,
+			config.show_hidden,
+			priority_dirs,
+			priority_files,
+		);
+
+		if (eval_result.is_hidden) {
+			if (!std.mem.eql(u8, entry.name, ".dirtree-state")) {
+				if (entry.kind == .directory) {
+					stats.hidden_dirs += 1;
+				} else {
+					stats.hidden_files += 1;
+				}
+			}
+			continue;
+		}
+
+		if (entry.kind == .directory) {
+			stats.shown_dirs += 1;
+		} else {
+			stats.shown_files += 1;
+		}
+
+		try visible.append(allocator, .{
+			.entry = entry,
+			.is_closed = eval_result.is_closed,
+			.child_rel = try allocator.dupe(u8, child_rel),
+		});
+	}
+	defer {
+		for (visible.items) |v| allocator.free(v.child_rel);
+	}
+
+	// Second pass: render with focus awareness
+	for (visible.items, 0..) |vis, idx| {
+		if (config.head_lines) |hl| {
+			if (stats.total_lines >= hl) {
+				stats.head_reached = true;
+				return;
+			}
+		}
+
+		const is_last = idx == visible.items.len - 1;
+		const connector = if (is_last) LAST else BRANCH;
+		const next_prefix_ext = if (is_last) SPACE else VERT;
+
+		const next_prefix = try std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix, next_prefix_ext });
+		defer allocator.free(next_prefix);
+
+		if (vis.entry.kind == .directory) {
+			const is_ancestor = focus.isAncestor(vis.child_rel);
+			const is_target = focus.isTarget(vis.child_rel);
+			const is_under = focus.isUnderTarget(vis.child_rel);
+
+			if (is_target) {
+				// Target dir: render normally with full depth
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, "/", config);
+				stats.total_lines += 1;
+				if (!vis.is_closed and depth_left > 1) {
+					try renderDir(
+						allocator, writer, abs_dir, vis.child_rel,
+						depth_left - 1, vis.is_closed, next_prefix,
+						effective, priority_dirs, priority_files,
+						config, stats,
+					);
+					if (stats.head_reached) return;
+				}
+			} else if (is_ancestor) {
+				// Ancestor dir: render and recurse with focus
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, "/", config);
+				stats.total_lines += 1;
+				if (depth_left > 1) {
+					try renderDirFocused(
+						allocator, writer, abs_dir, vis.child_rel,
+						depth_left - 1, vis.is_closed, next_prefix,
+						effective, priority_dirs, priority_files,
+						config, stats, focus,
+					);
+					if (stats.head_reached) return;
+				}
+			} else if (is_under) {
+				// Under a target: render via normal renderDir
+				var marker: []const u8 = "/";
+				if (vis.is_closed) {
+					const child_path = if (rel_dir.len == 0)
+						try std.fs.path.join(allocator, &.{ abs_dir, vis.entry.name })
+					else
+						try std.fs.path.join(allocator, &.{ abs_dir, vis.child_rel });
+					defer allocator.free(child_path);
+					if (dir_scan.dirHasChildren(child_path)) marker = "/*";
+				}
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config);
+				stats.total_lines += 1;
+				if (!vis.is_closed and depth_left > 1) {
+					try renderDir(
+						allocator, writer, abs_dir, vis.child_rel,
+						depth_left - 1, vis.is_closed, next_prefix,
+						effective, priority_dirs, priority_files,
+						config, stats,
+					);
+					if (stats.head_reached) return;
+				}
+			} else {
+				// Sibling dir: collapsed (show as dir/* if non-empty, dir/ if empty)
+				const child_path = if (rel_dir.len == 0)
+					try std.fs.path.join(allocator, &.{ abs_dir, vis.entry.name })
+				else
+					try std.fs.path.join(allocator, &.{ abs_dir, vis.child_rel });
+				defer allocator.free(child_path);
+				const marker: []const u8 = if (dir_scan.dirHasChildren(child_path)) "/*" else "/";
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config);
+				stats.total_lines += 1;
+				// No recursion — collapsed
+			}
+		} else {
+			// Files always rendered
+			const is_executable = isExecutable(abs_dir, vis.child_rel);
+			const is_symlink = vis.entry.kind == .symlink;
+			try renderFileEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, is_executable, is_symlink, config);
+			stats.total_lines += 1;
 		}
 	}
 }

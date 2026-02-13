@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " v\xc3\xa0 ",
     .hidden_is_hidden = " b\xe1\xbb\x8b \xe1\xba\xa9n.",
     .hidden_are_hidden = " b\xe1\xbb\x8b \xe1\xba\xa9n.",
+    .stats_shown = " hiển thị",
+    .stats_hidden = " ẩn.",
+    .stats_line_singular = "dòng",
+    .stats_line_plural = "dòng",
+    .stats_separator = "; ",
 
     // ── Th\xc3\xb4ng b\xc3\xa1o l\xe1\xbb\x97i ──────────────────────────────────────────
     .err_depth_requires_number = "L\xe1\xbb\x97i: --depth y\xc3\xaau c\xe1\xba\xa7u \xc4\x91\xe1\xbb\x91i s\xe1\xbb\x91 l\xc3\xa0 s\xe1\xbb\x91",

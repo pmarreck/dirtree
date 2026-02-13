@@ -1195,6 +1195,11 @@ Options:
   --config           Show computed effective configuration
   --test             Run associated tests
   --lang CODE        Set display language (e.g. en, de, fr, ja)
+  --max-lines N      Set large output warning threshold (default: 500)
+  --override-warning Suppress the large output warning
+  --head N           Stop output after N lines
+  --tail N           Show only the last N lines (prefer piping to tail -N)
+  --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)
 
 Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.
 Paths supplied to --show/--hide must be relative (no leading '/').
@@ -1824,7 +1829,7 @@ test_decorated_output_reports_hidden_counts() {
 		return 1
 	fi
 	actual_stderr_pb="$stderr_pb"
-	expected_stderr_plain=$'\n\e[2;3m1 directory is hidden.\e[0m\n'
+	expected_stderr_plain=$'\n\e[2;3m1 directory shown (2 lines); 1 directory hidden.\e[0m\n'
 	encode_printable expected_stderr_pb "$expected_stderr_plain"
 	compare_printable "decorated output reports hidden counts" "$actual_stderr_pb" "$expected_stderr_pb"
 }
@@ -2368,7 +2373,7 @@ STATE
 		return 1
 	fi
 	actual_stderr_pb="$stderr_pb"
-	expected_stderr_plain=$'\n1 directory is hidden.\n'
+	expected_stderr_plain=$'\n5 directories and 1 file shown (7 lines); 1 directory hidden.\n'
 	encode_printable expected_stderr_pb "$expected_stderr_plain"
 	compare_printable "inline INI-MA arrays parse correctly (stderr)" "$actual_stderr_pb" "$expected_stderr_pb"
 }
@@ -3534,6 +3539,259 @@ EOF
 	fi
 }
 
+test_head_truncates_output() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/head-trunc"
+	mkdir -p "$target/aaa" "$target/bbb" "$target/ccc" "$target/ddd"
+	touch "$target/file1.txt" "$target/file2.txt" "$target/file3.txt"
+	# With --head 3, we get root header + 2 entries = 3 lines
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --head 3 "$target"; then
+		echo "capture helper failed for --head" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--head run failed with rc=$rc" >&2
+		return 1
+	fi
+	# Count lines in stdout (grep -c '' counts lines including the last without trailing newline)
+	local plain=""
+	decode_printable plain "$stdout_pb"
+	local line_count
+	line_count=$(printf '%s\n' "$plain" | grep -c '')
+	if [[ "$line_count" -ne 3 ]]; then
+		echo "Expected 3 lines but got $line_count" >&2
+		printf '%s' "$plain" >&2
+		return 1
+	fi
+	# Stderr should contain truncation message
+	if [[ -z "$stderr_pb" ]]; then
+		echo "Expected stderr with truncation notice" >&2
+		return 1
+	fi
+	local stderr_plain=""
+	decode_printable stderr_plain "$stderr_pb"
+	if [[ "$stderr_plain" != *"truncated after 3 lines"* ]]; then
+		echo "Expected truncation message in stderr" >&2
+		echo "Got: $stderr_plain" >&2
+		return 1
+	fi
+}
+
+test_max_lines_persists_to_state() {
+	local workspace target state_file actual_state_pb expected_state_plain expected_state_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/max-lines-persist"
+	mkdir -p "$target/sub"
+	state_file="$target/.dirtree-state"
+	if ! run_quiet "$DIRTREE_BIN" --max-lines 100 "$target"; then
+		echo "dirtree --max-lines 100 failed" >&2
+		return 1
+	fi
+	encode_file_printable actual_state_pb "$state_file"
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\nmax_lines=100\n'
+	encode_printable expected_state_pb "$expected_state_plain"
+	compare_printable "max-lines state persistence" "$actual_state_pb" "$expected_state_pb"
+}
+
+test_large_output_warning_appears() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/warn-large"
+	# Create enough entries to exceed --max-lines 5
+	mkdir -p "$target/a" "$target/b" "$target/c" "$target/d" "$target/e"
+	touch "$target/f1" "$target/f2" "$target/f3"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --max-lines 5 "$target"; then
+		echo "capture helper failed for large output warning" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "large output warning run failed with rc=$rc" >&2
+		return 1
+	fi
+	if [[ -z "$stderr_pb" ]]; then
+		echo "Expected stderr with large output warning" >&2
+		return 1
+	fi
+	local stderr_plain=""
+	decode_printable stderr_plain "$stderr_pb"
+	if [[ "$stderr_plain" != *"Warning:"* ]]; then
+		echo "Expected 'Warning:' in stderr" >&2
+		echo "Got: $stderr_plain" >&2
+		return 1
+	fi
+}
+
+test_override_warning_suppresses_warning() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/override-warn"
+	# Create enough entries to exceed --max-lines 5
+	mkdir -p "$target/a" "$target/b" "$target/c" "$target/d" "$target/e"
+	touch "$target/f1" "$target/f2" "$target/f3"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --max-lines 5 --override-warning "$target"; then
+		echo "capture helper failed for override warning" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "override warning run failed with rc=$rc" >&2
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
+		local stderr_plain=""
+		decode_printable stderr_plain "$stderr_pb"
+		if [[ "$stderr_plain" == *"Warning:"* ]]; then
+			echo "Warning should have been suppressed but got: $stderr_plain" >&2
+			return 1
+		fi
+	fi
+}
+
+test_only_focuses_subtree() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/only-focus"
+	mkdir -p "$target/src/lib" "$target/docs" "$target/test"
+	touch "$target/src/main.zig" "$target/src/lib/util.zig" "$target/docs/README.md" "$target/test/test.sh"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --only src "$target"; then
+		echo "capture helper failed for --only" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--only run failed with rc=$rc" >&2
+		return 1
+	fi
+	local plain=""
+	decode_printable plain "$stdout_pb"
+	# src/ should be expanded (shown as "src/" without *)
+	if [[ "$plain" != *"src/"* ]]; then
+		echo "Expected src/ in output" >&2
+		return 1
+	fi
+	# src/main.zig should be visible (inside expanded target)
+	if [[ "$plain" != *"main.zig"* ]]; then
+		echo "Expected main.zig inside expanded src/" >&2
+		return 1
+	fi
+	# docs should be collapsed (shown as "docs/*")
+	if [[ "$plain" != *"docs/*"* ]]; then
+		echo "Expected docs/* collapsed in output" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+	# test should be collapsed (shown as "test/*")
+	if [[ "$plain" != *"test/*"* ]]; then
+		echo "Expected test/* collapsed in output" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+}
+
+test_only_deep_path_expands_ancestors() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/only-deep"
+	mkdir -p "$target/src/lib" "$target/src/util" "$target/docs"
+	touch "$target/src/lib/foo.zig" "$target/src/util/bar.zig" "$target/docs/README.md"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --only src/lib "$target"; then
+		echo "capture helper failed for --only deep" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--only deep run failed with rc=$rc" >&2
+		return 1
+	fi
+	local plain=""
+	decode_printable plain "$stdout_pb"
+	# src/ should be expanded (ancestor)
+	if [[ "$plain" != *"src/"* ]]; then
+		echo "Expected src/ in output" >&2
+		return 1
+	fi
+	# lib/ should be expanded (target) and foo.zig visible
+	if [[ "$plain" != *"foo.zig"* ]]; then
+		echo "Expected foo.zig inside expanded lib/" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+	# util should be collapsed
+	if [[ "$plain" != *"util/*"* ]]; then
+		echo "Expected util/* collapsed in output" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+	# docs should be collapsed
+	if [[ "$plain" != *"docs/*"* ]]; then
+		echo "Expected docs/* collapsed in output" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+}
+
+test_only_multiple_paths() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/only-multi"
+	mkdir -p "$target/src" "$target/docs" "$target/test"
+	touch "$target/src/main.zig" "$target/docs/README.md" "$target/test/test.sh"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --only src --only docs "$target"; then
+		echo "capture helper failed for --only multi" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--only multi run failed with rc=$rc" >&2
+		return 1
+	fi
+	local plain=""
+	decode_printable plain "$stdout_pb"
+	# Both src and docs should be expanded
+	if [[ "$plain" != *"main.zig"* ]]; then
+		echo "Expected main.zig in expanded src/" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+	if [[ "$plain" != *"README.md"* ]]; then
+		echo "Expected README.md in expanded docs/" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+	# test should be collapsed
+	if [[ "$plain" != *"test/*"* ]]; then
+		echo "Expected test/* collapsed in output" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+}
+
+test_only_nonexistent_collapses_all() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/only-nonexist"
+	mkdir -p "$target/src" "$target/docs"
+	touch "$target/src/main.zig" "$target/docs/README.md"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --only nonexistent "$target"; then
+		echo "capture helper failed for --only nonexistent" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "--only nonexistent run failed with rc=$rc" >&2
+		return 1
+	fi
+	local plain=""
+	decode_printable plain "$stdout_pb"
+	# Both src and docs should be collapsed
+	if [[ "$plain" != *"src/*"* ]]; then
+		echo "Expected src/* collapsed in output" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+	if [[ "$plain" != *"docs/*"* ]]; then
+		echo "Expected docs/* collapsed in output" >&2
+		echo "$plain" >&2
+		return 1
+	fi
+}
+
 run_all_tests() {
 	run_test "dirtree root resolves repo" \
 		test_dirtree_root_points_to_repo_root
@@ -3757,6 +4015,22 @@ run_all_tests() {
 		test_handwritten_glob_in_state_file
 	run_test "mixed glob/regex/literal state file works" \
 		test_mixed_glob_regex_literal_state
+	run_test "--head truncates output" \
+		test_head_truncates_output
+	run_test "--max-lines persists to state" \
+		test_max_lines_persists_to_state
+	run_test "large output warning appears when piped" \
+		test_large_output_warning_appears
+	run_test "--override-warning suppresses warning" \
+		test_override_warning_suppresses_warning
+	run_test "--only focuses subtree" \
+		test_only_focuses_subtree
+	run_test "--only deep path expands ancestors" \
+		test_only_deep_path_expands_ancestors
+	run_test "--only multiple paths" \
+		test_only_multiple_paths
+	run_test "--only nonexistent collapses all" \
+		test_only_nonexistent_collapses_all
 }
 
 run_all_tests

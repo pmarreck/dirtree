@@ -70,6 +70,15 @@ pub const CliConfig = struct {
 	hide_literals: std.ArrayListUnmanaged([]const u8) = .{},
 	hide_regexes: std.ArrayListUnmanaged(ArgEntry) = .{},
 
+	// Output control
+	max_lines: ?u32 = null,
+	override_warning: bool = false,
+	head_lines: ?u32 = null,
+	tail_lines: ?u32 = null,
+
+	// Focus mode
+	only_paths: std.ArrayListUnmanaged([]const u8) = .{},
+
 	// Target directory
 	dir: []const u8 = ".",
 
@@ -89,6 +98,7 @@ pub const CliConfig = struct {
 		self.show_regexes.deinit(allocator);
 		self.hide_literals.deinit(allocator);
 		self.hide_regexes.deinit(allocator);
+		self.only_paths.deinit(allocator);
 	}
 
 	fn freeOwnedEntries(allocator: std.mem.Allocator, entries: *std.ArrayListUnmanaged(ArgEntry)) void {
@@ -255,6 +265,81 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					},
 					.config => {
 						config.show_config = true;
+						i += 1;
+						continue;
+					},
+					.max_lines => {
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_max_lines_requires_number };
+						}
+						const ml_str = args[i];
+						const ml = std.fmt.parseInt(u32, ml_str, 10) catch {
+							config.deinit(allocator);
+							return .{ .err = s.err_max_lines_requires_number };
+						};
+						config.max_lines = ml;
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.override_warning => {
+						config.override_warning = true;
+						i += 1;
+						continue;
+					},
+					.head => {
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_head_requires_number };
+						}
+						const head_str = args[i];
+						const head_val = std.fmt.parseInt(u32, head_str, 10) catch {
+							config.deinit(allocator);
+							return .{ .err = s.err_head_requires_number };
+						};
+						config.head_lines = head_val;
+						i += 1;
+						continue;
+					},
+					.tail => {
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_tail_requires_number };
+						}
+						const tail_str = args[i];
+						const tail_val = std.fmt.parseInt(u32, tail_str, 10) catch {
+							config.deinit(allocator);
+							return .{ .err = s.err_tail_requires_number };
+						};
+						config.tail_lines = tail_val;
+						i += 1;
+						continue;
+					},
+					.only => {
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_only_requires_path };
+						}
+						var only_path: []const u8 = args[i];
+						// Strip trailing slashes
+						while (only_path.len > 0 and only_path[only_path.len - 1] == '/') {
+							only_path = only_path[0 .. only_path.len - 1];
+						}
+						// Strip leading slashes (relative paths only)
+						while (only_path.len > 0 and only_path[0] == '/') {
+							only_path = only_path[1..];
+						}
+						if (only_path.len > 0) {
+							config.only_paths.append(allocator, only_path) catch {
+								config.deinit(allocator);
+								return .{ .err = s.err_only_requires_path };
+							};
+						}
 						i += 1;
 						continue;
 					},
@@ -697,6 +782,16 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll(s.help_opt_test);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_lang);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_max_lines);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_override_warning);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_head);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_tail);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_only);
 	try writer.writeAll("\n\n");
 	try writer.writeAll(s.help_regex_note);
 	try writer.writeAll("\n");
@@ -906,6 +1001,8 @@ pub fn main() !u8 {
 				.show_hidden = cfg.show_hidden,
 				.sort_mode = sort_mode,
 				.sort_direction = sort_direction,
+				.head_lines = cfg.head_lines,
+				.only_paths = cfg.only_paths.items,
 			};
 
 			// Persist state if modified
@@ -914,6 +1011,34 @@ pub fn main() !u8 {
 					try stderr.print("Warning: could not persist state: {}\n", .{err});
 					try stderr.flush();
 				};
+			}
+
+			// Pre-scan warning for large output when piped
+			if (!cfg.stdout_is_tty and !cfg.override_warning) {
+				const threshold = effective.max_lines orelse 500;
+				const estimated = tree_render.countVisibleEntries(
+					allocator,
+					abs_dir,
+					"",
+					max_depth,
+					false,
+					&effective,
+					if (priority.enabled) &priority.dirs else null,
+					if (priority.enabled) &priority.files else null,
+					cfg.show_hidden,
+				);
+				if (estimated + 1 > threshold) { // +1 for root header line
+					const ws = i18n.tr();
+					try stderr.writeAll("\n");
+					if (!use_simple) try stderr.writeAll("\x1b[1;33m");
+					try stderr.writeAll(ws.warn_large_output_prefix);
+					try stderr.print("{}", .{estimated + 1});
+					try stderr.writeAll(ws.warn_large_output_mid);
+					try stderr.print("{}", .{threshold});
+					try stderr.writeAll(ws.warn_large_output_suffix);
+					if (!use_simple) try stderr.writeAll("\x1b[0m");
+					try stderr.writeAll("\n");
+				}
 			}
 
 			// Render the tree
@@ -1025,6 +1150,11 @@ fn applyCliOverrides(allocator: std.mem.Allocator, cfg: *const CliConfig, effect
 	}
 	if (cfg.no_hyperlinks) {
 		effective.hyperlink_preference = false;
+	}
+
+	// Apply CLI max_lines
+	if (cfg.max_lines) |ml| {
+		effective.max_lines = ml;
 	}
 }
 
@@ -1163,6 +1293,9 @@ fn persistState(
 	}
 	if (cfg.no_hyperlinks) {
 		sf.hyperlink_preference = false;
+	}
+	if (cfg.max_lines) |ml| {
+		sf.max_lines = ml;
 	}
 
 	// Apply open/close/show/hide from CLI

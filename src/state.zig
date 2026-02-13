@@ -86,6 +86,7 @@ pub const StateFile = struct {
 	sort_direction: ?SortDirection = null,
 	color_preference: ?bool = null,
 	hyperlink_preference: ?bool = null,
+	max_lines: ?u32 = null,
 
 	// Collections
 	open_entries: std.ArrayListUnmanaged(StateEntry) = .{},
@@ -389,6 +390,13 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 					const duped = try state.dupeStr(raw_line);
 					try state.passthrough_lines.append(allocator, duped);
 				}
+			} else if (std.mem.eql(u8, key, "max_lines")) {
+				if (std.fmt.parseInt(u32, value, 10)) |ml| {
+					state.max_lines = ml;
+				} else |_| {
+					const duped = try state.dupeStr(raw_line);
+					try state.passthrough_lines.append(allocator, duped);
+				}
 			} else if (isKnownArrayKey(key)) {
 				if (std.mem.eql(u8, compact, "[")) {
 					current_array = key;
@@ -495,6 +503,7 @@ pub fn writeStateFile(state: *const StateFile, writer: anytype) !void {
 	if (state.sort_direction != null) scalar_count += 1;
 	if (state.color_preference != null) scalar_count += 1;
 	if (state.hyperlink_preference != null) scalar_count += 1;
+	if (state.max_lines != null) scalar_count += 1;
 
 	if (scalar_count > 0) {
 		if (wrote_block) try writer.print("\n", .{});
@@ -512,6 +521,9 @@ pub fn writeStateFile(state: *const StateFile, writer: anytype) !void {
 		}
 		if (state.hyperlink_preference) |h| {
 			try writer.print("hyperlink={s}\n", .{if (h) "true" else "false"});
+		}
+		if (state.max_lines) |ml| {
+			try writer.print("max_lines={}\n", .{ml});
 		}
 		wrote_block = true;
 	}

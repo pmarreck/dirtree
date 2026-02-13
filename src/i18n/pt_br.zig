@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = " e ",
     .hidden_is_hidden = " est\xc3\xa1 oculto.",
     .hidden_are_hidden = " est\xc3\xa3o ocultos.",
+    .stats_shown = " exibidos",
+    .stats_hidden = " ocultos.",
+    .stats_line_singular = "linha",
+    .stats_line_plural = "linhas",
+    .stats_separator = "; ",
 
     // ── Mensagens de erro ──────────────────────────────────────
     .err_depth_requires_number = "Erro: --depth requer um argumento num\xc3\xa9rico",

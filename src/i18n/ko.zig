@@ -49,6 +49,11 @@ pub const strings = Strings{
     .hidden_and = "과 ",
     .hidden_is_hidden = "이 숨겨져 있습니다.",
     .hidden_are_hidden = "이 숨겨져 있습니다.",
+    .stats_shown = " 표시됨",
+    .stats_hidden = " 숨김.",
+    .stats_line_singular = "줄",
+    .stats_line_plural = "줄",
+    .stats_separator = "; ",
 
     // ── 오류 메시지 ────────────────────────────────────────────
     .err_depth_requires_number = "오류: --depth에는 숫자 인수가 필요합니다",

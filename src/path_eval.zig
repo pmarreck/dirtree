@@ -62,6 +62,7 @@ pub const EffectiveState = struct {
 	sort_direction: ?state_mod.SortDirection = null,
 	color_preference: ?bool = null,
 	hyperlink_preference: ?bool = null,
+	max_lines: ?u32 = null,
 
 	// Literal hash maps
 	open_literals: std.StringHashMapUnmanaged(void) = .{},
@@ -74,6 +75,12 @@ pub const EffectiveState = struct {
 	close_regexes: std.ArrayListUnmanaged(CompiledRegex) = .{},
 	show_regexes: std.ArrayListUnmanaged(CompiledRegex) = .{},
 	hide_regexes: std.ArrayListUnmanaged(CompiledRegex) = .{},
+
+	// Combined regexes for fast non-negated matching (alternation of all non-negated patterns)
+	open_combined: ?regex_lib.Regex = null,
+	close_combined: ?regex_lib.Regex = null,
+	show_combined: ?regex_lib.Regex = null,
+	hide_combined: ?regex_lib.Regex = null,
 
 	// Track whether state was modified and needs to be persisted
 	needs_migration: bool = false,
@@ -101,6 +108,11 @@ pub const EffectiveState = struct {
 		self.close_regexes.deinit(a);
 		self.show_regexes.deinit(a);
 		self.hide_regexes.deinit(a);
+
+		if (self.open_combined) |*c| c.deinit();
+		if (self.close_combined) |*c| c.deinit();
+		if (self.show_combined) |*c| c.deinit();
+		if (self.hide_combined) |*c| c.deinit();
 	}
 
 	pub fn dupeStr(self: *EffectiveState, s: []const u8) ![]const u8 {
@@ -119,10 +131,10 @@ pub const EffectiveState = struct {
 		priority_files: ?*const std.StringHashMapUnmanaged(void),
 	) PathEvalResult {
 		// Get match types for all four categories
-		var open_type = self.matchCategory(rel, &self.open_literals, &self.open_regexes);
-		var close_type = self.matchCategory(rel, &self.close_literals, &self.close_regexes);
-		var show_type = self.matchCategory(rel, &self.show_literals, &self.show_regexes);
-		var hide_type = self.matchCategory(rel, &self.hide_literals, &self.hide_regexes);
+		var open_type = self.matchCategory(rel, &self.open_literals, &self.open_regexes, &self.open_combined);
+		var close_type = self.matchCategory(rel, &self.close_literals, &self.close_regexes, &self.close_combined);
+		var show_type = self.matchCategory(rel, &self.show_literals, &self.show_regexes, &self.show_combined);
+		var hide_type = self.matchCategory(rel, &self.hide_literals, &self.hide_regexes, &self.hide_combined);
 
 		// If show_hidden, disable hide matching
 		if (show_hidden) {
@@ -200,6 +212,7 @@ pub const EffectiveState = struct {
 		rel: []const u8,
 		literals: *const std.StringHashMapUnmanaged(void),
 		regexes: *const std.ArrayListUnmanaged(CompiledRegex),
+		combined: *?regex_lib.Regex,
 	) MatchType {
 		_ = self;
 		// Check literals first
@@ -207,11 +220,23 @@ pub const EffectiveState = struct {
 			return .literal;
 		}
 
-		// Check regexes
-		// We need mutable access to compiled regexes for matching
-		for (@constCast(regexes).items) |*r| {
-			if (r.matches(rel)) {
+		if (combined.*) |*c| {
+			// Fast path: combined regex covers all non-negated patterns
+			if (c.partialMatch(rel) catch false) {
 				return .regex;
+			}
+			// Only check negated patterns individually
+			for (@constCast(regexes).items) |*r| {
+				if (r.negated and r.matches(rel)) {
+					return .regex;
+				}
+			}
+		} else {
+			// No combined regex built: check all patterns individually (fallback)
+			for (@constCast(regexes).items) |*r| {
+				if (r.matches(rel)) {
+					return .regex;
+				}
 			}
 		}
 
@@ -240,6 +265,8 @@ const InheritedState = struct {
 	color_preference_set: bool = false,
 	hyperlink_preference: ?bool = null,
 	hyperlink_preference_set: bool = false,
+	max_lines: ?u32 = null,
+	max_lines_set: bool = false,
 
 	// Literal maps
 	open_literals: std.StringHashMapUnmanaged(void) = .{},
@@ -327,6 +354,10 @@ const InheritedState = struct {
 		if (sf.hyperlink_preference != null) {
 			self.hyperlink_preference = sf.hyperlink_preference;
 			self.hyperlink_preference_set = true;
+		}
+		if (sf.max_lines != null) {
+			self.max_lines = sf.max_lines;
+			self.max_lines_set = true;
 		}
 
 		// Literals: open removes from close and vice versa
@@ -656,6 +687,7 @@ fn rebuildEffectiveState(
 		effective.sort_direction = sf.sort_direction orelse inherited.sort_direction;
 		effective.color_preference = sf.color_preference orelse inherited.color_preference;
 		effective.hyperlink_preference = sf.hyperlink_preference orelse inherited.hyperlink_preference;
+		effective.max_lines = sf.max_lines orelse inherited.max_lines;
 		effective.needs_migration = sf.needs_migration;
 	} else {
 		effective.default_state = inherited.default_state;
@@ -665,6 +697,7 @@ fn rebuildEffectiveState(
 		effective.sort_direction = inherited.sort_direction;
 		effective.color_preference = inherited.color_preference;
 		effective.hyperlink_preference = inherited.hyperlink_preference;
+		effective.max_lines = inherited.max_lines;
 	}
 
 	// Start with inherited literals
@@ -863,6 +896,12 @@ fn rebuildEffectiveState(
 	try compileRegexMap(allocator, &show_regex_map, &effective.show_regexes, &effective.strings);
 	try compileRegexMap(allocator, &hide_regex_map, &effective.hide_regexes, &effective.strings);
 
+	// Build combined regexes for fast non-negated matching
+	effective.open_combined = try buildCombinedRegex(allocator, &effective.open_regexes, &effective.strings);
+	effective.close_combined = try buildCombinedRegex(allocator, &effective.close_regexes, &effective.strings);
+	effective.show_combined = try buildCombinedRegex(allocator, &effective.show_regexes, &effective.strings);
+	effective.hide_combined = try buildCombinedRegex(allocator, &effective.hide_regexes, &effective.strings);
+
 	return effective;
 }
 
@@ -895,6 +934,48 @@ fn compileRegexMap(
 			.kind = info.kind,
 		});
 	}
+}
+
+/// Build a single combined regex from all non-negated patterns using alternation.
+/// Returns null if there are no non-negated patterns.
+fn buildCombinedRegex(
+	allocator: std.mem.Allocator,
+	regexes: *const std.ArrayListUnmanaged(CompiledRegex),
+	strings: *std.ArrayListUnmanaged([]const u8),
+) !?regex_lib.Regex {
+	// Count non-negated patterns
+	var count: usize = 0;
+	for (regexes.items) |r| {
+		if (!r.negated) count += 1;
+	}
+	if (count == 0) return null;
+
+	// Single pattern: compile it directly (no alternation needed)
+	if (count == 1) {
+		for (regexes.items) |r| {
+			if (!r.negated) {
+				return regex_lib.Regex.compile(allocator, r.pattern) catch null;
+			}
+		}
+	}
+
+	// Multiple patterns: build alternation (pat1|pat2|...|patN)
+	var buf: std.ArrayListUnmanaged(u8) = .{};
+	defer buf.deinit(allocator);
+	try buf.append(allocator, '(');
+	var first = true;
+	for (regexes.items) |r| {
+		if (!r.negated) {
+			if (!first) try buf.append(allocator, '|');
+			try buf.appendSlice(allocator, r.pattern);
+			first = false;
+		}
+	}
+	try buf.append(allocator, ')');
+
+	const pattern = try allocator.dupe(u8, buf.items);
+	try strings.append(allocator, pattern);
+	return regex_lib.Regex.compile(allocator, pattern) catch null;
 }
 
 /// Helper: test if a single regex pattern matches a string (used for .dirtree-state check).
@@ -1134,6 +1215,71 @@ test "evaluatePath: negated regex hide hides non-matches" {
 
 	const result2 = es.evaluatePath("skip.txt", false, false, null, null);
 	try std.testing.expect(result2.is_hidden);
+}
+
+
+test "combined regex: multiple non-negated hide patterns" {
+	const allocator = std.testing.allocator;
+
+	var inherited = InheritedState{ .allocator = allocator };
+	defer inherited.deinit();
+
+	// Build a state file with multiple hide regex patterns
+	var sf = try state_mod.parseStateFile(allocator, "ver=1.2\nhide=[\n\t/\\.log$/\n\t/\\.tmp$/\n\t/\\.bak$/\n]");
+	defer sf.deinit();
+	try inherited.mergeFrom(&sf);
+
+	var es = try rebuildEffectiveState(allocator, &inherited, null);
+	defer es.deinit();
+
+	// Combined regex should be built
+	try std.testing.expect(es.hide_combined != null);
+
+	// All patterns should match via combined regex
+	var result = es.evaluatePath("debug.log", false, false, null, null);
+	try std.testing.expect(result.is_hidden);
+
+	result = es.evaluatePath("scratch.tmp", false, false, null, null);
+	try std.testing.expect(result.is_hidden);
+
+	result = es.evaluatePath("old.bak", false, false, null, null);
+	try std.testing.expect(result.is_hidden);
+
+	// Non-matching files should not be hidden
+	result = es.evaluatePath("main.zig", false, false, null, null);
+	try std.testing.expect(!result.is_hidden);
+}
+
+test "combined regex: negated + non-negated mix" {
+	const allocator = std.testing.allocator;
+
+	var inherited = InheritedState{ .allocator = allocator };
+	defer inherited.deinit();
+
+	// Build a state file with a negated hide pattern (hide everything NOT matching .zig$)
+	// and a show pattern for specific files
+	var sf = try state_mod.parseStateFile(allocator, "ver=1.2\nhide=[\n\t/\\.log$/\n\t!/\\.zig$/\n]");
+	defer sf.deinit();
+	try inherited.mergeFrom(&sf);
+
+	var es = try rebuildEffectiveState(allocator, &inherited, null);
+	defer es.deinit();
+
+	// Combined regex should be built (from the non-negated .log$ pattern)
+	try std.testing.expect(es.hide_combined != null);
+
+	// .log files should be hidden (matches non-negated pattern)
+	var result = es.evaluatePath("debug.log", false, false, null, null);
+	try std.testing.expect(result.is_hidden);
+
+	// .txt files should be hidden (don't match negated .zig$ pattern → negated match = true)
+	result = es.evaluatePath("readme.txt", false, false, null, null);
+	try std.testing.expect(result.is_hidden);
+
+	// .zig files: .log$ doesn't match, but !.zig$ means "hide if NOT .zig" → .zig files NOT hidden by negated
+	// Actually the negated check: the pattern .zig$ DOES match main.zig, so negated match returns false
+	result = es.evaluatePath("main.zig", false, false, null, null);
+	try std.testing.expect(!result.is_hidden);
 }
 
 test "InheritedState.mergeFrom: mutual exclusion" {

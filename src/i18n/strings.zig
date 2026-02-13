@@ -38,7 +38,7 @@ pub const Strings = struct {
     // ── About text ─────────────────────────────────────────────
     about_text: [:0]const u8,
 
-    // ── Hidden count fragments ─────────────────────────────────
+    // ── Stats count fragments ──────────────────────────────────
     hidden_dir_singular: [:0]const u8,
     hidden_dir_plural: [:0]const u8,
     hidden_file_singular: [:0]const u8,
@@ -46,8 +46,31 @@ pub const Strings = struct {
     hidden_and: [:0]const u8,
     hidden_is_hidden: [:0]const u8,
     hidden_are_hidden: [:0]const u8,
+    stats_shown: [:0]const u8,
+    stats_hidden: [:0]const u8,
+    stats_line_singular: [:0]const u8,
+    stats_line_plural: [:0]const u8,
+    stats_separator: [:0]const u8,
+
+    // ── Help text (new flags) ──────────────────────────────────
+    help_opt_max_lines: [:0]const u8 = "  --max-lines N      Set large output warning threshold (default: 500)",
+    help_opt_override_warning: [:0]const u8 = "  --override-warning Suppress the large output warning",
+    help_opt_head: [:0]const u8 = "  --head N           Stop output after N lines",
+    help_opt_tail: [:0]const u8 = "  --tail N           Show only the last N lines (prefer piping to tail -N)",
+    help_opt_only: [:0]const u8 = "  --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)",
+
+    // ── Warning messages (large output) ────────────────────────
+    warn_large_output_prefix: [:0]const u8 = "Warning: output is ~",
+    warn_large_output_mid: [:0]const u8 = " lines (threshold: ",
+    warn_large_output_suffix: [:0]const u8 = "). Consider: --depth N, --head N, or --hide patterns.",
+    warn_truncated_head_prefix: [:0]const u8 = "(Output truncated after ",
+    warn_truncated_head_suffix: [:0]const u8 = " lines by --head)",
 
     // ── Error messages ─────────────────────────────────────────
+    err_max_lines_requires_number: [:0]const u8 = "Error: --max-lines requires a numeric argument",
+    err_head_requires_number: [:0]const u8 = "Error: --head requires a numeric argument",
+    err_tail_requires_number: [:0]const u8 = "Error: --tail requires a numeric argument",
+    err_only_requires_path: [:0]const u8 = "Error: --only requires a path argument",
     err_depth_requires_number: [:0]const u8,
     err_sort_requires_mode: [:0]const u8,
     err_default_requires_value: [:0]const u8,
