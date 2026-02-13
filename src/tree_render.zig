@@ -271,6 +271,7 @@ fn renderDir(
 			child_rel,
 			parent_closed,
 			config.show_hidden,
+			entry.kind == .directory,
 			priority_dirs,
 			priority_files,
 		);
@@ -361,8 +362,7 @@ fn renderDir(
 				if (stats.head_reached) return;
 			}
 		} else {
-			// Check if file is executable or symlink
-			const is_executable = isExecutable(abs_dir, vis.child_rel);
+			const is_executable = (vis.entry.mode & 0o111) != 0;
 			const is_symlink = vis.entry.kind == .symlink;
 
 			try renderFileEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, is_executable, is_symlink, config);
@@ -411,6 +411,7 @@ pub fn countVisibleEntries(
 			child_rel,
 			parent_closed,
 			show_hidden,
+			entry.kind == .directory,
 			priority_dirs,
 			priority_files,
 		);
@@ -570,6 +571,7 @@ fn renderDirFocused(
 			child_rel,
 			parent_closed,
 			config.show_hidden,
+			entry.kind == .directory,
 			priority_dirs,
 			priority_files,
 		);
@@ -693,7 +695,7 @@ fn renderDirFocused(
 			}
 		} else {
 			// Files always rendered
-			const is_executable = isExecutable(abs_dir, vis.child_rel);
+			const is_executable = (vis.entry.mode & 0o111) != 0;
 			const is_symlink = vis.entry.kind == .symlink;
 			try renderFileEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, is_executable, is_symlink, config);
 			stats.total_lines += 1;
@@ -846,17 +848,6 @@ fn renderFileEntry(
 	try writer.writeAll("\n");
 }
 
-/// Check if a file is executable.
-fn isExecutable(abs_dir: []const u8, child_rel: []const u8) bool {
-	// Use the directory to stat the file
-	var dir = std.fs.cwd().openDir(abs_dir, .{}) catch return false;
-	defer dir.close();
-
-	const stat = dir.statFile(child_rel) catch return false;
-	// Check for executable permission in mode bits
-	return (stat.mode & 0o111) != 0;
-}
-
 /// Read a symlink's target path. Returns owned slice or null on failure.
 fn readSymlinkTarget(allocator: std.mem.Allocator, abs_dir: []const u8, child_rel: []const u8) ?[]const u8 {
 	var dir = std.fs.cwd().openDir(abs_dir, .{}) catch return null;
@@ -934,6 +925,3 @@ test "tree connectors" {
 	try std.testing.expectEqualStrings("    ", SPACE);
 }
 
-test "isExecutable: non-existent returns false" {
-	try std.testing.expect(!isExecutable("/tmp", "nonexistent_file_xyz"));
-}

@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
 	const target = b.standardTargetOptions(.{});
-	const optimize = b.standardOptimizeOption(.{});
+	const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode (default: ReleaseFast)") orelse .ReleaseFast;
 
 	// Get the PCRE2 dependency (C library, statically linked)
 	const pcre2_dep = b.dependency("pcre2", .{

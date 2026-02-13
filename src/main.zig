@@ -804,6 +804,12 @@ pub fn main() !u8 {
 	var stderr_writer = std.fs.File.stderr().writer(&stderr_buf);
 	const stderr = &stderr_writer.interface;
 
+	// Warn if running an unoptimized debug build
+	if (comptime @import("builtin").mode == .Debug) {
+		try stderr.writeAll("\x1b[33mDEBUG BUILD\x1b[0m\n");
+		try stderr.flush();
+	}
+
 	var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 	defer arena.deinit();
 	const allocator = arena.allocator();

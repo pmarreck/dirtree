@@ -126,12 +126,13 @@ pub const EffectiveState = struct {
 		rel: []const u8,
 		parent_closed: bool,
 		show_hidden: bool,
+		is_dir: bool,
 		priority_dirs: ?*const std.StringHashMapUnmanaged(void),
 		priority_files: ?*const std.StringHashMapUnmanaged(void),
 	) PathEvalResult {
-		// Get match types for all four categories
-		var open_type = self.matchCategory(rel, &self.open_literals, &self.open_regexes, &self.open_combined);
-		var close_type = self.matchCategory(rel, &self.close_literals, &self.close_regexes, &self.close_combined);
+		// open/close only apply to directories — skip expensive regex evaluation for files
+		var open_type: MatchType = if (is_dir) self.matchCategory(rel, &self.open_literals, &self.open_regexes, &self.open_combined) else .none;
+		var close_type: MatchType = if (is_dir) self.matchCategory(rel, &self.close_literals, &self.close_regexes, &self.close_combined) else .none;
 		var show_type = self.matchCategory(rel, &self.show_literals, &self.show_regexes, &self.show_combined);
 		var hide_type = self.matchCategory(rel, &self.hide_literals, &self.hide_regexes, &self.hide_combined);
 
@@ -963,7 +964,7 @@ test "evaluatePath: basic hidden" {
 	const key = try es.dupeStr("secret");
 	try es.hide_literals.put(allocator, key, {});
 
-	const result = es.evaluatePath("secret", false, false, null, null);
+	const result = es.evaluatePath("secret", false, false, true, null, null);
 	try std.testing.expect(result.is_hidden);
 	try std.testing.expect(!result.is_closed);
 }
@@ -976,7 +977,7 @@ test "evaluatePath: basic closed" {
 	const key = try es.dupeStr(".git");
 	try es.close_literals.put(allocator, key, {});
 
-	const result = es.evaluatePath(".git", false, false, null, null);
+	const result = es.evaluatePath(".git", false, false, true, null, null);
 	try std.testing.expect(!result.is_hidden);
 	try std.testing.expect(result.is_closed);
 }
@@ -986,7 +987,7 @@ test "evaluatePath: parent closed propagates" {
 	var es = EffectiveState{ .allocator = allocator };
 	defer es.deinit();
 
-	const result = es.evaluatePath("any_dir", true, false, null, null);
+	const result = es.evaluatePath("any_dir", true, false, true, null, null);
 	try std.testing.expect(result.is_closed);
 }
 
@@ -999,7 +1000,7 @@ test "evaluatePath: open overrides default closed" {
 	const key = try es.dupeStr("src");
 	try es.open_literals.put(allocator, key, {});
 
-	const result = es.evaluatePath("src", false, false, null, null);
+	const result = es.evaluatePath("src", false, false, true, null, null);
 	try std.testing.expect(!result.is_closed);
 }
 
@@ -1010,7 +1011,7 @@ test "evaluatePath: default closed" {
 
 	es.default_state = .closed;
 
-	const result = es.evaluatePath("any_dir", false, false, null, null);
+	const result = es.evaluatePath("any_dir", false, false, true, null, null);
 	try std.testing.expect(result.is_closed);
 }
 
@@ -1022,7 +1023,7 @@ test "evaluatePath: show_hidden overrides hide" {
 	const key = try es.dupeStr("secret");
 	try es.hide_literals.put(allocator, key, {});
 
-	const result = es.evaluatePath("secret", false, true, null, null);
+	const result = es.evaluatePath("secret", false, true, true, null, null);
 	try std.testing.expect(!result.is_hidden);
 }
 
@@ -1044,7 +1045,7 @@ test "evaluatePath: literal beats regex in open/close conflict" {
 		.compiled = compiled,
 	});
 
-	const result = es.evaluatePath("src", false, false, null, null);
+	const result = es.evaluatePath("src", false, false, true, null, null);
 	// literal open beats regex close
 	try std.testing.expect(!result.is_closed);
 }
@@ -1063,10 +1064,10 @@ test "evaluatePath: regex hide" {
 		.compiled = compiled,
 	});
 
-	const result = es.evaluatePath(".hidden_file", false, false, null, null);
+	const result = es.evaluatePath(".hidden_file", false, false, true, null, null);
 	try std.testing.expect(result.is_hidden);
 
-	const result2 = es.evaluatePath("visible_file", false, false, null, null);
+	const result2 = es.evaluatePath("visible_file", false, false, true, null, null);
 	try std.testing.expect(!result2.is_hidden);
 }
 
@@ -1084,7 +1085,7 @@ test "evaluatePath: priority dirs override" {
 	defer pd.deinit(allocator);
 	try pd.put(allocator, "src", {});
 
-	const result = es.evaluatePath("src", false, false, &pd, null);
+	const result = es.evaluatePath("src", false, false, true, &pd, null);
 	try std.testing.expect(!result.is_hidden);
 	try std.testing.expect(!result.is_closed);
 }
@@ -1154,7 +1155,7 @@ test "rebuildEffectiveState: auto-hides .dirtree-state" {
 	defer es.deinit();
 
 	// .dirtree-state should be matched by hide regexes
-	const result = es.evaluatePath(".dirtree-state", false, false, null, null);
+	const result = es.evaluatePath(".dirtree-state", false, false, true, null, null);
 	try std.testing.expect(result.is_hidden);
 }
 
@@ -1175,10 +1176,10 @@ test "evaluatePath: negated regex hide hides non-matches" {
 	// keep.exe should NOT be hidden (matches pattern, negation means hide non-matches)
 	// Actually, \\.exe$ matches literal-backslash + any-char + exe, so keep.exe does NOT match
 	// With negation, non-matches are hidden, so keep.exe IS hidden
-	const result1 = es.evaluatePath("keep.exe", false, false, null, null);
+	const result1 = es.evaluatePath("keep.exe", false, false, true, null, null);
 	try std.testing.expect(result1.is_hidden);
 
-	const result2 = es.evaluatePath("skip.txt", false, false, null, null);
+	const result2 = es.evaluatePath("skip.txt", false, false, true, null, null);
 	try std.testing.expect(result2.is_hidden);
 }
 
@@ -1201,17 +1202,17 @@ test "combined regex: multiple non-negated hide patterns" {
 	try std.testing.expect(es.hide_combined != null);
 
 	// All patterns should match via combined regex
-	var result = es.evaluatePath("debug.log", false, false, null, null);
+	var result = es.evaluatePath("debug.log", false, false, true, null, null);
 	try std.testing.expect(result.is_hidden);
 
-	result = es.evaluatePath("scratch.tmp", false, false, null, null);
+	result = es.evaluatePath("scratch.tmp", false, false, true, null, null);
 	try std.testing.expect(result.is_hidden);
 
-	result = es.evaluatePath("old.bak", false, false, null, null);
+	result = es.evaluatePath("old.bak", false, false, true, null, null);
 	try std.testing.expect(result.is_hidden);
 
 	// Non-matching files should not be hidden
-	result = es.evaluatePath("main.zig", false, false, null, null);
+	result = es.evaluatePath("main.zig", false, false, true, null, null);
 	try std.testing.expect(!result.is_hidden);
 }
 
@@ -1234,16 +1235,16 @@ test "combined regex: negated + non-negated mix" {
 	try std.testing.expect(es.hide_combined != null);
 
 	// .log files should be hidden (matches non-negated pattern)
-	var result = es.evaluatePath("debug.log", false, false, null, null);
+	var result = es.evaluatePath("debug.log", false, false, true, null, null);
 	try std.testing.expect(result.is_hidden);
 
 	// .txt files should be hidden (don't match negated .zig$ pattern → negated match = true)
-	result = es.evaluatePath("readme.txt", false, false, null, null);
+	result = es.evaluatePath("readme.txt", false, false, true, null, null);
 	try std.testing.expect(result.is_hidden);
 
 	// .zig files: .log$ doesn't match, but !.zig$ means "hide if NOT .zig" → .zig files NOT hidden by negated
 	// Actually the negated check: the pattern .zig$ DOES match main.zig, so negated match returns false
-	result = es.evaluatePath("main.zig", false, false, null, null);
+	result = es.evaluatePath("main.zig", false, false, true, null, null);
 	try std.testing.expect(!result.is_hidden);
 }
 

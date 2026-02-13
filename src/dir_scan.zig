@@ -10,6 +10,12 @@ pub const DirEntry = struct {
 	name: []const u8, // owned by caller/arena
 	kind: EntryKind,
 	mtime: i128, // nanoseconds since epoch
+	mode: u32, // permission bits from stat
+};
+
+pub const StatInfo = struct {
+	mtime: i128,
+	mode: u32,
 };
 
 pub const SortMode = enum {
@@ -41,6 +47,7 @@ pub fn scanDir(
 	};
 	defer dir.close();
 
+	const need_stat = sort_mode == .modified;
 	var iter = dir.iterate();
 	while (try iter.next()) |entry| {
 		const kind: EntryKind = switch (entry.kind) {
@@ -49,14 +56,15 @@ pub fn scanDir(
 			else => .file,
 		};
 
-		// Get mtime via stat
-		const mtime = getMtime(dir, entry.name) catch 0;
+		// Only stat when needed for mtime sorting; mode is fetched lazily during render
+		const stat_info: StatInfo = if (need_stat) getStatInfo(dir, entry.name) else .{ .mtime = 0, .mode = 0 };
 
 		const name = try allocator.dupe(u8, entry.name);
 		try entries.append(allocator, .{
 			.name = name,
 			.kind = kind,
-			.mtime = mtime,
+			.mtime = stat_info.mtime,
+			.mode = stat_info.mode,
 		});
 	}
 
@@ -92,14 +100,13 @@ pub fn dirHasChildren(dir_path: []const u8) bool {
 	return false;
 }
 
-fn getMtime(dir: std.fs.Dir, name: []const u8) !i128 {
+fn getStatInfo(dir: std.fs.Dir, name: []const u8) StatInfo {
 	const stat = dir.statFile(name) catch |err| {
 		switch (err) {
-			error.FileNotFound => return 0,
-			else => return err,
+			else => return .{ .mtime = 0, .mode = 0 },
 		}
 	};
-	return stat.mtime;
+	return .{ .mtime = stat.mtime, .mode = @intCast(stat.mode) };
 }
 
 // Sort comparisons
