@@ -2,26 +2,30 @@
 # Build dirtree
 set -euo pipefail
 
-MODE="ReleaseFast"
-for arg in "$@"; do
-	case "$arg" in
-		--debug)   MODE="Debug" ;;
-		--test)    MODE="Debug" ;;
-		--release) MODE="ReleaseFast" ;;
-		--help|-h)
-			echo "Usage: ./build [--debug|--test|--release]"
-			echo "  --debug    Build with debug info"
-			echo "  --test     Build in debug mode (for testing)"
-			echo "  --release  Build with optimizations (default)"
-			exit 0
-			;;
-		*)
-			echo "Unknown argument: $arg" >&2
-			exit 1
-			;;
-	esac
-done
+MIN_ZIG_VERSION="0.15.0"
 
-zig build "-Doptimize=$MODE"
+# Compare semver: returns 0 if $1 >= $2
+version_gte() {
+	printf '%s\n%s\n' "$2" "$1" | sort -V | head -n1 | grep -qx "$2"
+}
 
-echo "Built zig-out/bin/dirtree ($MODE)"
+if command -v nix &>/dev/null; then
+	echo "Using nix develop to build..."
+	exec nix develop -c zig build "$@"
+elif command -v zig &>/dev/null; then
+	zig_ver=$(zig version)
+	if version_gte "$zig_ver" "$MIN_ZIG_VERSION"; then
+		echo "Using zig $zig_ver to build..."
+		exec zig build "$@"
+	else
+		echo "Error: zig $zig_ver found but >= $MIN_ZIG_VERSION is required" >&2
+		echo "Install a newer zig or install nix (https://nixos.org/download)" >&2
+		exit 1
+	fi
+else
+	echo "Error: neither nix nor zig found on PATH" >&2
+	echo "Install one of:" >&2
+	echo "  - nix: https://nixos.org/download" >&2
+	echo "  - zig >= $MIN_ZIG_VERSION: https://ziglang.org/download/" >&2
+	exit 1
+fi
