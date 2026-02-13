@@ -1,47 +1,72 @@
-ver=1.1
+# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree
+ver=1.2
 depth=3
 
 close=[
-	/^(.*/)?_build$/
-	/^(.*/)?\.cache$/
-	/^(.*/)?\.cargo$/
-	/^(.*/)?\.claude$/
-	/^(.*/)?\.codegpt$/
-	/^(.*/)?\.codeium$/
-	/^(.*/)?\.codex$/
-	/^(.*/)?\.compose-cache$/
-	/^(.*/)?\.config$/
-	/^(.*/)?\.cursor$/
-	/^(.*/)?\.direnv$/
-	/^(.*/)?\.dotnet$/
-	/^(.*/)?\.gemini$/
-	/^(.*/)?\.git$/
-	/^(.*/)?\.gnupg$/
-	/^(.*/)?\.java$/
-	/^(.*/)?\.jj$/
-	/^(.*/)?\.links$/
-	/^(.*/)?\.local$/
-	/^(.*/)?\.mozilla$/
-	/^(.*/)?\.nix-defexpr$/
-	/^(.*/)?\.nix-profile$/
-	/^(.*/)?node_modules$/
-	/^(.*/)?\.npm$/
-	/^(.*/)?\.ollama$/
-	/^(.*/)?\.pki$/
-	/^(.*/)?\.rustup$/
-	/^(.*/)?\.rye$/
-	/^(.*/)?\.ssh$/
-	/^(.*/)?\.steam$/
-	/^(.*/)?\.supermaven$/
-	/^(.*/)?\.venv$/
+	**/_build
+	**/.cache
+	**/.cargo
+	**/.claude
+	**/.codegpt
+	**/.codeium
+	**/.codex
+	**/.compose-cache
+	**/.config
+	**/.cursor
+	**/.direnv
+	**/.dotnet
+	**/.elixir-tools
+	**/.gemini
+	**/.git
+	**/.gnupg
+	**/.gradle
+	**/.hex
+	**/.java
+	**/.jj
+	**/.links
+	**/.local
+	**/.mix
+	**/.mozilla
+	**/.nix-defexpr
+	**/.nix-profile
+	**/node_modules
+	**/.npm
+	**/.ollama
+	**/.pki
+	**/.rustup
+	**/.rye
+	**/.ssh
+	**/.steam
+	**/.supermaven
+	**/.venv
 	Videos
-	/^(.*/)?\.vscode[^/]*$/
-	/^(.*/)?\.vscode$/
-	/^(.*/)?\.wasmer$/
-	/^(.*/)?\.windsurf$/
-	/^(.*/)?\.wine$/
+	**/.vscode*
+	**/.wasmer
+	**/.windsurf
+	**/.wine
+	**/zig-cache
+	**/zig-out
+	**/__pycache__
+	**/.mypy_cache
+	**/.pytest_cache
+	**/target
+	**/_deps
+	**/deps
+	**/build
+	**/.build
+	**/.next
+	**/.nuxt
+	**/dist
+	**/.turbo
+	**/.svelte-kit
+	**/.parcel-cache
+	**/.terraform
 ]
 
 hide=[
 	.gitignore
+	.DS_Store
+	Thumbs.db
+	**/*.pyc
+	**/*.pyo
 ]
