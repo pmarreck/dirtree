@@ -1,7 +1,7 @@
 const std = @import("std");
 const regex_mod = @import("regex.zig");
 
-pub const STATE_VERSION_LABEL = "ver=1.1";
+pub const STATE_VERSION_LABEL = "ver=1.2";
 pub const STATE_HEADER_COMMENT = "# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree";
 
 pub const DefaultState = enum {
@@ -52,10 +52,17 @@ pub const SortDirection = enum {
 	}
 };
 
-/// A state entry that can be either a literal path or a regex pattern.
+/// The kind of pattern stored in a state entry.
+pub const PatternKind = enum {
+	literal,
+	regex,
+	glob,
+};
+
+/// A state entry that can be a literal path, regex pattern, or glob pattern.
 pub const StateEntry = struct {
 	value: []const u8,
-	is_regex: bool,
+	kind: PatternKind,
 	negated: bool,
 	comment: ?[]const u8 = null, // preceding comment block
 };
@@ -118,7 +125,7 @@ pub const StateFile = struct {
 	/// Check if a literal already exists in a collection.
 	pub fn hasLiteral(entries: []const StateEntry, value: []const u8) bool {
 		for (entries) |e| {
-			if (!e.is_regex and std.mem.eql(u8, e.value, value)) return true;
+			if (e.kind == .literal and std.mem.eql(u8, e.value, value)) return true;
 		}
 		return false;
 	}
@@ -126,7 +133,14 @@ pub const StateFile = struct {
 	/// Check if a regex already exists in a collection.
 	pub fn hasRegex(entries: []const StateEntry, value: []const u8, negated: bool) bool {
 		for (entries) |e| {
-			if (e.is_regex and e.negated == negated and std.mem.eql(u8, e.value, value)) return true;
+			if (e.kind == .regex and e.negated == negated and std.mem.eql(u8, e.value, value)) return true;
+		}
+		return false;
+	}
+
+	pub fn hasGlob(entries: []const StateEntry, value: []const u8, negated: bool) bool {
+		for (entries) |e| {
+			if (e.kind == .glob and e.negated == negated and std.mem.eql(u8, e.value, value)) return true;
 		}
 		return false;
 	}
@@ -206,7 +220,7 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 				if (!StateFile.hasRegex(target.items, val, p.negated)) {
 					try state.addEntry(target, .{
 						.value = val,
-						.is_regex = true,
+						.kind = .regex,
 						.negated = p.negated,
 						.comment = comment_str,
 					});
@@ -220,17 +234,40 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 				continue;
 			}
 
+			// Check for negated bare entries (e.g. !*.log)
+			var bare_entry = entry_str;
+			var bare_negated = false;
+			if (bare_entry.len > 1 and bare_entry[0] == '!' and !regex_mod.isGlobPattern(entry_str[0..1])) {
+				bare_negated = true;
+				bare_entry = bare_entry[1..];
+			}
+
+			// Check if it's a glob pattern
+			if (regex_mod.isGlobPattern(bare_entry)) {
+				const gval = try state.dupeStr(bare_entry);
+				const gtarget = getEntryList(&state, arr_key);
+				if (!StateFile.hasGlob(gtarget.items, gval, bare_negated)) {
+					try state.addEntry(gtarget, .{
+						.value = gval,
+						.kind = .glob,
+						.negated = bare_negated,
+						.comment = comment_str,
+					});
+				}
+				continue;
+			}
+
 			// Literal entry - strip leading '/' (normalize like bash's normalize_rel)
-			const normalized = if (entry_str.len > 1 and entry_str[0] == '/')
-				entry_str[1..]
+			const normalized = if (bare_entry.len > 1 and bare_entry[0] == '/')
+				bare_entry[1..]
 			else
-				entry_str;
+				bare_entry;
 			const val = try state.dupeStr(normalized);
 			const target = getEntryList(&state, arr_key);
 			if (!StateFile.hasLiteral(target.items, val)) {
 				try state.addEntry(target, .{
 					.value = val,
-					.is_regex = false,
+					.kind = .literal,
 					.negated = false,
 					.comment = comment_str,
 				});
@@ -256,7 +293,7 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 					const duped = try state.dupeStr(ver);
 					state.version = duped;
 					format = .inima;
-					if (!std.mem.eql(u8, ver, "1.1")) {
+					if (!std.mem.eql(u8, ver, "1.2")) {
 						state.needs_migration = true;
 					}
 					continue;
@@ -387,6 +424,27 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 		state.needs_migration = true;
 	}
 
+	// v1.1 → v1.2 migration: convert regex entries that were originally globs back to globs
+	if (state.needs_migration) {
+		const collections = [_]*std.ArrayListUnmanaged(StateEntry){
+			&state.open_entries,
+			&state.close_entries,
+			&state.show_entries,
+			&state.hide_entries,
+		};
+		for (collections) |list| {
+			for (list.items) |*entry| {
+				if (entry.kind == .regex) {
+					if (regex_mod.regexToGlob(allocator, entry.value) catch null) |glob| {
+						try state.strings.append(allocator, glob);
+						entry.value = glob;
+						entry.kind = .glob;
+					}
+				}
+			}
+		}
+	}
+
 	return state;
 }
 
@@ -472,14 +530,24 @@ pub fn writeStateFile(state: *const StateFile, writer: anytype) !void {
 				if (entry.comment) |c| {
 					try writer.writeAll(c);
 				}
-				if (entry.is_regex) {
-					if (entry.negated) {
-						try writer.print("\t!/{s}/\n", .{entry.value});
-					} else {
-						try writer.print("\t/{s}/\n", .{entry.value});
-					}
-				} else {
-					try writer.print("\t{s}\n", .{entry.value});
+				switch (entry.kind) {
+					.regex => {
+						if (entry.negated) {
+							try writer.print("\t!/{s}/\n", .{entry.value});
+						} else {
+							try writer.print("\t/{s}/\n", .{entry.value});
+						}
+					},
+					.glob => {
+						if (entry.negated) {
+							try writer.print("\t!{s}\n", .{entry.value});
+						} else {
+							try writer.print("\t{s}\n", .{entry.value});
+						}
+					},
+					.literal => {
+						try writer.print("\t{s}\n", .{entry.value});
+					},
 				}
 			}
 			try writer.print("]\n", .{});
@@ -516,10 +584,18 @@ fn compareEntrySerialized(a: StateEntry, b: StateEntry) bool {
 	// Build virtual prefixes for comparison
 	// For regex: "/" (or "!/"), for literal: ""
 	// Then compare prefix + value + suffix character by character
-	const a_prefix: []const u8 = if (a.is_regex) (if (a.negated) "!/" else "/") else "";
-	const b_prefix: []const u8 = if (b.is_regex) (if (b.negated) "!/" else "/") else "";
-	const a_suffix: []const u8 = if (a.is_regex) "/" else "";
-	const b_suffix: []const u8 = if (b.is_regex) "/" else "";
+	const a_prefix: []const u8 = switch (a.kind) {
+		.regex => if (a.negated) "!/" else "/",
+		.glob => if (a.negated) "!" else "",
+		.literal => "",
+	};
+	const b_prefix: []const u8 = switch (b.kind) {
+		.regex => if (b.negated) "!/" else "/",
+		.glob => if (b.negated) "!" else "",
+		.literal => "",
+	};
+	const a_suffix: []const u8 = if (a.kind == .regex) "/" else "";
+	const b_suffix: []const u8 = if (b.kind == .regex) "/" else "";
 
 	// Total virtual lengths
 	const a_total = a_prefix.len + a.value.len + a_suffix.len;
@@ -664,8 +740,22 @@ fn parseInlineCollection(state: *StateFile, key: []const u8, content: []const u8
 			if (!StateFile.hasRegex(target.items, val, p.negated)) {
 				try state.addEntry(target, .{
 					.value = val,
-					.is_regex = true,
+					.kind = .regex,
 					.negated = p.negated,
+				});
+			}
+			continue;
+		}
+
+		// Check for glob
+		if (regex_mod.isGlobPattern(token)) {
+			const val = try state.dupeStr(token);
+			const target = getEntryList(state, key);
+			if (!StateFile.hasGlob(target.items, val, false)) {
+				try state.addEntry(target, .{
+					.value = val,
+					.kind = .glob,
+					.negated = false,
 				});
 			}
 			continue;
@@ -677,7 +767,7 @@ fn parseInlineCollection(state: *StateFile, key: []const u8, content: []const u8
 		if (!StateFile.hasLiteral(target.items, val)) {
 			try state.addEntry(target, .{
 				.value = val,
-				.is_regex = false,
+				.kind = .literal,
 				.negated = false,
 			});
 		}
@@ -732,7 +822,7 @@ fn parseLegacyCollection(state: *StateFile, key: []const u8, value: []const u8) 
 				const val = try state.dupeStr(p.pattern);
 				const target = getEntryList(state, key);
 				if (!StateFile.hasRegex(target.items, val, p.negated)) {
-					try state.addEntry(target, .{ .value = val, .is_regex = true, .negated = p.negated });
+					try state.addEntry(target, .{ .value = val, .kind = .regex, .negated = p.negated });
 				}
 				continue;
 			}
@@ -741,7 +831,7 @@ fn parseLegacyCollection(state: *StateFile, key: []const u8, value: []const u8) 
 		const val = try state.dupeStr(trimmed);
 		const target = getEntryList(state, key);
 		if (!StateFile.hasLiteral(target.items, val)) {
-			try state.addEntry(target, .{ .value = val, .is_regex = false, .negated = false });
+			try state.addEntry(target, .{ .value = val, .kind = .literal, .negated = false });
 		}
 	}
 }
@@ -754,7 +844,7 @@ fn parseLegacyRegexList(state: *StateFile, base_key: []const u8, value: []const 
 		const val = try state.dupeStr(trimmed);
 		const target = getEntryList(state, base_key);
 		if (!StateFile.hasRegex(target.items, val, false)) {
-			try state.addEntry(target, .{ .value = val, .is_regex = true, .negated = false });
+			try state.addEntry(target, .{ .value = val, .kind = .regex, .negated = false });
 		}
 	}
 }
@@ -851,11 +941,11 @@ test "parse simple state file" {
 
 	// First entry: .git (literal)
 	try std.testing.expectEqualStrings(".git", state.close_entries.items[0].value);
-	try std.testing.expect(!state.close_entries.items[0].is_regex);
+	try std.testing.expect(state.close_entries.items[0].kind == .literal);
 
-	// Second entry: regex
-	try std.testing.expectEqualStrings("^(.*/)?node_modules$", state.close_entries.items[1].value);
-	try std.testing.expect(state.close_entries.items[1].is_regex);
+	// Second entry: was regex in v1.1, migrated to glob
+	try std.testing.expectEqualStrings("**/node_modules", state.close_entries.items[1].value);
+	try std.testing.expect(state.close_entries.items[1].kind == .glob);
 
 	// Hide
 	try std.testing.expectEqual(@as(usize, 1), state.hide_entries.items.len);
@@ -882,7 +972,7 @@ test "parse state with default array" {
 }
 
 test "round-trip: parse then write produces equivalent output" {
-	const input = "ver=1.1\ndepth=3\n\nclose=[\n\t.git\n\t/^(.*/)?node_modules$/\n]\n\nhide=[\n\t.gitignore\n]";
+	const input = "ver=1.2\ndepth=3\n\nclose=[\n\t.git\n\t**/node_modules\n]\n\nhide=[\n\t.gitignore\n]";
 	var state = try parseStateFile(std.testing.allocator, input);
 	defer state.deinit();
 
@@ -891,14 +981,14 @@ test "round-trip: parse then write produces equivalent output" {
 	try writeStateFile(&state, fbs.writer());
 	const output = fbs.getWritten();
 
-	// The output should have the header comment and ver=1.1,
+	// The output should have the header comment and ver=1.2,
 	// then the same structure
 	try std.testing.expect(std.mem.indexOf(u8, output, STATE_HEADER_COMMENT) != null);
-	try std.testing.expect(std.mem.indexOf(u8, output, "ver=1.1") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "ver=1.2") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "depth=3") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "close=[") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "\t.git") != null);
-	try std.testing.expect(std.mem.indexOf(u8, output, "\t/^(.*/)?node_modules$/") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "\t**/node_modules\n") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "hide=[") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "\t.gitignore") != null);
 }
@@ -925,7 +1015,7 @@ test "parse suggested-default-home-dir state file" {
 	// Check Videos is a literal
 	var found_videos = false;
 	for (state.close_entries.items) |e| {
-		if (std.mem.eql(u8, e.value, "Videos") and !e.is_regex) {
+		if (std.mem.eql(u8, e.value, "Videos") and e.kind == .literal) {
 			found_videos = true;
 		}
 	}
@@ -991,9 +1081,9 @@ test "write state file with all fields" {
 	state.sort_direction = .asc;
 
 	const val1 = try state.dupeStr("src");
-	try state.addEntry(&state.open_entries, .{ .value = val1, .is_regex = false, .negated = false });
+	try state.addEntry(&state.open_entries, .{ .value = val1, .kind = .literal, .negated = false });
 	const val2 = try state.dupeStr("^test$");
-	try state.addEntry(&state.close_entries, .{ .value = val2, .is_regex = true, .negated = false });
+	try state.addEntry(&state.close_entries, .{ .value = val2, .kind = .regex, .negated = false });
 
 	var buf: [4096]u8 = undefined;
 	var fbs = std.io.fixedBufferStream(&buf);
@@ -1033,14 +1123,83 @@ test "legacy state sort order matches bash" {
 	try writeStateFile(&sf, fbs.writer());
 	const output = fbs.getWritten();
 
-	// The expected show section order: /regex/ first, then README.md, then docs/index.md
-	// (ASCII: '/' < 'R' < 'd')
+	// After migration, ^docs/.*/index$ is converted to glob docs/**/index
+	// Expected sort order: README.md < docs/**/index < docs/index.md (ASCII: '*' < '/')
 	const show_start = std.mem.indexOf(u8, output, "show=[") orelse return error.NoShowSection;
 	const show_section = output[show_start..];
 	const readme_pos = std.mem.indexOf(u8, show_section, "\tREADME.md\n") orelse return error.NoReadme;
 	const docs_pos = std.mem.indexOf(u8, show_section, "\tdocs/index.md\n") orelse return error.NoDocs;
-	const regex_pos = std.mem.indexOf(u8, show_section, "\t/^docs/.*/index$/\n") orelse return error.NoRegex;
-	// regex should come first, then README, then docs/index.md
-	try std.testing.expect(regex_pos < readme_pos);
-	try std.testing.expect(readme_pos < docs_pos);
+	const glob_pos = std.mem.indexOf(u8, show_section, "\tdocs/**/index\n") orelse return error.NoGlob;
+	try std.testing.expect(readme_pos < glob_pos);
+	try std.testing.expect(glob_pos < docs_pos);
+}
+
+test "v1.1 to v1.2 migration converts regex to glob" {
+	const allocator = std.testing.allocator;
+	const input = "ver=1.1\nhide=[\n\t/^[^/]*\\.log$/\n\t/^(.*/)?node_modules$/\n\t.gitignore\n]";
+	var sf = try parseStateFile(allocator, input);
+	defer sf.deinit();
+
+	// Should be flagged for migration
+	try std.testing.expect(sf.needs_migration);
+
+	// The glob-convertible regex entries should now be globs
+	try std.testing.expectEqual(@as(usize, 3), sf.hide_entries.items.len);
+
+	// *.log was converted from regex to glob
+	const e0 = sf.hide_entries.items[0];
+	try std.testing.expectEqualStrings("*.log", e0.value);
+	try std.testing.expectEqual(PatternKind.glob, e0.kind);
+
+	// **/node_modules was converted from regex to glob
+	const e1 = sf.hide_entries.items[1];
+	try std.testing.expectEqualStrings("**/node_modules", e1.value);
+	try std.testing.expectEqual(PatternKind.glob, e1.kind);
+
+	// .gitignore stays literal (was never regex)
+	const e2 = sf.hide_entries.items[2];
+	try std.testing.expectEqualStrings(".gitignore", e2.value);
+	try std.testing.expectEqual(PatternKind.literal, e2.kind);
+
+	// Written output should have ver=1.2 and bare globs
+	var buf: [4096]u8 = undefined;
+	var fbs = std.io.fixedBufferStream(&buf);
+	try writeStateFile(&sf, fbs.writer());
+	const output = fbs.getWritten();
+
+	try std.testing.expect(std.mem.indexOf(u8, output, "ver=1.2") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "\t*.log\n") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "\t**/node_modules\n") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "\t.gitignore\n") != null);
+	// Should NOT contain the old regex forms
+	try std.testing.expect(std.mem.indexOf(u8, output, "/^[^/]*\\.log$/") == null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "/^(.*/)?node_modules$/") == null);
+}
+
+test "v1.2 state file does not trigger migration" {
+	const allocator = std.testing.allocator;
+	const input = "ver=1.2\nhide=[\n\t*.log\n\t/^custom\\d+$/\n]";
+	var sf = try parseStateFile(allocator, input);
+	defer sf.deinit();
+
+	try std.testing.expect(!sf.needs_migration);
+	try std.testing.expectEqual(PatternKind.glob, sf.hide_entries.items[0].kind);
+	try std.testing.expectEqual(PatternKind.regex, sf.hide_entries.items[1].kind);
+}
+
+test "unconvertible regex stays as regex during migration" {
+	const allocator = std.testing.allocator;
+	const input = "ver=1.1\nhide=[\n\t/^[^/]*\\.log$/\n\t/^custom\\d+$/\n]";
+	var sf = try parseStateFile(allocator, input);
+	defer sf.deinit();
+
+	try std.testing.expect(sf.needs_migration);
+
+	// *.log should be converted
+	try std.testing.expectEqual(PatternKind.glob, sf.hide_entries.items[0].kind);
+	try std.testing.expectEqualStrings("*.log", sf.hide_entries.items[0].value);
+
+	// \d+ pattern can't be converted — stays as regex
+	try std.testing.expectEqual(PatternKind.regex, sf.hide_entries.items[1].kind);
+	try std.testing.expectEqualStrings("^custom\\d+$", sf.hide_entries.items[1].value);
 }

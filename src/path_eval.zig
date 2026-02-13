@@ -1,6 +1,7 @@
 const std = @import("std");
 const state_mod = @import("state.zig");
-const regex_lib = @import("regex");
+const regex_lib = @import("pcre2.zig");
+const regex_mod = @import("regex.zig");
 
 /// Match type for path evaluation - how a path was matched.
 pub const MatchType = enum {
@@ -16,10 +17,19 @@ pub const PathEvalResult = struct {
 };
 
 /// A compiled regex test entry.
+/// Info stored in regex maps during state merging/building.
+pub const RegexInfo = struct {
+	negated: bool,
+	original_pattern: []const u8, // pattern as stored in state file (glob or regex)
+	kind: state_mod.PatternKind,
+};
+
 pub const CompiledRegex = struct {
-	pattern: []const u8, // owned by EffectiveState
+	pattern: []const u8, // the compiled regex pattern, owned by EffectiveState
 	negated: bool,
 	compiled: regex_lib.Regex,
+	original_pattern: []const u8 = "", // the original pattern (glob or regex) for round-trip serialization
+	kind: state_mod.PatternKind = .regex, // the original kind for serialization
 
 	pub fn deinit(self: *CompiledRegex) void {
 		self.compiled.deinit();
@@ -237,11 +247,11 @@ const InheritedState = struct {
 	show_literals: std.StringHashMapUnmanaged(void) = .{},
 	hide_literals: std.StringHashMapUnmanaged(void) = .{},
 
-	// Regex maps (pattern -> set, for deduplication)
-	open_regex_map: std.StringHashMapUnmanaged(bool) = .{}, // value is negated flag
-	close_regex_map: std.StringHashMapUnmanaged(bool) = .{},
-	show_regex_map: std.StringHashMapUnmanaged(bool) = .{},
-	hide_regex_map: std.StringHashMapUnmanaged(bool) = .{},
+	// Regex maps (pattern -> info, for deduplication; key is compiled regex pattern)
+	open_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .{},
+	close_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .{},
+	show_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .{},
+	hide_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .{},
 
 	// Track allocated strings
 	strings: std.ArrayListUnmanaged([]const u8) = .{},
@@ -268,6 +278,17 @@ const InheritedState = struct {
 		try self.strings.append(self.allocator, d);
 		return d;
 	}
+
+		/// Convert a state entry to a regex map key. For globs, converts to regex string.
+		/// For regex entries, dupes the value as-is.
+		fn entryToRegexKey(self: *InheritedState, entry: state_mod.StateEntry) ![]const u8 {
+			if (entry.kind == .glob) {
+				const converted = try regex_mod.globToRegex(self.allocator, entry.value);
+				try self.strings.append(self.allocator, converted);
+				return converted;
+			}
+			return try self.dupeStr(entry.value);
+		}
 
 	/// Merge a parsed state file into this inherited state.
 	/// This is called for each parent directory's state file, from root to target.
@@ -310,60 +331,65 @@ const InheritedState = struct {
 
 		// Literals: open removes from close and vice versa
 		for (sf.open_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				const key = try self.dupeStr(entry.value);
 				try self.open_literals.put(a, key, {});
 				_ = self.close_literals.fetchRemove(key);
 			}
 		}
 		for (sf.close_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				const key = try self.dupeStr(entry.value);
 				try self.close_literals.put(a, key, {});
 				_ = self.open_literals.fetchRemove(key);
 			}
 		}
 		for (sf.show_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				const key = try self.dupeStr(entry.value);
 				try self.show_literals.put(a, key, {});
 				_ = self.hide_literals.fetchRemove(key);
 			}
 		}
 		for (sf.hide_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				const key = try self.dupeStr(entry.value);
 				try self.hide_literals.put(a, key, {});
 				_ = self.show_literals.fetchRemove(key);
 			}
 		}
 
-		// Regexes: same mutual exclusion
+		// Regexes and globs: same mutual exclusion
+		// Globs are converted to regex for the map key but original pattern is preserved
 		for (sf.open_entries.items) |entry| {
-			if (entry.is_regex) {
-				const key = try self.dupeStr(entry.value);
-				try self.open_regex_map.put(a, key, entry.negated);
+			if (entry.kind != .literal) {
+				const key = try self.entryToRegexKey(entry);
+				const orig = try self.dupeStr(entry.value);
+				try self.open_regex_map.put(a, key, .{ .negated = entry.negated, .original_pattern = orig, .kind = entry.kind });
 				_ = self.close_regex_map.fetchRemove(key);
 			}
 		}
 		for (sf.close_entries.items) |entry| {
-			if (entry.is_regex) {
-				const key = try self.dupeStr(entry.value);
-				try self.close_regex_map.put(a, key, entry.negated);
+			if (entry.kind != .literal) {
+				const key = try self.entryToRegexKey(entry);
+				const orig = try self.dupeStr(entry.value);
+				try self.close_regex_map.put(a, key, .{ .negated = entry.negated, .original_pattern = orig, .kind = entry.kind });
 				_ = self.open_regex_map.fetchRemove(key);
 			}
 		}
 		for (sf.show_entries.items) |entry| {
-			if (entry.is_regex) {
-				const key = try self.dupeStr(entry.value);
-				try self.show_regex_map.put(a, key, entry.negated);
+			if (entry.kind != .literal) {
+				const key = try self.entryToRegexKey(entry);
+				const orig = try self.dupeStr(entry.value);
+				try self.show_regex_map.put(a, key, .{ .negated = entry.negated, .original_pattern = orig, .kind = entry.kind });
 				_ = self.hide_regex_map.fetchRemove(key);
 			}
 		}
 		for (sf.hide_entries.items) |entry| {
-			if (entry.is_regex) {
-				const key = try self.dupeStr(entry.value);
-				try self.hide_regex_map.put(a, key, entry.negated);
+			if (entry.kind != .literal) {
+				const key = try self.entryToRegexKey(entry);
+				const orig = try self.dupeStr(entry.value);
+				try self.hide_regex_map.put(a, key, .{ .negated = entry.negated, .original_pattern = orig, .kind = entry.kind });
 				_ = self.show_regex_map.fetchRemove(key);
 			}
 		}
@@ -552,16 +578,31 @@ pub fn dumpEffectiveState(writer: anytype, effective: *const EffectiveState) !vo
 				try writer.writeAll("\n");
 			}
 
-			// Write regexes
+			// Write regexes/globs using original pattern form
 			for (regexes.items) |r| {
 				try writer.writeAll("\t");
-				if (r.negated) {
-					try writer.writeAll("!/");
-				} else {
-					try writer.writeAll("/");
+				switch (r.kind) {
+					.glob => {
+						if (r.negated) {
+							try writer.writeAll("!");
+						}
+						try writer.writeAll(r.original_pattern);
+						try writer.writeAll("\n");
+					},
+					.regex => {
+						if (r.negated) {
+							try writer.writeAll("!/");
+						} else {
+							try writer.writeAll("/");
+						}
+						try writer.writeAll(r.original_pattern);
+						try writer.writeAll("/\n");
+					},
+					.literal => {
+						try writer.writeAll(r.original_pattern);
+						try writer.writeAll("\n");
+					},
 				}
-				try writer.writeAll(r.pattern);
-				try writer.writeAll("/\n");
 			}
 
 			try writer.writeAll("]\n");
@@ -571,6 +612,23 @@ pub fn dumpEffectiveState(writer: anytype, effective: *const EffectiveState) !vo
 }
 
 /// Combine inherited state and local state into an EffectiveState.
+/// Convert a state entry to a regex map key. For globs, converts to regex string.
+/// For regex entries, dupes the value as-is.
+fn entryToRegexKeyStatic(
+	allocator: std.mem.Allocator,
+	strings: *std.ArrayListUnmanaged([]const u8),
+	entry: state_mod.StateEntry,
+) ![]const u8 {
+	if (entry.kind == .glob) {
+		const converted = try regex_mod.globToRegex(allocator, entry.value);
+		try strings.append(allocator, converted);
+		return converted;
+	}
+	const duped = try allocator.dupe(u8, entry.value);
+	try strings.append(allocator, duped);
+	return duped;
+}
+
 fn rebuildEffectiveState(
 	allocator: std.mem.Allocator,
 	inherited: *const InheritedState,
@@ -642,47 +700,47 @@ fn rebuildEffectiveState(
 	// Apply local literal overrides (mutual exclusion)
 	if (local) |sf| {
 		for (sf.close_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				_ = effective.open_literals.fetchRemove(entry.value);
 			}
 		}
 		for (sf.open_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				_ = effective.close_literals.fetchRemove(entry.value);
 			}
 		}
 		for (sf.hide_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				_ = effective.show_literals.fetchRemove(entry.value);
 			}
 		}
 		for (sf.show_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				_ = effective.hide_literals.fetchRemove(entry.value);
 			}
 		}
 
 		// Add local literals
 		for (sf.open_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				const key = try effective.dupeStr(entry.value);
 				try effective.open_literals.put(allocator, key, {});
 			}
 		}
 		for (sf.close_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				const key = try effective.dupeStr(entry.value);
 				try effective.close_literals.put(allocator, key, {});
 			}
 		}
 		for (sf.show_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				const key = try effective.dupeStr(entry.value);
 				try effective.show_literals.put(allocator, key, {});
 			}
 		}
 		for (sf.hide_entries.items) |entry| {
-			if (!entry.is_regex) {
+			if (entry.kind == .literal) {
 				const key = try effective.dupeStr(entry.value);
 				try effective.hide_literals.put(allocator, key, {});
 			}
@@ -690,13 +748,13 @@ fn rebuildEffectiveState(
 	}
 
 	// Build regex maps: inherited + local with mutual exclusion
-	var open_regex_map = std.StringHashMapUnmanaged(bool){};
+	var open_regex_map = std.StringHashMapUnmanaged(RegexInfo){};
 	defer open_regex_map.deinit(allocator);
-	var close_regex_map = std.StringHashMapUnmanaged(bool){};
+	var close_regex_map = std.StringHashMapUnmanaged(RegexInfo){};
 	defer close_regex_map.deinit(allocator);
-	var show_regex_map = std.StringHashMapUnmanaged(bool){};
+	var show_regex_map = std.StringHashMapUnmanaged(RegexInfo){};
 	defer show_regex_map.deinit(allocator);
-	var hide_regex_map = std.StringHashMapUnmanaged(bool){};
+	var hide_regex_map = std.StringHashMapUnmanaged(RegexInfo){};
 	defer hide_regex_map.deinit(allocator);
 
 	// Copy inherited regexes
@@ -725,48 +783,56 @@ fn rebuildEffectiveState(
 		}
 	}
 
-	// Apply local regex overrides
+	// Apply local regex/glob overrides
 	if (local) |sf| {
 		for (sf.close_entries.items) |entry| {
-			if (entry.is_regex) {
-				_ = open_regex_map.fetchRemove(entry.value);
+			if (entry.kind != .literal) {
+				const key = try entryToRegexKeyStatic(allocator, &effective.strings, entry);
+				_ = open_regex_map.fetchRemove(key);
 			}
 		}
 		for (sf.open_entries.items) |entry| {
-			if (entry.is_regex) {
-				_ = close_regex_map.fetchRemove(entry.value);
+			if (entry.kind != .literal) {
+				const key = try entryToRegexKeyStatic(allocator, &effective.strings, entry);
+				_ = close_regex_map.fetchRemove(key);
 			}
 		}
 		for (sf.hide_entries.items) |entry| {
-			if (entry.is_regex) {
-				_ = show_regex_map.fetchRemove(entry.value);
+			if (entry.kind != .literal) {
+				const key = try entryToRegexKeyStatic(allocator, &effective.strings, entry);
+				_ = show_regex_map.fetchRemove(key);
 			}
 		}
 		for (sf.show_entries.items) |entry| {
-			if (entry.is_regex) {
-				_ = hide_regex_map.fetchRemove(entry.value);
+			if (entry.kind != .literal) {
+				const key = try entryToRegexKeyStatic(allocator, &effective.strings, entry);
+				_ = hide_regex_map.fetchRemove(key);
 			}
 		}
 
-		// Add local regexes
+		// Add local regexes/globs
 		for (sf.open_entries.items) |entry| {
-			if (entry.is_regex) {
-				try open_regex_map.put(allocator, entry.value, entry.negated);
+			if (entry.kind != .literal) {
+				const key = try entryToRegexKeyStatic(allocator, &effective.strings, entry);
+				try open_regex_map.put(allocator, key, .{ .negated = entry.negated, .original_pattern = entry.value, .kind = entry.kind });
 			}
 		}
 		for (sf.close_entries.items) |entry| {
-			if (entry.is_regex) {
-				try close_regex_map.put(allocator, entry.value, entry.negated);
+			if (entry.kind != .literal) {
+				const key = try entryToRegexKeyStatic(allocator, &effective.strings, entry);
+				try close_regex_map.put(allocator, key, .{ .negated = entry.negated, .original_pattern = entry.value, .kind = entry.kind });
 			}
 		}
 		for (sf.show_entries.items) |entry| {
-			if (entry.is_regex) {
-				try show_regex_map.put(allocator, entry.value, entry.negated);
+			if (entry.kind != .literal) {
+				const key = try entryToRegexKeyStatic(allocator, &effective.strings, entry);
+				try show_regex_map.put(allocator, key, .{ .negated = entry.negated, .original_pattern = entry.value, .kind = entry.kind });
 			}
 		}
 		for (sf.hide_entries.items) |entry| {
-			if (entry.is_regex) {
-				try hide_regex_map.put(allocator, entry.value, entry.negated);
+			if (entry.kind != .literal) {
+				const key = try entryToRegexKeyStatic(allocator, &effective.strings, entry);
+				try hide_regex_map.put(allocator, key, .{ .negated = entry.negated, .original_pattern = entry.value, .kind = entry.kind });
 			}
 		}
 	}
@@ -780,15 +846,15 @@ fn rebuildEffectiveState(
 		var iter = show_regex_map.iterator();
 		while (iter.next()) |entry| {
 			const pattern = entry.key_ptr.*;
-			const negated = entry.value_ptr.*;
-			if (regexMatchesString(allocator, pattern, negated, state_file_name)) {
+			const info = entry.value_ptr.*;
+			if (regexMatchesString(allocator, pattern, info.negated, state_file_name)) {
 				show_state_visible = true;
 				break;
 			}
 		}
 	}
 	if (!show_state_visible) {
-		try hide_regex_map.put(allocator, "^\\.dirtree-state$", false);
+		try hide_regex_map.put(allocator, "^\\.dirtree-state$", .{ .negated = false, .original_pattern = "^\\.dirtree-state$", .kind = .regex });
 	}
 
 	// Compile all regexes
@@ -803,16 +869,19 @@ fn rebuildEffectiveState(
 /// Compile regex patterns from a map into a list of CompiledRegex.
 fn compileRegexMap(
 	allocator: std.mem.Allocator,
-	map: *const std.StringHashMapUnmanaged(bool),
+	map: *const std.StringHashMapUnmanaged(RegexInfo),
 	list: *std.ArrayListUnmanaged(CompiledRegex),
 	strings: *std.ArrayListUnmanaged([]const u8),
 ) !void {
 	var iter = map.iterator();
 	while (iter.next()) |entry| {
 		const pattern = entry.key_ptr.*;
-		const negated = entry.value_ptr.*;
+		const info = entry.value_ptr.*;
 		const owned_pattern = try allocator.dupe(u8, pattern);
 		try strings.append(allocator, owned_pattern);
+
+		const owned_original = try allocator.dupe(u8, info.original_pattern);
+		try strings.append(allocator, owned_original);
 
 		const compiled = regex_lib.Regex.compile(allocator, owned_pattern) catch {
 			// Skip patterns that fail to compile
@@ -820,8 +889,10 @@ fn compileRegexMap(
 		};
 		try list.append(allocator, .{
 			.pattern = owned_pattern,
-			.negated = negated,
+			.negated = info.negated,
 			.compiled = compiled,
+			.original_pattern = owned_original,
+			.kind = info.kind,
 		});
 	}
 }

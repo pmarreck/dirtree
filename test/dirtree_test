@@ -667,7 +667,7 @@ test_fixture_helper_resets_state_between_uses() {
 	fi
 	local path1 path2
 	path1=$(fixture_simple_tree)
-	printf 'ver=1.1\ndefault=closed\n' >"$path1/.dirtree-state"
+	printf 'ver=1.2\ndefault=closed\n' >"$path1/.dirtree-state"
 	path2=$(fixture_simple_tree)
 	if [[ "$path1" != "$path2" ]]; then
 		echo "fixture helper returned different paths; expected reuse" >&2
@@ -686,7 +686,7 @@ test_fixture_decorated_single_file_clears_state() {
 	fi
 	local path1 path2
 	path1=$(fixture_decorated_single_file)
-	printf 'ver=1.1\ndefault=opened\n' >"$path1/.dirtree-state"
+	printf 'ver=1.2\ndefault=opened\n' >"$path1/.dirtree-state"
 	path2=$(fixture_decorated_single_file)
 	if [[ "$path1" != "$path2" ]]; then
 		echo "decor fixture returned different paths; expected reuse" >&2
@@ -709,7 +709,7 @@ test_fixture_hide_show_clears_state() {
 	fi
 	local path1 path2
 	path1=$(fixture_hide_show)
-	printf 'ver=1.1\ndefault=opened\n' >"$path1/.dirtree-state"
+	printf 'ver=1.2\ndefault=opened\n' >"$path1/.dirtree-state"
 	path2=$(fixture_hide_show)
 	if [[ "$path1" != "$path2" ]]; then
 		echo "hide/show fixture returned different paths; expected reuse" >&2
@@ -1323,7 +1323,7 @@ test_persist_default_via_default_only() {
 		return 1
 	fi
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=closed\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "persist default via --default only" "$actual_pb" "$expected_pb"
 }
@@ -1339,7 +1339,7 @@ test_persist_default_visibility_via_default_hide() {
 		return 1
 	fi
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=hidden\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=hidden\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "persist default visibility via --default hide" "$actual_pb" "$expected_pb"
 }
@@ -1355,7 +1355,7 @@ test_persist_default_array_via_multiple_tokens() {
 		return 1
 	fi
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=[\n\topened\n\thidden\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=[\n\topened\n\thidden\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "persist default array via multiple --default tokens" "$actual_pb" "$expected_pb"
 }
@@ -1371,7 +1371,7 @@ test_depth_flag_persists_and_applies() {
 		return 1
 	fi
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndepth=1\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndepth=1\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "depth state persistence" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -1406,7 +1406,7 @@ test_sort_flags_persist_and_apply() {
 		return 1
 	fi
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nsort=alpha\nsort_direction=asc\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\nsort=alpha\nsort_direction=asc\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "sort state persistence" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -1436,7 +1436,7 @@ test_inherits_parent_state_closing_rules() {
 	child="$root/parent/child"
 	mkdir -p "$child/.git/objects"
 	cat <<'STATE' > "$root/.dirtree-state"
-ver=1.1
+ver=1.2
 close=[
 	/.git$/
 ]
@@ -1608,7 +1608,7 @@ test_decorated_handles_percent_encoded_osc8_hyperlinks() {
 	workspace=$(new_tmpdir)
 	target="$workspace/spaces"
 	mkdir -p "$target/sys (server)/child"
-	printf 'ver=1.1\ndefault=closed\n' > "$target/.dirtree-state"
+	printf 'ver=1.2\ndefault=closed\n' > "$target/.dirtree-state"
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --decorated "$target"; then
 		echo "capture helper failed for percent-encoded run" >&2
 		return 1
@@ -1923,7 +1923,7 @@ test_show_slash_regex_persists() {
 	state_file="$target/.dirtree-state"
 	run_quiet "$DIRTREE_BIN" --show '/^docs/' "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nshow=[\n\t/^docs/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\nshow=[\n\t/^docs/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--show slash regex persists" "$actual_pb" "$expected_pb"
 }
@@ -2232,7 +2232,7 @@ test_git_modified_file_bypasses_hide() {
 		git add tracked.txt && \
 		GIT_AUTHOR_NAME=dirtree-test GIT_AUTHOR_EMAIL=dirtree@example.com \
 		GIT_COMMITTER_NAME=dirtree-test GIT_COMMITTER_EMAIL=dirtree@example.com git commit -q -m init && \
-		printf 'ver=1.1\nhide=[\n\ttracked.txt\n]\n' > .dirtree-state && \
+		printf 'ver=1.2\nhide=[\n\ttracked.txt\n]\n' > .dirtree-state && \
 		echo changed > tracked.txt
 	)
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 1 "$repo"; then
@@ -2255,7 +2255,7 @@ test_git_untracked_file_opens_hidden_parents() {
 	repo="$workspace/git-untracked"
 	mkdir -p "$repo/hidden"
 	init_git_repo "$repo"
-	printf 'ver=1.1\nhide=[\n\thidden\n\t/.git\n]\nclose=[\n\thidden\n]\n' > "$repo/.dirtree-state"
+	printf 'ver=1.2\nhide=[\n\thidden\n\t/.git\n]\nclose=[\n\thidden\n]\n' > "$repo/.dirtree-state"
 	touch "$repo/hidden/new.txt"
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 "$repo"; then
 		echo "capture helper failed for git untracked run" >&2
@@ -2277,7 +2277,7 @@ test_git_override_can_be_disabled_via_env() {
 	repo="$workspace/git-disable"
 	mkdir -p "$repo/hidden"
 	init_git_repo "$repo"
-	printf 'ver=1.1\nhide=[\n\thidden\n]\nclose=[\n\thidden\n]\n' > "$repo/.dirtree-state"
+	printf 'ver=1.2\nhide=[\n\thidden\n]\nclose=[\n\thidden\n]\n' > "$repo/.dirtree-state"
 	touch "$repo/hidden/new.txt"
 	if ! DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED=1 capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 1 "$repo"; then
 		echo "capture helper failed for git override disable run" >&2
@@ -2307,7 +2307,7 @@ test_state_persists_using_ini_ma_arrays() {
 	run_quiet "$DIRTREE_BIN" --hide '/^build/' "$target"
 	run_quiet "$DIRTREE_BIN" --hide '/\.log$/' "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nopen=[\n\tlib\n\tsrc\n]\n\nclose=[\n\tdocs\n]\n\nshow=[\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\t/^build/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=closed\n\nopen=[\n\tlib\n\tsrc\n]\n\nclose=[\n\tdocs\n]\n\nshow=[\n\tREADME.md\n]\n\nhide=[\n\t/\\.log$/\n\t/^build/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "state persists using INI-MA arrays" "$actual_pb" "$expected_pb"
 }
@@ -2331,7 +2331,7 @@ hide_regex=\.log$
 STATE
 	run_quiet "$DIRTREE_BIN" "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=[\n\topened\n\thidden\n]\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\t/temp$/\n\tlogs\n]\n\nshow=[\n\t/^docs/.*/index$/\n\tREADME.md\n\tdocs/index.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=[\n\topened\n\thidden\n]\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\t/temp$/\n\tlogs\n]\n\nshow=[\n\tREADME.md\n\tdocs/**/index\n\tdocs/index.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "legacy state migrates to INI-MA" "$actual_pb" "$expected_pb"
 }
@@ -2348,7 +2348,7 @@ test_inline_ini_ma_arrays_parse_correctly() {
 	touch -t 202312010101 "$target/docs"
 	touch -t 202311010101 "$target/tests"
 cat >"$state_file" <<'STATE'
-ver=1.1
+ver=1.2
 default=closed
 open=[src docs]
 close=[tests]
@@ -2467,10 +2467,10 @@ test_simple_preserves_unknown_keys_in_state() {
 	target="$workspace/simple-unknown"
 	state_file="$target/.dirtree-state"
 	mkdir -p "$target"
-	printf 'ver=1.1\nmystery=1\n' > "$state_file"
+	printf 'ver=1.2\nmystery=1\n' > "$state_file"
 	run_quiet "$DIRTREE_BIN" --simple "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'ver=1.1\nmystery=1\n'
+	expected_plain=$'ver=1.2\nmystery=1\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--simple preserves unknown keys in state" "$actual_pb" "$expected_pb"
 }
@@ -2481,10 +2481,10 @@ test_rewrite_settings_rewrites_state_with_format_updates() {
 	target="$workspace/rewrite-settings"
 	state_file="$target/.dirtree-state"
 	mkdir -p "$target"
-	printf 'ver=1.1\ndefault=closed\n' > "$state_file"
+	printf 'ver=1.2\ndefault=closed\n' > "$state_file"
 	run_quiet "$DIRTREE_BIN" --rewrite-settings "$target"
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=closed\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--rewrite-settings rewrites state with format updates" "$actual_pb" "$expected_pb"
 }
@@ -2712,7 +2712,7 @@ test_open_regex_persists_in_state() {
 		run_quiet "$DIRTREE_BIN" --open '/^src/'
 	)
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nopen=[\n\t/^src/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=closed\n\nopen=[\n\t/^src/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--open regex persists in state" "$actual_pb" "$expected_pb"
 }
@@ -2729,7 +2729,7 @@ test_open_slash_regex_persists_in_state() {
 		run_quiet "$DIRTREE_BIN" --open '/^docs/'
 	)
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nopen=[\n\t/^docs/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=closed\n\nopen=[\n\t/^docs/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--open slash regex persists in state" "$actual_pb" "$expected_pb"
 }
@@ -2776,7 +2776,7 @@ test_close_slash_regex_persists_in_state() {
 		run_quiet "$DIRTREE_BIN" --close '/^src/'
 	)
 	encode_file_printable actual_pb "$state_file"
-	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nclose=[\n\t/^src/\n]\n'
+	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=closed\n\nclose=[\n\t/^src/\n]\n'
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "--close slash regex persists in state" "$actual_pb" "$expected_pb"
 }
@@ -2786,7 +2786,7 @@ test_regex_open_close_conflict_raises_error() {
 	workspace=$(new_tmpdir)
 	target="$workspace/regex-conflict"
 	mkdir -p "$target/src"
-	printf 'ver=1.1\ndefault=closed\n\nopen=[\n/^src/\n]\nclose=[\n/^src/\n]\n' > "$target/.dirtree-state"
+	printf 'ver=1.2\ndefault=closed\n\nopen=[\n/^src/\n]\nclose=[\n/^src/\n]\n' > "$target/.dirtree-state"
 	capture_dirtree_printable stdout_pb stderr_pb rc "$target" || true
 	if [[ "$rc" -eq 0 ]]; then
 		echo "expected non-zero rc for regex conflict" >&2
@@ -2852,7 +2852,7 @@ test_hide_slash_regex_persists_and_hides() {
 	state_file="$target/.dirtree-state"
 	run_quiet "$DIRTREE_BIN" --hide '/\\.lnk$/' "$target"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nhide=[\n\t/\\\\.lnk$/\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\nhide=[\n\t/\\\\.lnk$/\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "hide regex persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -2900,7 +2900,7 @@ test_hide_negated_regex_persists_and_hides() {
 	state_file="$target/.dirtree-state"
 	run_quiet "$DIRTREE_BIN" --hide '!/\\.exe$/' "$target"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nhide=[\n\t!/\\\\.exe$/\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\nhide=[\n\t!/\\\\.exe$/\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "negated hide persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -2926,7 +2926,7 @@ test_reprefix_open_treats_argument_as_literal() {
 	mkdir -p "$target/src/deep" "$target/re:^src/inner"
 	touch -t 199001010101 "$target/src"
 	touch -t 200001010101 "$target/re:^src"
-	printf 'ver=1.1\ndefault=closed\n' > "$target/.dirtree-state"
+	printf 'ver=1.2\ndefault=closed\n' > "$target/.dirtree-state"
 	(
 		cd "$target" && \
 		run_quiet "$DIRTREE_BIN" --open 're:^src'
@@ -2935,7 +2935,7 @@ test_reprefix_open_treats_argument_as_literal() {
 	touch -t 200001010101 "$target/re:^src"
 	state_file="$target/.dirtree-state"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=closed\n\nopen=[\n\tre:^src\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=closed\n\nopen=[\n\tre:^src\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "re-prefix open persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -2965,14 +2965,14 @@ test_reprefix_hide_treats_argument_as_literal() {
 	workspace=$(new_tmpdir)
 	target="$workspace/re-literal-hide"
 	mkdir -p "$target/src/deep" "$target/re:^src/inner"
-	printf 'ver=1.1\ndefault=opened\n' > "$target/.dirtree-state"
+	printf 'ver=1.2\ndefault=opened\n' > "$target/.dirtree-state"
 	(
 		cd "$target" && \
 		run_quiet "$DIRTREE_BIN" --hide 're:^src'
 	)
 	state_file="$target/.dirtree-state"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\ndefault=opened\n\nhide=[\n\tre:^src\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=opened\n\nhide=[\n\tre:^src\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "re-prefix hide persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -3001,7 +3001,7 @@ test_hide_literal_with_dot_stays_literal() {
 	state_file="$target/.dirtree-state"
 	run_quiet "$DIRTREE_BIN" --hide src/config.json "$target"
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nhide=[\n\tsrc/config.json\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\nhide=[\n\tsrc/config.json\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	if ! compare_printable "hide literal dot persisted" "$actual_state_pb" "$expected_state_pb"; then
 		return 1
@@ -3047,7 +3047,7 @@ test_show_hidden_reveals_hidden_entries_without_persisting() {
 		return 1
 	fi
 	encode_file_printable actual_state_pb "$state_file"
-	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.1\nhide=[\n\t/^src/\n\ttests\n]\n'
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\nhide=[\n\t/^src/\n\ttests\n]\n'
 	encode_printable expected_state_pb "$expected_state_plain"
 	compare_printable "show-hidden keeps hide rules" "$actual_state_pb" "$expected_state_pb"
 }
@@ -3361,7 +3361,7 @@ test_config_shows_effective_state() {
 	child="$parent/child"
 	mkdir -p "$child"
 	# Write a parent .dirtree-state with a close regex
-	printf 'ver=1.1\nclose=[\n\t/.git$/\n]\n' > "$parent/.dirtree-state"
+	printf 'ver=1.2\nclose=[\n\t/.git$/\n]\n' > "$parent/.dirtree-state"
 	if ! capture_dirtree_printable stdout_pb stderr_pb rc --config "$child"; then
 		echo "capture helper failed for --config test" >&2
 		return 1
@@ -3372,9 +3372,9 @@ test_config_shows_effective_state() {
 	fi
 	local actual_plain
 	decode_printable actual_plain "$stdout_pb"
-	# Check that output contains ver=1.1
-	if [[ "$actual_plain" != *"ver=1.1"* ]]; then
-		echo "Missing ver=1.1 in --config output" >&2
+	# Check that output contains ver=1.2
+	if [[ "$actual_plain" != *"ver=1.2"* ]]; then
+		echo "Missing ver=1.2 in --config output" >&2
 		echo "Actual:" >&2
 		echo "$actual_plain" >&2
 		return 1
@@ -3428,6 +3428,114 @@ test_config_applies_cli_overrides() {
 		echo "Missing sort=alpha in --config output" >&2
 		echo "Actual:" >&2
 		echo "$actual_plain" >&2
+		return 1
+	fi
+}
+
+test_hide_glob_stores_bare_pattern() {
+	local workspace target state_file actual_state_pb expected_state_plain expected_state_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/glob-bare"
+	mkdir -p "$target"
+	touch "$target/debug.log" "$target/app.log" "$target/readme.txt"
+	run_quiet "$DIRTREE_BIN" --hide '*.log' "$target"
+	state_file="$target/.dirtree-state"
+	encode_file_printable actual_state_pb "$state_file"
+	# Glob should be stored bare (not as /regex/)
+	expected_state_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\nhide=[\n\t*.log\n]\n'
+	encode_printable expected_state_pb "$expected_state_plain"
+	compare_printable "hide glob stored bare" "$actual_state_pb" "$expected_state_pb"
+}
+
+test_hide_glob_hides_matching_files() {
+	local workspace target out="" err="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/glob-hide"
+	mkdir -p "$target"
+	touch "$target/debug.log" "$target/app.log" "$target/readme.txt"
+	run_quiet "$DIRTREE_BIN" --hide '*.log' "$target"
+	capture "$DIRTREE_BIN" --simple --no-icons "$target"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "hide glob listing failed with rc=$rc" >&2
+		return 1
+	fi
+	# readme.txt should be visible; .log files should be hidden
+	if [[ "$out" != *"readme.txt"* ]]; then
+		echo "expected readme.txt in output but got: $out" >&2
+		return 1
+	fi
+	if [[ "$out" == *"debug.log"* ]] || [[ "$out" == *"app.log"* ]]; then
+		echo "expected .log files to be hidden but got: $out" >&2
+		return 1
+	fi
+}
+
+test_handwritten_glob_in_state_file() {
+	local workspace target out="" err="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/glob-hand"
+	mkdir -p "$target"
+	touch "$target/build.tmp" "$target/cache.tmp" "$target/data.csv"
+	# Hand-write a state file with a bare glob
+	cat > "$target/.dirtree-state" <<'EOF'
+# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree
+ver=1.2
+hide=[
+	*.tmp
+]
+EOF
+	capture "$DIRTREE_BIN" --simple --no-icons "$target"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "handwritten glob listing failed with rc=$rc" >&2
+		return 1
+	fi
+	# data.csv should be visible; .tmp files should be hidden
+	if [[ "$out" != *"data.csv"* ]]; then
+		echo "expected data.csv in output but got: $out" >&2
+		return 1
+	fi
+	if [[ "$out" == *"build.tmp"* ]] || [[ "$out" == *"cache.tmp"* ]]; then
+		echo "expected .tmp files to be hidden but got: $out" >&2
+		return 1
+	fi
+}
+
+test_mixed_glob_regex_literal_state() {
+	local workspace target out="" err="" rc=0
+	workspace=$(new_tmpdir)
+	target="$workspace/glob-mixed"
+	mkdir -p "$target"
+	touch "$target/debug.log" "$target/notes.bak" "$target/thumbs.db" "$target/readme.txt"
+	# Hand-write a state file with mixed patterns: glob, regex, literal
+	cat > "$target/.dirtree-state" <<'EOF'
+# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree
+ver=1.2
+hide=[
+	*.log
+	/\.bak$/
+	thumbs.db
+]
+EOF
+	capture "$DIRTREE_BIN" --simple --no-icons "$target"
+	if [[ "$rc" -ne 0 ]]; then
+		echo "mixed patterns listing failed with rc=$rc" >&2
+		return 1
+	fi
+	# readme.txt should be visible; others hidden by glob/regex/literal
+	if [[ "$out" != *"readme.txt"* ]]; then
+		echo "expected readme.txt in output but got: $out" >&2
+		return 1
+	fi
+	if [[ "$out" == *"debug.log"* ]]; then
+		echo "expected debug.log to be hidden (glob) but got: $out" >&2
+		return 1
+	fi
+	if [[ "$out" == *"notes.bak"* ]]; then
+		echo "expected notes.bak to be hidden (regex) but got: $out" >&2
+		return 1
+	fi
+	if [[ "$out" == *"thumbs.db"* ]]; then
+		echo "expected thumbs.db to be hidden (literal) but got: $out" >&2
 		return 1
 	fi
 }
@@ -3647,6 +3755,14 @@ run_all_tests() {
 		test_config_shows_effective_state
 	run_test "--config applies CLI overrides" \
 		test_config_applies_cli_overrides
+	run_test "--hide glob stores bare pattern in state file" \
+		test_hide_glob_stores_bare_pattern
+	run_test "--hide glob correctly hides matching files" \
+		test_hide_glob_hides_matching_files
+	run_test "hand-edited glob in state file is applied" \
+		test_handwritten_glob_in_state_file
+	run_test "mixed glob/regex/literal state file works" \
+		test_mixed_glob_regex_literal_state
 }
 
 run_all_tests

@@ -1,6 +1,6 @@
 const std = @import("std");
 const regex = @import("regex.zig");
-const regex_lib = @import("regex");
+const regex_lib = @import("pcre2.zig");
 const state_mod = @import("state.zig");
 const path_eval = @import("path_eval.zig");
 const scm_mod = @import("scm.zig");
@@ -31,7 +31,7 @@ pub const DefaultVisibility = enum {
 
 pub const ArgEntry = struct {
 	value: []const u8,
-	is_regex: bool,
+	kind: state_mod.PatternKind,
 	negated: bool,
 	owned: bool = false, // true if value was allocated and needs to be freed
 };
@@ -507,7 +507,7 @@ fn collectVariadicArgs(
 		if (parsed) |p| {
 			regexes.append(allocator, .{
 				.value = p.pattern,
-				.is_regex = true,
+				.kind = .regex,
 				.negated = p.negated,
 			}) catch return .{ .err = s.err_out_of_memory };
 			count += 1;
@@ -526,16 +526,12 @@ fn collectVariadicArgs(
 			}
 		}
 
-		// Try as glob
+		// Try as glob - store as glob kind (deferred conversion to regex at eval time)
 		if (regex.isGlobPattern(token)) {
-			const regex_pattern = regex.globToRegex(allocator, token) catch {
-				return .{ .err = s.err_out_of_memory };
-			};
 			regexes.append(allocator, .{
-				.value = regex_pattern,
-				.is_regex = true,
+				.value = token,
+				.kind = .glob,
 				.negated = false,
-				.owned = true,
 			}) catch return .{ .err = s.err_out_of_memory };
 			count += 1;
 			continue;
@@ -1172,59 +1168,63 @@ fn persistState(
 	// Apply open/close/show/hide from CLI
 	for (cfg.open_literals.items) |lit| {
 		// Remove from close if present
-		removeEntryByValue(&sf.close_entries, lit, false);
+		removeEntryByValue(&sf.close_entries, lit, .literal);
 		if (!state_mod.StateFile.hasLiteral(sf.open_entries.items, lit)) {
 			const val = try sf.dupeStr(lit);
-			try sf.addEntry(&sf.open_entries, .{ .value = val, .is_regex = false, .negated = false });
+			try sf.addEntry(&sf.open_entries, .{ .value = val, .kind = .literal, .negated = false });
 		}
 	}
 	for (cfg.open_regexes.items) |re| {
-		removeEntryByValue(&sf.close_entries, re.value, true);
-		if (!state_mod.StateFile.hasRegex(sf.open_entries.items, re.value, re.negated)) {
+		removeEntryByValue(&sf.close_entries, re.value, re.kind);
+		const has = if (re.kind == .glob) state_mod.StateFile.hasGlob(sf.open_entries.items, re.value, re.negated) else state_mod.StateFile.hasRegex(sf.open_entries.items, re.value, re.negated);
+		if (!has) {
 			const val = try sf.dupeStr(re.value);
-			try sf.addEntry(&sf.open_entries, .{ .value = val, .is_regex = true, .negated = re.negated });
+			try sf.addEntry(&sf.open_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
 		}
 	}
 	for (cfg.close_literals.items) |lit| {
-		removeEntryByValue(&sf.open_entries, lit, false);
+		removeEntryByValue(&sf.open_entries, lit, .literal);
 		if (!state_mod.StateFile.hasLiteral(sf.close_entries.items, lit)) {
 			const val = try sf.dupeStr(lit);
-			try sf.addEntry(&sf.close_entries, .{ .value = val, .is_regex = false, .negated = false });
+			try sf.addEntry(&sf.close_entries, .{ .value = val, .kind = .literal, .negated = false });
 		}
 	}
 	for (cfg.close_regexes.items) |re| {
-		removeEntryByValue(&sf.open_entries, re.value, true);
-		if (!state_mod.StateFile.hasRegex(sf.close_entries.items, re.value, re.negated)) {
+		removeEntryByValue(&sf.open_entries, re.value, re.kind);
+		const has = if (re.kind == .glob) state_mod.StateFile.hasGlob(sf.close_entries.items, re.value, re.negated) else state_mod.StateFile.hasRegex(sf.close_entries.items, re.value, re.negated);
+		if (!has) {
 			const val = try sf.dupeStr(re.value);
-			try sf.addEntry(&sf.close_entries, .{ .value = val, .is_regex = true, .negated = re.negated });
+			try sf.addEntry(&sf.close_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
 		}
 	}
 	for (cfg.show_literals.items) |lit| {
-		removeEntryByValue(&sf.hide_entries, lit, false);
+		removeEntryByValue(&sf.hide_entries, lit, .literal);
 		if (!state_mod.StateFile.hasLiteral(sf.show_entries.items, lit)) {
 			const val = try sf.dupeStr(lit);
-			try sf.addEntry(&sf.show_entries, .{ .value = val, .is_regex = false, .negated = false });
+			try sf.addEntry(&sf.show_entries, .{ .value = val, .kind = .literal, .negated = false });
 		}
 	}
 	for (cfg.show_regexes.items) |re| {
-		removeEntryByValue(&sf.hide_entries, re.value, true);
-		if (!state_mod.StateFile.hasRegex(sf.show_entries.items, re.value, re.negated)) {
+		removeEntryByValue(&sf.hide_entries, re.value, re.kind);
+		const has = if (re.kind == .glob) state_mod.StateFile.hasGlob(sf.show_entries.items, re.value, re.negated) else state_mod.StateFile.hasRegex(sf.show_entries.items, re.value, re.negated);
+		if (!has) {
 			const val = try sf.dupeStr(re.value);
-			try sf.addEntry(&sf.show_entries, .{ .value = val, .is_regex = true, .negated = re.negated });
+			try sf.addEntry(&sf.show_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
 		}
 	}
 	for (cfg.hide_literals.items) |lit| {
-		removeEntryByValue(&sf.show_entries, lit, false);
+		removeEntryByValue(&sf.show_entries, lit, .literal);
 		if (!state_mod.StateFile.hasLiteral(sf.hide_entries.items, lit)) {
 			const val = try sf.dupeStr(lit);
-			try sf.addEntry(&sf.hide_entries, .{ .value = val, .is_regex = false, .negated = false });
+			try sf.addEntry(&sf.hide_entries, .{ .value = val, .kind = .literal, .negated = false });
 		}
 	}
 	for (cfg.hide_regexes.items) |re| {
-		removeEntryByValue(&sf.show_entries, re.value, true);
-		if (!state_mod.StateFile.hasRegex(sf.hide_entries.items, re.value, re.negated)) {
+		removeEntryByValue(&sf.show_entries, re.value, re.kind);
+		const has = if (re.kind == .glob) state_mod.StateFile.hasGlob(sf.hide_entries.items, re.value, re.negated) else state_mod.StateFile.hasRegex(sf.hide_entries.items, re.value, re.negated);
+		if (!has) {
 			const val = try sf.dupeStr(re.value);
-			try sf.addEntry(&sf.hide_entries, .{ .value = val, .is_regex = true, .negated = re.negated });
+			try sf.addEntry(&sf.hide_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
 		}
 	}
 
@@ -1246,10 +1246,10 @@ fn persistState(
 }
 
 /// Remove entries from a list that match a given value.
-fn removeEntryByValue(list: *std.ArrayListUnmanaged(state_mod.StateEntry), value: []const u8, is_regex: bool) void {
+fn removeEntryByValue(list: *std.ArrayListUnmanaged(state_mod.StateEntry), value: []const u8, kind: state_mod.PatternKind) void {
 	var ii: usize = 0;
 	while (ii < list.items.len) {
-		if (list.items[ii].is_regex == is_regex and std.mem.eql(u8, list.items[ii].value, value)) {
+		if (list.items[ii].kind == kind and std.mem.eql(u8, list.items[ii].value, value)) {
 			_ = list.orderedRemove(ii);
 		} else {
 			ii += 1;
@@ -1431,9 +1431,9 @@ test "parseArgs: open with glob" {
 		.config => |*cfg| {
 			defer cfg.deinit(std.testing.allocator);
 			try std.testing.expectEqual(@as(usize, 1), cfg.open_regexes.items.len);
-			try std.testing.expect(cfg.open_regexes.items[0].is_regex);
-			// glob *.txt should become ^[^/]*\.txt$
-			try std.testing.expectEqualStrings("^[^/]*\\.txt$", cfg.open_regexes.items[0].value);
+			try std.testing.expect(cfg.open_regexes.items[0].kind == .glob);
+			// glob *.txt should be stored as-is (converted to regex at eval time)
+			try std.testing.expectEqualStrings("*.txt", cfg.open_regexes.items[0].value);
 		},
 		else => return error.TestExpectedConfig,
 	}

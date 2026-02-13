@@ -150,6 +150,125 @@ pub fn globToRegex(allocator: std.mem.Allocator, glob: []const u8) ![]u8 {
 	return try result.toOwnedSlice(allocator);
 }
 
+/// Attempt to reverse a regex pattern back to a glob, if it was produced by globToRegex.
+/// Returns null if the regex uses features that globToRegex never produces.
+/// The caller owns the returned slice (if non-null).
+pub fn regexToGlob(allocator: std.mem.Allocator, pattern: []const u8) !?[]u8 {
+	// Must start with ^ and end with $
+	if (pattern.len < 2 or pattern[0] != '^' or pattern[pattern.len - 1] != '$') return null;
+
+	const inner = pattern[1 .. pattern.len - 1];
+	var result: std.ArrayListUnmanaged(u8) = .{};
+	defer result.deinit(allocator);
+
+	var i: usize = 0;
+	while (i < inner.len) {
+		const c = inner[i];
+
+		// Try to match known globToRegex output patterns:
+
+		// "(.*/)?" → "**/"
+		if (i + 6 <= inner.len and std.mem.eql(u8, inner[i .. i + 6], "(.*/)?")) {
+			try result.appendSlice(allocator, "**/");
+			i += 6;
+			continue;
+		}
+
+		// "[^/]*" → "*"
+		if (i + 5 <= inner.len and std.mem.eql(u8, inner[i .. i + 5], "[^/]*")) {
+			try result.append(allocator, '*');
+			i += 5;
+			continue;
+		}
+
+		// ".*" → "**" (only if not part of "(.*/?)")
+		if (i + 2 <= inner.len and std.mem.eql(u8, inner[i .. i + 2], ".*")) {
+			try result.appendSlice(allocator, "**");
+			i += 2;
+			continue;
+		}
+
+		// "[^/]" (without trailing *) → "?"
+		if (i + 4 <= inner.len and std.mem.eql(u8, inner[i .. i + 4], "[^/]")) {
+			// Make sure this isn't "[^/]*" (already handled above)
+			try result.append(allocator, '?');
+			i += 4;
+			continue;
+		}
+
+		// "[...]" character class → pass through as glob "[...]"
+		if (c == '[') {
+			var j = i + 1;
+			// Skip negation
+			if (j < inner.len and inner[j] == '^') j += 1;
+			// Skip ] as first char in class
+			if (j < inner.len and inner[j] == ']') j += 1;
+			// Find closing ]
+			while (j < inner.len) {
+				if (inner[j] == '\\' and j + 1 < inner.len) {
+					j += 2; // skip escaped char
+					continue;
+				}
+				if (inner[j] == ']') {
+					// Found valid class — copy it through, unescaping internal chars
+					try result.append(allocator, '[');
+					var k = i + 1;
+					// Handle negation: ^ in regex → ! in glob
+					if (k < j and inner[k] == '^') {
+						try result.append(allocator, '!');
+						k += 1;
+					}
+					while (k < j) {
+						if (inner[k] == '\\' and k + 1 < j) {
+							// Unescape chars that globToRegex escapes inside classes
+							try result.append(allocator, inner[k + 1]);
+							k += 2;
+						} else {
+							try result.append(allocator, inner[k]);
+							k += 1;
+						}
+					}
+					try result.append(allocator, ']');
+					i = j + 1;
+					break;
+				}
+				j += 1;
+			}
+			if (j >= inner.len) return null; // unclosed class — not from globToRegex
+			continue;
+		}
+
+		// Escaped metacharacter → literal in glob
+		if (c == '\\' and i + 1 < inner.len) {
+			const escaped = inner[i + 1];
+			switch (escaped) {
+				'.', '+', '^', '$', '(', ')', '{', '}', '|', '\\', '[' => {
+					try result.append(allocator, escaped);
+					i += 2;
+					continue;
+				},
+				else => {
+					// \d, \w, \s, etc. — not produced by globToRegex
+					return null;
+				},
+			}
+		}
+
+		// Unescaped regex metacharacters that globToRegex never produces
+		switch (c) {
+			'|', '(', ')', '{', '}', '+', '?' => return null,
+			'.' => return null, // unescaped dot — globToRegex always escapes dots
+			else => {
+				// Literal character — pass through
+				try result.append(allocator, c);
+			},
+		}
+		i += 1;
+	}
+
+	return try result.toOwnedSlice(allocator);
+}
+
 // Tests
 test "parseWrappedRegexToken: normal regex" {
 	const result = try parseWrappedRegexToken("/^foo$/");
@@ -218,4 +337,68 @@ test "globToRegex: character class" {
 	const result = try globToRegex(allocator, "[abc].txt");
 	defer allocator.free(result);
 	try std.testing.expectEqualStrings("^[abc]\\.txt$", result);
+}
+
+test "regexToGlob: simple star" {
+	const allocator = std.testing.allocator;
+	const result = try regexToGlob(allocator, "^[^/]*\\.txt$");
+	defer allocator.free(result.?);
+	try std.testing.expectEqualStrings("*.txt", result.?);
+}
+
+test "regexToGlob: double star with slash prefix" {
+	const allocator = std.testing.allocator;
+	const result = try regexToGlob(allocator, "^(.*/)?node_modules$");
+	defer allocator.free(result.?);
+	try std.testing.expectEqualStrings("**/node_modules", result.?);
+}
+
+test "regexToGlob: bare double star" {
+	const allocator = std.testing.allocator;
+	const result = try regexToGlob(allocator, "^.*$");
+	defer allocator.free(result.?);
+	try std.testing.expectEqualStrings("**", result.?);
+}
+
+test "regexToGlob: question mark" {
+	const allocator = std.testing.allocator;
+	const result = try regexToGlob(allocator, "^file[^/]\\.log$");
+	defer allocator.free(result.?);
+	try std.testing.expectEqualStrings("file?.log", result.?);
+}
+
+test "regexToGlob: character class passthrough" {
+	const allocator = std.testing.allocator;
+	const result = try regexToGlob(allocator, "^[abc]\\.txt$");
+	defer allocator.free(result.?);
+	try std.testing.expectEqualStrings("[abc].txt", result.?);
+}
+
+test "regexToGlob: escaped metacharacters" {
+	const allocator = std.testing.allocator;
+	const result = try regexToGlob(allocator, "^foo\\.bar\\+baz$");
+	defer allocator.free(result.?);
+	try std.testing.expectEqualStrings("foo.bar+baz", result.?);
+}
+
+test "regexToGlob: not a converted glob returns null" {
+	const allocator = std.testing.allocator;
+	// Alternation - not produced by globToRegex
+	try std.testing.expect(try regexToGlob(allocator, "^foo|bar$") == null);
+	// No anchors
+	try std.testing.expect(try regexToGlob(allocator, "foo") == null);
+	// Shorthand character classes - not produced by globToRegex
+	try std.testing.expect(try regexToGlob(allocator, "^\\d+$") == null);
+}
+
+test "regexToGlob: roundtrip with globToRegex" {
+	const allocator = std.testing.allocator;
+	const globs = [_][]const u8{ "*.log", "**/src", "file?.txt", "[abc].md", "foo.bar" };
+	for (globs) |glob| {
+		const re = try globToRegex(allocator, glob);
+		defer allocator.free(re);
+		const back = try regexToGlob(allocator, re);
+		defer allocator.free(back.?);
+		try std.testing.expectEqualStrings(glob, back.?);
+	}
 }

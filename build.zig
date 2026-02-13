@@ -4,9 +4,14 @@ pub fn build(b: *std.Build) void {
 	const target = b.standardTargetOptions(.{});
 	const optimize = b.standardOptimizeOption(.{});
 
-	// Get the regex dependency
-	const regex_dep = b.dependency("regex", .{});
-	const regex_module = regex_dep.module("regex");
+	// Get the PCRE2 dependency (C library, statically linked)
+	const pcre2_dep = b.dependency("pcre2", .{
+		.target = target,
+		.optimize = optimize,
+		.linkage = .static,
+		.@"code-unit-width" = .@"8",
+	});
+	const pcre2_lib = pcre2_dep.artifact("pcre2-8");
 
 	// Main executable
 	const exe = b.addExecutable(.{
@@ -15,11 +20,11 @@ pub fn build(b: *std.Build) void {
 			.root_source_file = b.path("src/main.zig"),
 			.target = target,
 			.optimize = optimize,
-			.imports = &.{
-				.{ .name = "regex", .module = regex_module },
-			},
 		}),
 	});
+	exe.root_module.addIncludePath(pcre2_lib.getEmittedIncludeTree());
+	exe.linkLibrary(pcre2_lib);
+	exe.linkLibC();
 
 	b.installArtifact(exe);
 
@@ -38,11 +43,11 @@ pub fn build(b: *std.Build) void {
 			.root_source_file = b.path("src/main.zig"),
 			.target = target,
 			.optimize = optimize,
-			.imports = &.{
-				.{ .name = "regex", .module = regex_module },
-			},
 		}),
 	});
+	unit_tests.root_module.addIncludePath(pcre2_lib.getEmittedIncludeTree());
+	unit_tests.linkLibrary(pcre2_lib);
+	unit_tests.linkLibC();
 
 	const run_unit_tests = b.addRunArtifact(unit_tests);
 	const test_step = b.step("test", "Run unit tests");
