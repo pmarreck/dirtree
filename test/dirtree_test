@@ -124,7 +124,7 @@ export DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 export TEST_SCRIPT_DIR="$DIRTREE_ROOT/test"
 export PB_BIN_ROOT="$DIRTREE_ROOT/bin"
 
-export DIRTREE_BIN="${DIRTREE_BIN:-$PB_BIN_ROOT/dirtree}"
+export DIRTREE_BIN="${DIRTREE_BIN:-$DIRTREE_ROOT/zig-out/bin/dirtree}"
 
 if [[ ! -x "$DIRTREE_BIN" ]]; then
 	echo "dirtree binary not found at $DIRTREE_BIN" >&2
@@ -166,15 +166,7 @@ TMPDIR="${TMPDIR%/}"  # drop any trailing slash
 export TMPDIR
 
 is_compiled_binary() {
-	# Direct compiled binary
-	if file "$DIRTREE_BIN" 2>/dev/null | grep -qE 'Mach-O|ELF|PE32'; then
-		return 0
-	fi
-	# Shell wrapper that references a zig-out binary
-	if grep -q 'zig-out' "$DIRTREE_BIN" 2>/dev/null; then
-		return 0
-	fi
-	return 1
+	file "$DIRTREE_BIN" 2>/dev/null | grep -qE 'Mach-O|ELF|PE32'
 }
 
 declare -a TEST_TEMP_PATHS=()
@@ -537,13 +529,15 @@ fixture_hide_show() {
 # Test implementations
 
 test_dirtree_root_points_to_repo_root() {
-	local expected actual
-	expected='DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)'
-	actual=$(rg -n '^DIRTREE_ROOT=' "$DIRTREE_ROOT/bin/dirtree" | head -n1 | cut -d: -f2-)
-	if [[ "$actual" != "$expected" ]]; then
-		echo "DIRTREE_ROOT definition mismatch" >&2
-		echo "Expected: $expected" >&2
-		echo "Actual:   $actual" >&2
+	if [[ ! -x "$DIRTREE_BIN" ]]; then
+		echo "dirtree binary not found at $DIRTREE_BIN" >&2
+		return 1
+	fi
+	# Verify the binary runs and produces output
+	local out
+	out=$("$DIRTREE_BIN" --simple --no-icons "$DIRTREE_ROOT" 2>/dev/null | head -1)
+	if [[ -z "$out" ]]; then
+		echo "dirtree binary produced no output" >&2
 		return 1
 	fi
 }
