@@ -325,8 +325,9 @@ fn renderDir(
 		if (vis.entry.kind == .directory) {
 			// Determine marker
 			var marker: []const u8 = "/";
-			if (vis.is_closed) {
+			if (vis.is_closed or (!vis.is_closed and depth_left <= 1)) {
 				// Check if dir has children for /* marker
+				// (applies to closed dirs AND dirs truncated by depth limit)
 				const child_path = if (rel_dir.len == 0)
 					try std.fs.path.join(allocator, &.{ abs_dir, vis.entry.name })
 				else
@@ -623,7 +624,16 @@ fn renderDirFocused(
 
 			if (is_target) {
 				// Target dir: render normally with full depth
-				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, "/", config);
+				var target_marker: []const u8 = "/";
+				if (vis.is_closed or (!vis.is_closed and depth_left <= 1)) {
+					const child_path = if (rel_dir.len == 0)
+						try std.fs.path.join(allocator, &.{ abs_dir, vis.entry.name })
+					else
+						try std.fs.path.join(allocator, &.{ abs_dir, vis.child_rel });
+					defer allocator.free(child_path);
+					if (dir_scan.dirHasChildren(child_path)) target_marker = "/*";
+				}
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, target_marker, config);
 				stats.total_lines += 1;
 				if (!vis.is_closed and depth_left > 1) {
 					try renderDir(
@@ -650,7 +660,7 @@ fn renderDirFocused(
 			} else if (is_under) {
 				// Under a target: render via normal renderDir
 				var marker: []const u8 = "/";
-				if (vis.is_closed) {
+				if (vis.is_closed or (!vis.is_closed and depth_left <= 1)) {
 					const child_path = if (rel_dir.len == 0)
 						try std.fs.path.join(allocator, &.{ abs_dir, vis.entry.name })
 					else

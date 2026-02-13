@@ -87,6 +87,7 @@
 # [x] open but hidden directory stays collapsed — Ensures open but hidden directory stays collapsed.
 # [x] --hide rejects absolute paths — Ensures --hide rejects absolute paths.
 # [x] decorated tree shows connectors — Ensures decorated tree shows connectors.
+# [ ] depth truncated dirs show asterisk — Ensures dirs at depth boundary with children show /* marker.
 
 set -uo pipefail
 
@@ -1087,7 +1088,7 @@ test_depth_limiting() {
 	fi
 	local actual_pb expected_plain expected_pb
 	actual_pb="$stdout_pb"
-	printf -v expected_plain ' %s/\n├──  root.txt\n└──  sub/\n' "$target"
+	printf -v expected_plain ' %s/\n├──  root.txt\n└──  sub/*\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "depth limiting" "$actual_pb" "$expected_pb"
 }
@@ -1114,7 +1115,7 @@ test_default_depth_limits_to_four_levels() {
 	fi
 	local actual_pb expected_plain expected_pb
 	actual_pb="$stdout_pb"
-	printf -v expected_plain ' %s/\n└──  l1/\n    └──  l2/\n        └──  l3/\n            └──  l4/\n' "$target"
+	printf -v expected_plain ' %s/\n└──  l1/\n    └──  l2/\n        └──  l3/\n            └──  l4/*\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "default depth limits to 4 levels" "$actual_pb" "$expected_pb"
 }
@@ -1144,7 +1145,7 @@ test_depth_limiting_effectiveness() {
 	fi
 	local actual_pb expected_plain expected_pb
 	actual_pb="$stdout_pb"
-	printf -v expected_plain ' %s/\n├──  alpha/\n└──  beta/\n' "$target"
+	printf -v expected_plain ' %s/\n├──  alpha/*\n└──  beta/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "depth limiting effectiveness" "$actual_pb" "$expected_pb"
 }
@@ -1372,7 +1373,7 @@ test_depth_flag_persists_and_applies() {
 		return 1
 	fi
 	actual_tree_pb="$stdout_pb"
-	printf -v expected_tree_plain ' %s/\n└──  sub/\n' "$target"
+	printf -v expected_tree_plain ' %s/\n└──  sub/*\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	compare_printable "depth flag persists and applies" "$actual_tree_pb" "$expected_tree_pb"
 }
@@ -1775,7 +1776,7 @@ test_decorated_dirs_end_with_slash_files_do_not() {
 	connector_last=$'└── '
 	actual_pb="$stdout_pb"
 	build_decorated_root_header_plain header_plain "$target" true
-	build_decorated_dir_entry_plain dir_plain "$target" "docs" "$connector_branch" true ""
+	build_decorated_dir_entry_plain dir_plain "$target" "docs" "$connector_branch" true "" '/*'
 	build_decorated_with_hyperlinks_plain file_plain "$target" "file.txt" true
 	printf -v expected_plain '%s%s%s' "$header_plain" "$dir_plain" "$file_plain"
 	encode_printable expected_pb "$expected_plain"
@@ -2027,7 +2028,7 @@ test_decorated_indentation_reflects_hierarchy() {
 		return 1
 	fi
 	actual_pb="$stdout_pb"
-	printf -v expected_plain '%s/\n├── app/\n│   ├── tests/\n│   └── lib/\n└── config/\n' "$target"
+	printf -v expected_plain '%s/\n├── app/\n│   ├── tests/\n│   └── lib/*\n└── config/\n' "$target"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "decorated indentation reflects hierarchy" "$actual_pb" "$expected_pb"
 }
@@ -2226,7 +2227,7 @@ test_git_modified_file_bypasses_hide() {
 		return 1
 	fi
 	actual_pb="$stdout_pb"
-	printf -v expected_plain ' %s/\n├──  .dirtree-state\n├──  .git/\n└──  tracked.txt\n' "$repo"
+	printf -v expected_plain ' %s/\n├──  .dirtree-state\n├──  .git/*\n└──  tracked.txt\n' "$repo"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "git modified file bypasses hide" "$actual_pb" "$expected_pb"
 }
@@ -2270,7 +2271,7 @@ test_git_override_can_be_disabled_via_env() {
 		return 1
 	fi
 	actual_pb="$stdout_pb"
-	printf -v expected_plain ' %s/\n└──  .git/\n' "$repo"
+	printf -v expected_plain ' %s/\n└──  .git/*\n' "$repo"
 	encode_printable expected_pb "$expected_plain"
 	compare_printable "git override can be disabled via env" "$actual_pb" "$expected_pb"
 }
@@ -3746,6 +3747,39 @@ test_only_nonexistent_collapses_all() {
 	fi
 }
 
+test_depth_truncated_dirs_show_asterisk() {
+	local workspace
+	workspace=$(new_tmpdir)
+	local target="$workspace/depth-asterisk"
+	# Create dirs: "full" has children, "empty" does not
+	mkdir -p "$target/full/child" "$target/empty"
+	touch "$target/full/file.txt"
+	# Control mtime order: full before empty (newer first = default sort)
+	touch -t 200001010201 "$target/full"
+	touch -t 199001010101 "$target/empty"
+	local stdout_pb="" stderr_pb="" rc=0
+	if ! capture_printable_outputs stdout_pb stderr_pb rc "$DIRTREE_BIN" -d 1 "$target"; then
+		echo "capture helper failed for depth asterisk" >&2
+		return 1
+	fi
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree exited non-zero for depth asterisk" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
+		echo "Unexpected stderr for depth asterisk" >&2
+		print_printable_to_stderr "$stderr_pb"
+		return 1
+	fi
+	local actual_pb expected_plain expected_pb
+	actual_pb="$stdout_pb"
+	# "full" has children so should show /*, "empty" has none so just /
+	printf -v expected_plain ' %s/\n├──  full/*\n└──  empty/\n' "$target"
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "depth truncated dirs show asterisk" "$actual_pb" "$expected_pb"
+}
+
 run_all_tests() {
 	run_test "dirtree root resolves repo" \
 		test_dirtree_root_points_to_repo_root
@@ -3983,6 +4017,8 @@ run_all_tests() {
 		test_only_multiple_paths
 	run_test "--only nonexistent collapses all" \
 		test_only_nonexistent_collapses_all
+	run_test "depth truncated dirs show asterisk" \
+		test_depth_truncated_dirs_show_asterisk
 }
 
 run_all_tests
