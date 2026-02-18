@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [yolo]
+    tags: ["v*"]
+  pull_request:
+    branches: [yolo]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - name: aarch64-macos
+            os: macos-latest
+            zig-target: ""
+            can-test: true
+            artifact-name: dirtree-aarch64-macos
+          - name: x86_64-macos
+            os: macos-latest
+            zig-target: x86_64-macos
+            can-test: false
+            artifact-name: dirtree-x86_64-macos
+          - name: x86_64-linux-musl
+            os: ubuntu-latest
+            zig-target: x86_64-linux-musl
+            can-test: true
+            artifact-name: dirtree-x86_64-linux-musl
+          - name: aarch64-linux-musl
+            os: ubuntu-latest
+            zig-target: aarch64-linux-musl
+            can-test: false
+            artifact-name: dirtree-aarch64-linux-musl
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
+      - name: Build
+        run: zig build -Doptimize=ReleaseFast ${{ matrix.zig-target && format('-Dtarget={0}', matrix.zig-target) || '' }}
+
+      - name: Unit tests
+        if: matrix.can-test
+        run: zig build test ${{ matrix.zig-target && format('-Dtarget={0}', matrix.zig-target) || '' }}
+
+      - name: Integration tests
+        if: matrix.can-test
+        run: |
+          export PATH="$PWD/zig-out/bin:$PATH"
+          bash test/dirtree_test
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: zig-out/bin/dirtree
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release binaries
+        run: |
+          for dir in artifacts/dirtree-*; do
+            name=$(basename "$dir")
+            mv "$dir/dirtree" "$name"
+            chmod +x "$name"
+          done
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dirtree-*
+          generate_release_notes: true

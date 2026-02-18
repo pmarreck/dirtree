@@ -1,4 +1,5 @@
 # dirtree
+[![CI](https://github.com/pmarreck/dirtree/actions/workflows/ci.yml/badge.svg)](https://github.com/pmarreck/dirtree/actions/workflows/ci.yml) [![built with garnix](https://img.shields.io/endpoint.svg?url=https://garnix.io/api/badges/pmarreck/dirtree)](https://garnix.io/repo/pmarreck/dirtree)
 
 `dirtree` is a native Zig CLI that produces stateful directory trees. It aims to make it easy for humans—and tooling like LLM pair-programmers—to share a consistent view of a project hierarchy without drowning in noise from build artifacts, vendor bundles, or other clutter.
 
