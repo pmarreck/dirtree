@@ -57,13 +57,17 @@ jobs:
 
       - name: Install test dependencies (macOS)
         if: matrix.can-test && runner.os == 'macOS'
-        run: brew install luajit || true
+        run: brew install bash luajit || true
 
       - name: Integration tests
         if: matrix.can-test
         run: |
-          export PATH="$PWD/zig-out/bin:$PATH"
-          bash test/dirtree_test
+          export PATH="$PWD/zig-out/bin:$PWD/bin:$PATH"
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            "$(brew --prefix)/bin/bash" test/dirtree_test
+          else
+            bash test/dirtree_test
+          fi
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
