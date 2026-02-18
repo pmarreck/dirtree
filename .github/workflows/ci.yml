@@ -77,7 +77,7 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -95,7 +95,20 @@ jobs:
             chmod +x "$name"
           done
 
-      - uses: softprops/action-gh-release@v2
+      - name: Rolling release (latest)
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Build
+          body: "Rolling release from `${{ github.sha }}` on `yolo`."
+          prerelease: true
+          make_latest: false
+          files: dirtree-*
+
+      - name: Tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
         with:
           files: dirtree-*
           generate_release_notes: true
