@@ -51,6 +51,14 @@ jobs:
         if: matrix.can-test
         run: zig build test ${{ matrix.zig-target && format('-Dtarget={0}', matrix.zig-target) || '' }}
 
+      - name: Install test dependencies
+        if: matrix.can-test && runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y luajit
+
+      - name: Install test dependencies (macOS)
+        if: matrix.can-test && runner.os == 'macOS'
+        run: brew install luajit || true
+
       - name: Integration tests
         if: matrix.can-test
         run: |
