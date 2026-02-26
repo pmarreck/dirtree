@@ -3,6 +3,14 @@
 
 `dirtree` is a native Zig CLI that produces stateful directory trees. It aims to make it easy for humans—and tooling like LLM pair-programmers—to share a consistent view of a project hierarchy without drowning in noise from build artifacts, vendor bundles, or other clutter.
 
+<table><tr>
+<td align="center"><strong>Opened</strong></td>
+<td align="center"><strong>Closed</strong></td>
+</tr><tr>
+<td><picture><source srcset="assets/images/open.jxl" type="image/jxl" /><img src="assets/images/open.png" alt="dirtree with directories opened" /></picture></td>
+<td><picture><source srcset="assets/images/closed.jxl" type="image/jxl" /><img src="assets/images/closed.png" alt="dirtree with directories closed" /></picture></td>
+</tr></table>
+
 ## Use case
 
 - Capture and persist the "interesting" parts of a repository's structure by closing noisy directories or hiding file types you rarely need.
