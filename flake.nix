@@ -10,19 +10,34 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        isDarwin = pkgs.stdenv.isDarwin;
+        pname = "dirtree";
+        version = "0.1.0";
 
-        # Pre-fetch PCRE2 Zig wrapper tarball (runs during Nix fetch phase, has network)
-        pcre2-tarball = pkgs.fetchurl {
-          url = "https://github.com/pmarreck/pcre2/archive/refs/tags/zig-0.15.2.tar.gz";
-          hash = "sha256-2V5f3Ie1YVjblcqP9RAOANwodU6OrxV1ofbbcv3uvKY=";
+        zigDepsHash = "sha256-uY8TcSP6wSIKNvfo6eunuxiYRjQGIJMgaXrX1meUWT4=";
+
+        zigDeps = pkgs.stdenv.mkDerivation {
+          pname = "${pname}-zig-deps";
+          inherit version;
+          src = self;
+          nativeBuildInputs = [ pkgs.zig pkgs.git pkgs.cacert ]
+            ++ pkgs.lib.optionals isDarwin [
+              pkgs.darwin.cctools
+              pkgs.apple-sdk
+            ];
+          outputHashMode = "recursive";
+          outputHashAlgo = "sha256";
+          outputHash = zigDepsHash;
+          buildPhase = ''
+            export HOME=$TMPDIR
+            export ZIG_GLOBAL_CACHE_DIR=$out
+            export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+            export GIT_SSL_CAINFO=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+            zig build --fetch=all
+          '';
+          dontInstall = true;
+          dontFixup = true;
         };
-
-        # Unpack into the directory structure Zig expects for --system
-        zigDeps = pkgs.runCommandLocal "zig-deps" {} ''
-          hash="pcre2-10.47.0-S7QTbjnVMgAEncX1a_JtH4G6BgDWzC1tCMvL-KOMrM8b"
-          mkdir -p "$out/$hash"
-          tar xzf ${pcre2-tarball} --strip-components=1 -C "$out/$hash"
-        '';
       in
       {
         devShells.default = pkgs.mkShell {
@@ -32,19 +47,24 @@
         };
 
         packages.default = pkgs.stdenv.mkDerivation {
-          pname = "dirtree";
-          version = "0.1.0";
-          src = ./.;
-          nativeBuildInputs = [ pkgs.zig ];
+          inherit pname version;
+          src = self;
+          nativeBuildInputs = [ pkgs.zig ]
+            ++ pkgs.lib.optionals isDarwin [
+              pkgs.darwin.cctools
+              pkgs.apple-sdk
+            ];
           dontConfigure = true;
           buildPhase = ''
-            export ZIG_GLOBAL_CACHE_DIR=$(mktemp -d)
-            zig build --system ${zigDeps} -Doptimize=ReleaseFast
+            export HOME="$TMPDIR"
+            export ZIG_GLOBAL_CACHE_DIR=$TMPDIR/zig-cache
+            mkdir -p $ZIG_GLOBAL_CACHE_DIR
+            cp -r ${zigDeps}/* $ZIG_GLOBAL_CACHE_DIR/
+            chmod -R u+w $ZIG_GLOBAL_CACHE_DIR
+            zig build --prefix $out -Doptimize=ReleaseFast
           '';
-          installPhase = ''
-            mkdir -p $out/bin
-            cp zig-out/bin/dirtree $out/bin/
-          '';
+          dontInstall = true;
+          dontFixup = true;
         };
       });
 }
