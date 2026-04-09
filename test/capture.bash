@@ -36,10 +36,10 @@ Runs the command and captures:
 
 Options:
 	-p, --printable-binary
-		Process stdout and stderr through the `printable_binary` utility
+		Process stdout and stderr through the `printable-binary` utility
 		to make them safe for storing in Bash variables (handles NULs
-		and other control characters). It can also decode printable_binary
-		output back into a string or to a file via `printable_binary -d`.
+		and other control characters). It can also decode printable-binary
+		output back into a string or to a file via `printable-binary -d`.
 
 Requirements:
 	- This function must be sourced.
@@ -71,8 +71,8 @@ EOF
 	# Check for printable_binary if requested
 	local _old_pb_mute_stats
 	if (( use_printable_binary )); then
-		if ! command -v printable_binary &> /dev/null; then
-			printf 'capture: command not found: printable_binary\n' >&2
+		if ! command -v printable-binary &> /dev/null; then
+			printf 'capture: command not found: printable-binary\n' >&2
 			return 127
 		fi
 		# Mute printable_binary's statistics output that goes to stderr, if not already muted
@@ -88,7 +88,7 @@ EOF
 			return 2
 		fi
 	done
-	(( use_printable_binary )) && _filter="printable_binary" || _filter="cat"
+	(( use_printable_binary )) && _filter="printable-binary" || _filter="cat"
 	local __out __err __rc
 	# We source the output of the block, which contains 'declare -- __out="..."' etc.
 	# FD 3 is used to route filtered stderr around the inner stdout capture.

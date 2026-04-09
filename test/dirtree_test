@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# dirtree_test: printable_binary-based regression tests for dirtree
+# dirtree_test: printable-binary-based regression tests for dirtree
 #
-# Test TODOs (mark [x] as they gain full printable_binary expectations):
+# Test TODOs (mark [x] as they gain full printable-binary expectations):
 # [x] basic listing prints absolute root header — Ensures basic listing prints absolute root header.
 # [x] decorated root header includes trailing slash — Ensures decorated root header includes trailing slash.
 # [x] dotfiles visibility — Ensures dotfiles visibility.
@@ -91,38 +91,8 @@
 
 set -uo pipefail
 
-export WASM_RUNNER=${WASM_RUNNER:-"wazero"}
-
-export USE_WASM=${USE_WASM:-true}
-PRINTABLE_BACKING_BIN=""
-
-print_printable_banner() {
-	local backing="${PRINTABLE_BACKING_BIN:-}"
-	local wrapper="${PRINTABLE_BINARY_BIN:-}"
-	[[ -z "$backing" ]] && return 0
-	printf 'Using %s as printable_binary executable via wrapper %s\n' "$backing" "$wrapper" >&2
-}
-
 export DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 export TEST_SCRIPT_DIR="$DIRTREE_ROOT/test"
-export PB_BIN_ROOT="$DIRTREE_ROOT/bin"
-
-# error out unless a wasm runner exists
-if [[ "$USE_WASM" == "false" || "$USE_WASM" == "0" || "$USE_WASM" == "no" || "$USE_WASM" == "off" ]]; then
-	PRINTABLE_BACKING_BIN="$PB_BIN_ROOT/printable_binary_ape.com"
-	unset WASM_RUNNER WASM_COMMAND
-elif [[ ! -x "$(command -v "$WASM_RUNNER")" ]]; then
-	echo "$WASM_RUNNER or another suitable wasm runner was not found (set via \$WASM_RUNNER); defaulting to printable_binary_ape.com" >&2
-	PRINTABLE_BACKING_BIN="$PB_BIN_ROOT/printable_binary_ape.com"
-	unset WASM_RUNNER WASM_COMMAND
-else
-	echo "Using $WASM_RUNNER as wasm runner for printable_binary" >&2
-	export WASM_COMMAND=${WASM_COMMAND:-"$WASM_RUNNER run --env-inherit"}
-fi
-
-export DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-export TEST_SCRIPT_DIR="$DIRTREE_ROOT/test"
-export PB_BIN_ROOT="$DIRTREE_ROOT/bin"
 
 export DIRTREE_BIN="${DIRTREE_BIN:-$DIRTREE_ROOT/zig-out/bin/dirtree}"
 
@@ -131,27 +101,13 @@ if [[ ! -x "$DIRTREE_BIN" ]]; then
 	exit 1
 fi
 
-if [[ -z "${PRINTABLE_BINARY_MAP:-}" && -f "$DIRTREE_ROOT/character_map.txt" ]]; then
-	export PRINTABLE_BINARY_MAP="$DIRTREE_ROOT/character_map.txt"
-fi
-
-SYSTEM_PRINTABLE_BINARY_BIN=${SYSTEM_PRINTABLE_BINARY_BIN:-$(command -v printable_binary || true)}
 if [[ -z "${PRINTABLE_BINARY_BIN:-}" ]]; then
-	if [[ -x "$PB_BIN_ROOT/printable_binary" ]]; then
-		PRINTABLE_BINARY_BIN="$PB_BIN_ROOT/printable_binary"
-	else
-		PRINTABLE_BINARY_BIN=$(command -v printable_binary || true)
-	fi
+	PRINTABLE_BINARY_BIN=$(command -v printable-binary || true)
 fi
 export PRINTABLE_BINARY_BIN
 if [[ -z "$PRINTABLE_BINARY_BIN" ]]; then
-	echo "printable_binary not found in PATH; please either set PRINTABLE_BINARY_BIN or add $DIRTREE_ROOT/bin to your PATH or install direnv which will then do this for you automatically" >&2
+	echo "printable-binary not found in PATH; please install printable-binary or set PRINTABLE_BINARY_BIN" >&2
 	exit 1
-else
-	if [[ -n "$PRINTABLE_BACKING_BIN" ]]; then
-		PRINTABLE_BACKING_BIN="$(dirname "$PRINTABLE_BINARY_BIN")/printable_binary_ape.com"
-	fi
-	print_printable_banner
 fi
 
 export BASH_BIN=${BASH_BIN:-$(command -v bash || true)}
@@ -160,7 +116,6 @@ if [[ -z "$BASH_BIN" ]]; then
 	exit 1
 fi
 
-export PATH="$PB_BIN_ROOT:$PATH"
 : "${TMPDIR:=/tmp}"   # default TMPDIR to /tmp if unset/empty
 TMPDIR="${TMPDIR%/}"  # drop any trailing slash
 export TMPDIR
@@ -579,58 +534,6 @@ test_capture_command_printable_handles_nuls() {
 		echo "expected empty stderr, got printable: $stderr_pb" >&2
 		return 1
 	fi
-}
-
-test_local_printable_binary_matches_system() {
-	local system_bin="$SYSTEM_PRINTABLE_BINARY_BIN"
-	local local_bin="$PB_BIN_ROOT/printable_binary"
-	if [[ -z "$system_bin" || ! -x "$system_bin" ]]; then
-		echo "system printable_binary not found" >&2
-		return 1
-	fi
-	if [[ ! -x "$local_bin" ]]; then
-		echo "local printable_binary not found" >&2
-		return 1
-	fi
-	local system_out local_out
-	system_out=$(printf 'a\0b\n' | "$system_bin")
-	local_out=$(printf 'a\0b\n' | "$local_bin")
-	if [[ "$system_out" != "$local_out" ]]; then
-		echo "local printable_binary does not match system encoding" >&2
-		echo "System: $system_bin" >&2
-		echo "Local:  $local_bin" >&2
-		return 1
-	fi
-}
-
-test_printable_binary_bin_prefers_local() {
-	local expected="$PB_BIN_ROOT/printable_binary"
-	if [[ "$PRINTABLE_BINARY_BIN" != "$expected" ]]; then
-		echo "PRINTABLE_BINARY_BIN should default to local printable_binary" >&2
-		echo "Expected: $expected" >&2
-		echo "Actual:   $PRINTABLE_BINARY_BIN" >&2
-		return 1
-	fi
-}
-
-test_printable_banner_ape() {
-	local stderr_pb="" stdout_pb="" rc=0 expected_pb backing wrapper
-	backing="/tmp/ape.bin"
-	wrapper="/tmp/wrapper.bin"
-	PRINTABLE_BACKING_BIN="$backing"
-	PRINTABLE_BINARY_BIN="$wrapper"
-	if ! capture_command_printable stdout_pb stderr_pb rc print_printable_banner; then
-		echo "capture failed for banner" >&2
-		return 1
-	fi
-	if [[ "$stderr_pb" == "$stdout_pb" ]]; then :; fi # avoid shellcheck unused
-	if [[ "$rc" -ne 0 ]]; then
-		echo "expected rc=0 for banner" >&2
-		return 1
-	fi
-	printf -v expected_pb 'Using %s as printable_binary executable via wrapper %s\n' "$backing" "$wrapper"
-	encode_printable expected_pb "$expected_pb"
-	compare_printable "printable banner ape" "$stderr_pb" "$expected_pb"
 }
 
 test_capture_dirtree_printable_runs_help() {
@@ -3787,10 +3690,6 @@ run_all_tests() {
 		test_encode_printable_reads_from_stdin
 	run_test "capture_command_printable handles NULs" \
 		test_capture_command_printable_handles_nuls
-	run_test "local printable_binary matches system" \
-		test_local_printable_binary_matches_system
-	run_test "printable_binary bin prefers local" \
-		test_printable_binary_bin_prefers_local
 	run_test "capture_dirtree_printable runs --help" \
 		test_capture_dirtree_printable_runs_help
 	run_test "fixture helper resets state between uses" \
