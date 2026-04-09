@@ -59,10 +59,16 @@ jobs:
         if: matrix.can-test && runner.os == 'macOS'
         run: brew install bash luajit || true
 
+      - name: Install printable-binary (test dependency)
+        if: matrix.can-test
+        run: |
+          git clone --depth 1 https://github.com/pmarreck/printable_binary.git /tmp/printable_binary
+          echo "/tmp/printable_binary/bin" >> $GITHUB_PATH
+
       - name: Integration tests
         if: matrix.can-test
         run: |
-          export PATH="$PWD/zig-out/bin:$PWD/bin:$PATH"
+          export PATH="$PWD/zig-out/bin:$PATH"
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             "$(brew --prefix)/bin/bash" test/dirtree_test
           else
