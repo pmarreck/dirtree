@@ -1,31 +1,29 @@
 #!/usr/bin/env bash
-# Build dirtree
-set -euo pipefail
+set -uo pipefail
+set -E
 
-MIN_ZIG_VERSION="0.15.0"
+trap 'echo "ERR at ${BASH_SOURCE[0]}:${LINENO}: $BASH_COMMAND" >&2' ERR
 
-# Compare semver: returns 0 if $1 >= $2
-version_gte() {
-	printf '%s\n%s\n' "$2" "$1" | sort -V | head -n1 | grep -qx "$2"
+run() {
+  "$@" || {
+    echo "FAILED: $*" >&2
+    exit 1
+  }
 }
 
-if command -v nix &>/dev/null; then
-	echo "Using nix develop to build..."
-	exec nix develop -c zig build "$@"
-elif command -v zig &>/dev/null; then
-	zig_ver=$(zig version)
-	if version_gte "$zig_ver" "$MIN_ZIG_VERSION"; then
-		echo "Using zig $zig_ver to build..."
-		exec zig build "$@"
-	else
-		echo "Error: zig $zig_ver found but >= $MIN_ZIG_VERSION is required" >&2
-		echo "Install a newer zig or install nix (https://nixos.org/download)" >&2
-		exit 1
-	fi
+optimize="ReleaseFast"
+if [[ "${1:-}" == "debug" ]]; then
+  optimize="Debug"
+  shift
+fi
+
+if [[ "$optimize" != "ReleaseFast" ]]; then
+  # Non-release builds use zig directly (local dev, no need for Nix reproducibility)
+  run zig build "-Doptimize=$optimize" "$@"
+elif command -v nix >/dev/null 2>&1; then
+  run nix build "$@"
+  mkdir -p zig-out/bin
+  run install -m755 result/bin/* zig-out/bin/
 else
-	echo "Error: neither nix nor zig found on PATH" >&2
-	echo "Install one of:" >&2
-	echo "  - nix: https://nixos.org/download" >&2
-	echo "  - zig >= $MIN_ZIG_VERSION: https://ziglang.org/download/" >&2
-	exit 1
+  run zig build "-Doptimize=$optimize" "$@"
 fi
