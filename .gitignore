@@ -5,3 +5,4 @@ zig-out/
 .serena
 zig-pkg/
 ZIG_RECENT_API_CHANGES_2025.md
+.direnv/
