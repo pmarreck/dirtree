@@ -5,6 +5,7 @@ depth=4
 close=[
 	.git
 	.jj
+	src/i18n
 ]
 
 hide=[
