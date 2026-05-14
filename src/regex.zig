@@ -55,7 +55,7 @@ pub fn isGlobPattern(token: []const u8) bool {
 /// Supports: * (non-slash), ** (any), ?  (non-slash char), [class]
 /// Escapes regex metacharacters in literal portions.
 pub fn globToRegex(allocator: std.mem.Allocator, glob: []const u8) ![]u8 {
-	var result: std.ArrayListUnmanaged(u8) = .{};
+	var result: std.ArrayListUnmanaged(u8) = .empty;
 	defer result.deinit(allocator);
 
 	try result.append(allocator, '^');
@@ -84,7 +84,7 @@ pub fn globToRegex(allocator: std.mem.Allocator, glob: []const u8) ![]u8 {
 			'[' => {
 				// Parse character class
 				var j = i + 1;
-				var class_buf: std.ArrayListUnmanaged(u8) = .{};
+				var class_buf: std.ArrayListUnmanaged(u8) = .empty;
 				defer class_buf.deinit(allocator);
 
 				try class_buf.append(allocator, '[');
@@ -158,7 +158,7 @@ pub fn regexToGlob(allocator: std.mem.Allocator, pattern: []const u8) !?[]u8 {
 	if (pattern.len < 2 or pattern[0] != '^' or pattern[pattern.len - 1] != '$') return null;
 
 	const inner = pattern[1 .. pattern.len - 1];
-	var result: std.ArrayListUnmanaged(u8) = .{};
+	var result: std.ArrayListUnmanaged(u8) = .empty;
 	defer result.deinit(allocator);
 
 	var i: usize = 0;

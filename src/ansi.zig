@@ -1,5 +1,6 @@
 const std = @import("std");
 const i18n = @import("i18n/mod.zig");
+const runtime = @import("runtime.zig");
 
 // ANSI color codes
 pub const reset = "\x1b[0m";
@@ -32,14 +33,14 @@ pub fn writeOsc8End(writer: anytype) !void {
 /// Build a file:// URL from hostname and absolute path.
 /// Percent-encodes special characters in the path.
 pub fn buildFileUrl(allocator: std.mem.Allocator, abs_path: []const u8) ![]u8 {
-	var result: std.ArrayListUnmanaged(u8) = .{};
+	var result: std.ArrayListUnmanaged(u8) = .empty;
 	defer result.deinit(allocator);
 
 	try result.appendSlice(allocator, "file://");
 
 	// Get hostname
-	const hostname = std.posix.getenv("HOSTNAME") orelse
-		std.posix.getenv("HOST") orelse
+	const hostname = runtime.getEnv("HOSTNAME") orelse
+		runtime.getEnv("HOST") orelse
 		"";
 	try result.appendSlice(allocator, hostname);
 
@@ -200,17 +201,17 @@ test "buildFileUrl: path with spaces" {
 
 test "writeStatsMessage: hidden only" {
 	var buf: [256]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	try writeStatsMessage(fbs.writer(), 0, 0, 0, 0, 1, true);
-	const output = fbs.getWritten();
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStatsMessage(&fbs, 0, 0, 0, 0, 1, true);
+	const output = fbs.buffered();
 	try std.testing.expect(std.mem.indexOf(u8, output, "1 file hidden.") != null);
 }
 
 test "writeStatsMessage: shown and hidden" {
 	var buf: [512]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	try writeStatsMessage(fbs.writer(), 3, 10, 42, 2, 3, true);
-	const output = fbs.getWritten();
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStatsMessage(&fbs, 3, 10, 42, 2, 3, true);
+	const output = fbs.buffered();
 	try std.testing.expect(std.mem.indexOf(u8, output, "3 directories and 10 files shown (42 lines)") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "2 directories and 3 files hidden.") != null);
 }

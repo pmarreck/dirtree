@@ -2,6 +2,7 @@ const std = @import("std");
 const state_mod = @import("state.zig");
 const regex_lib = @import("pcre2.zig");
 const regex_mod = @import("regex.zig");
+const runtime = @import("runtime.zig");
 
 /// Match type for path evaluation - how a path was matched.
 pub const MatchType = enum {
@@ -64,16 +65,16 @@ pub const EffectiveState = struct {
 	max_lines: ?u32 = null,
 
 	// Literal hash maps
-	open_literals: std.StringHashMapUnmanaged(void) = .{},
-	close_literals: std.StringHashMapUnmanaged(void) = .{},
-	show_literals: std.StringHashMapUnmanaged(void) = .{},
-	hide_literals: std.StringHashMapUnmanaged(void) = .{},
+	open_literals: std.StringHashMapUnmanaged(void) = .empty,
+	close_literals: std.StringHashMapUnmanaged(void) = .empty,
+	show_literals: std.StringHashMapUnmanaged(void) = .empty,
+	hide_literals: std.StringHashMapUnmanaged(void) = .empty,
 
 	// Compiled regex tests
-	open_regexes: std.ArrayListUnmanaged(CompiledRegex) = .{},
-	close_regexes: std.ArrayListUnmanaged(CompiledRegex) = .{},
-	show_regexes: std.ArrayListUnmanaged(CompiledRegex) = .{},
-	hide_regexes: std.ArrayListUnmanaged(CompiledRegex) = .{},
+	open_regexes: std.ArrayListUnmanaged(CompiledRegex) = .empty,
+	close_regexes: std.ArrayListUnmanaged(CompiledRegex) = .empty,
+	show_regexes: std.ArrayListUnmanaged(CompiledRegex) = .empty,
+	hide_regexes: std.ArrayListUnmanaged(CompiledRegex) = .empty,
 
 	// Combined regexes for fast non-negated matching (alternation of all non-negated patterns)
 	open_combined: ?regex_lib.Regex = null,
@@ -85,7 +86,7 @@ pub const EffectiveState = struct {
 	needs_migration: bool = false,
 
 	// All allocated strings tracked for cleanup
-	strings: std.ArrayListUnmanaged([]const u8) = .{},
+	strings: std.ArrayListUnmanaged([]const u8) = .empty,
 
 	pub fn deinit(self: *EffectiveState) void {
 		const a = self.allocator;
@@ -267,19 +268,19 @@ const InheritedState = struct {
 	max_lines_set: bool = false,
 
 	// Literal maps
-	open_literals: std.StringHashMapUnmanaged(void) = .{},
-	close_literals: std.StringHashMapUnmanaged(void) = .{},
-	show_literals: std.StringHashMapUnmanaged(void) = .{},
-	hide_literals: std.StringHashMapUnmanaged(void) = .{},
+	open_literals: std.StringHashMapUnmanaged(void) = .empty,
+	close_literals: std.StringHashMapUnmanaged(void) = .empty,
+	show_literals: std.StringHashMapUnmanaged(void) = .empty,
+	hide_literals: std.StringHashMapUnmanaged(void) = .empty,
 
 	// Regex maps (pattern -> info, for deduplication; key is compiled regex pattern)
-	open_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .{},
-	close_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .{},
-	show_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .{},
-	hide_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .{},
+	open_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .empty,
+	close_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .empty,
+	show_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .empty,
+	hide_regex_map: std.StringHashMapUnmanaged(RegexInfo) = .empty,
 
 	// Track allocated strings
-	strings: std.ArrayListUnmanaged([]const u8) = .{},
+	strings: std.ArrayListUnmanaged([]const u8) = .empty,
 
 	fn deinit(self: *InheritedState) void {
 		const a = self.allocator;
@@ -430,7 +431,7 @@ pub fn buildEffectiveState(allocator: std.mem.Allocator, abs_dir: []const u8) !E
 	defer inherited.deinit();
 
 	// Collect parent directories that have .dirtree-state files
-	var state_dirs = std.ArrayListUnmanaged([]const u8){};
+	var state_dirs: std.ArrayListUnmanaged([]const u8) = .empty;
 	defer {
 		for (state_dirs.items) |s| allocator.free(s);
 		state_dirs.deinit(allocator);
@@ -445,7 +446,7 @@ pub fn buildEffectiveState(allocator: std.mem.Allocator, abs_dir: []const u8) !E
 		defer allocator.free(state_path);
 
 		const exists = blk: {
-			std.fs.cwd().access(state_path, .{}) catch break :blk false;
+			std.Io.Dir.cwd().access(runtime.io(), state_path, .{}) catch break :blk false;
 			break :blk true;
 		};
 
@@ -474,7 +475,7 @@ pub fn buildEffectiveState(allocator: std.mem.Allocator, abs_dir: []const u8) !E
 		const state_path = try std.fs.path.join(allocator, &.{ dir, ".dirtree-state" });
 		defer allocator.free(state_path);
 
-		const content = std.fs.cwd().readFileAlloc(allocator, state_path, 1024 * 1024) catch continue;
+		const content = std.Io.Dir.cwd().readFileAlloc(runtime.io(), state_path, allocator, .limited(1024 * 1024)) catch continue;
 		defer allocator.free(content);
 
 		var sf = try state_mod.parseStateFile(allocator, content);
@@ -493,7 +494,7 @@ pub fn buildEffectiveState(allocator: std.mem.Allocator, abs_dir: []const u8) !E
 		const state_path = try std.fs.path.join(allocator, &.{ abs_dir, ".dirtree-state" });
 		defer allocator.free(state_path);
 
-		const content = std.fs.cwd().readFileAlloc(allocator, state_path, 1024 * 1024) catch null;
+		const content = std.Io.Dir.cwd().readFileAlloc(runtime.io(), state_path, allocator, .limited(1024 * 1024)) catch null;
 		if (content) |c| {
 			defer allocator.free(c);
 			local_state = state_mod.parseStateFile(allocator, c) catch null;
@@ -926,7 +927,7 @@ fn buildCombinedRegex(
 	}
 
 	// Multiple patterns: build alternation (pat1|pat2|...|patN)
-	var buf: std.ArrayListUnmanaged(u8) = .{};
+	var buf: std.ArrayListUnmanaged(u8) = .empty;
 	defer buf.deinit(allocator);
 	try buf.append(allocator, '(');
 	var first = true;

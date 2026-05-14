@@ -8,6 +8,7 @@ const tree_render = @import("tree_render.zig");
 const dir_scan = @import("dir_scan.zig");
 const ansi_mod = @import("ansi.zig");
 const i18n = @import("i18n/mod.zig");
+const runtime = @import("runtime.zig");
 
 pub const SortMode = enum {
 	modified,
@@ -55,14 +56,14 @@ pub const CliConfig = struct {
 	default_state: ?DefaultState = null,
 
 	// Variadic args (literals and regex patterns)
-	open_literals: std.ArrayListUnmanaged([]const u8) = .{},
-	open_regexes: std.ArrayListUnmanaged(ArgEntry) = .{},
-	close_literals: std.ArrayListUnmanaged([]const u8) = .{},
-	close_regexes: std.ArrayListUnmanaged(ArgEntry) = .{},
-	show_literals: std.ArrayListUnmanaged([]const u8) = .{},
-	show_regexes: std.ArrayListUnmanaged(ArgEntry) = .{},
-	hide_literals: std.ArrayListUnmanaged([]const u8) = .{},
-	hide_regexes: std.ArrayListUnmanaged(ArgEntry) = .{},
+	open_literals: std.ArrayListUnmanaged([]const u8) = .empty,
+	open_regexes: std.ArrayListUnmanaged(ArgEntry) = .empty,
+	close_literals: std.ArrayListUnmanaged([]const u8) = .empty,
+	close_regexes: std.ArrayListUnmanaged(ArgEntry) = .empty,
+	show_literals: std.ArrayListUnmanaged([]const u8) = .empty,
+	show_regexes: std.ArrayListUnmanaged(ArgEntry) = .empty,
+	hide_literals: std.ArrayListUnmanaged([]const u8) = .empty,
+	hide_regexes: std.ArrayListUnmanaged(ArgEntry) = .empty,
 
 	// Output control
 	max_lines: ?u32 = null,
@@ -71,7 +72,7 @@ pub const CliConfig = struct {
 	tail_lines: ?u32 = null,
 
 	// Focus mode
-	only_paths: std.ArrayListUnmanaged([]const u8) = .{},
+	only_paths: std.ArrayListUnmanaged([]const u8) = .empty,
 
 	// Target directory
 	dir: []const u8 = ".",
@@ -690,7 +691,7 @@ fn detectTty() bool {
 			return false; // PIPED_STDOUT=1 means treat as piped
 		}
 	}
-	return std.posix.isatty(std.posix.STDOUT_FILENO);
+	return std.Io.File.stdout().isTty(runtime.io()) catch false;
 }
 
 fn applyEnvVars(config: *CliConfig) void {
@@ -795,13 +796,17 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll("\n");
 }
 
-pub fn main() !u8 {
+pub fn main(init: std.process.Init) !u8 {
+	// Initialize process-wide runtime context (io + env) for all modules.
+	runtime.init(init.io, init.environ_map);
+	const io = init.io;
+
 	var stdout_buf: [4096]u8 = undefined;
-	var stdout_writer = std.fs.File.stdout().writer(&stdout_buf);
+	var stdout_writer = std.Io.File.stdout().writer(io, &stdout_buf);
 	const stdout = &stdout_writer.interface;
 
 	var stderr_buf: [4096]u8 = undefined;
-	var stderr_writer = std.fs.File.stderr().writer(&stderr_buf);
+	var stderr_writer = std.Io.File.stderr().writer(io, &stderr_buf);
 	const stderr = &stderr_writer.interface;
 
 	// Warn if running an unoptimized debug build
@@ -810,10 +815,9 @@ pub fn main() !u8 {
 		try stderr.flush();
 	}
 
-	var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-	defer arena.deinit();
+	const arena = init.arena;
 	const allocator = arena.allocator();
-	const raw_args = try std.process.argsAlloc(allocator);
+	const raw_args = try init.minimal.args.toSlice(allocator);
 	// No need for argsFree - arena handles cleanup
 
 	const result = parseArgs(allocator, raw_args);
@@ -834,28 +838,32 @@ pub fn main() !u8 {
 		.test_mode => {
 			const s = i18n.tr();
 			// Check for DIRTREE_TEST_BIN to run external test binary
-			const test_bin = std.posix.getenv("DIRTREE_TEST_BIN");
+			const test_bin = runtime.getEnv("DIRTREE_TEST_BIN");
 			if (test_bin) |bin| {
 				const argv: []const []const u8 = &.{bin};
-				var child = std.process.Child.init(argv, allocator);
-				child.stderr_behavior = .Inherit;
-				child.stdout_behavior = .Inherit;
-				child.stdin_behavior = .Inherit;
-				child.spawn() catch {
+				var child = std.process.spawn(io, .{
+					.argv = argv,
+					.stdin = .inherit,
+					.stdout = .inherit,
+					.stderr = .inherit,
+				}) catch {
 					var err_buf: [512]u8 = undefined;
-					const msg = i18n.fmtRuntime(&err_buf, s.err_test_bin_run, &.{std.mem.sliceTo(bin, 0)});
+					const msg = i18n.fmtRuntime(&err_buf, s.err_test_bin_run, &.{bin});
 					try stderr.writeAll(msg);
 					try stderr.writeAll("\n");
 					try stderr.flush();
 					return 1;
 				};
-				const term = child.wait() catch {
+				const term = child.wait(io) catch {
 					try stderr.writeAll(s.err_test_bin_wait);
 					try stderr.writeAll("\n");
 					try stderr.flush();
 					return 1;
 				};
-				return term.Exited;
+				return switch (term) {
+					.exited => |code| code,
+					else => 1,
+				};
 			}
 			try stderr.writeAll(s.test_mode_msg);
 			try stderr.writeAll("\n");
@@ -1059,17 +1067,19 @@ pub fn main() !u8 {
 
 /// Resolve a directory path to an absolute path.
 fn resolveAbsDir(allocator: std.mem.Allocator, dir: []const u8) ![]const u8 {
+	const io = runtime.io();
 	// If already absolute, use it directly
 	if (dir.len > 0 and dir[0] == '/') {
 		// Verify it's a directory
-		var d = try std.fs.cwd().openDir(dir, .{});
-		d.close();
+		var d = try std.Io.Dir.cwd().openDir(io, dir, .{});
+		d.close(io);
 		return try allocator.dupe(u8, dir);
 	}
 
 	// Resolve relative to cwd
-	const cwd = try std.fs.cwd().realpathAlloc(allocator, ".");
-	defer allocator.free(cwd);
+	const cwd_z = try std.Io.Dir.cwd().realPathFileAlloc(io, ".", allocator);
+	defer allocator.free(cwd_z);
+	const cwd: []const u8 = cwd_z;
 
 	if (std.mem.eql(u8, dir, ".")) {
 		return try allocator.dupe(u8, cwd);
@@ -1079,8 +1089,8 @@ fn resolveAbsDir(allocator: std.mem.Allocator, dir: []const u8) ![]const u8 {
 	errdefer allocator.free(abs);
 
 	// Verify it's a directory
-	var d = std.fs.cwd().openDir(abs, .{}) catch return error.NotADirectory;
-	d.close();
+	var d = std.Io.Dir.cwd().openDir(io, abs, .{}) catch return error.NotADirectory;
+	d.close(io);
 
 	return abs;
 }
@@ -1216,10 +1226,11 @@ fn findMatchingEntry(
 	abs_dir: []const u8,
 	re: *path_eval.CompiledRegex,
 ) ?[]const u8 {
-	var dir = std.fs.cwd().openDir(abs_dir, .{ .iterate = true }) catch return null;
-	defer dir.close();
+	const io = runtime.io();
+	var dir = std.Io.Dir.cwd().openDir(io, abs_dir, .{ .iterate = true }) catch return null;
+	defer dir.close(io);
 	var iter = dir.iterate();
-	while (iter.next() catch return null) |entry| {
+	while (iter.next(io) catch return null) |entry| {
 		if (std.mem.eql(u8, entry.name, ".") or std.mem.eql(u8, entry.name, "..")) continue;
 		const matched = re.compiled.partialMatch(entry.name) catch continue;
 		if (matched) {
@@ -1240,8 +1251,9 @@ fn persistState(
 	const state_path = try std.fs.path.join(allocator, &.{ abs_dir, ".dirtree-state" });
 	defer allocator.free(state_path);
 
+	const io = runtime.io();
 	var sf: state_mod.StateFile = blk: {
-		const content = std.fs.cwd().readFileAlloc(allocator, state_path, 1024 * 1024) catch |err| {
+		const content = std.Io.Dir.cwd().readFileAlloc(io, state_path, allocator, .limited(1024 * 1024)) catch |err| {
 			switch (err) {
 				error.FileNotFound => {
 					break :blk state_mod.StateFile{ .allocator = allocator };
@@ -1355,15 +1367,15 @@ fn persistState(
 	defer allocator.free(tmp_path);
 
 	{
-		const file = try std.fs.cwd().createFile(tmp_path, .{});
-		defer file.close();
+		const file = try std.Io.Dir.cwd().createFile(io, tmp_path, .{});
+		defer file.close(io);
 		var buf: [8192]u8 = undefined;
-		var bw = file.writer(&buf);
+		var bw = file.writer(io, &buf);
 		try state_mod.writeStateFile(&sf, &bw.interface);
 		try bw.interface.flush();
 	}
 
-	try std.fs.cwd().rename(tmp_path, state_path);
+	try std.Io.Dir.cwd().rename(tmp_path, std.Io.Dir.cwd(), state_path, io);
 	_ = effective; // used in caller for needs_migration check
 }
 /// Remove entries from a list that match a given value.
@@ -1385,10 +1397,10 @@ fn removeEntryByValue(list: *std.ArrayListUnmanaged(state_mod.StateEntry), value
 // Tests
 test "help output contains usage" {
 	var buf: [8192]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	const writer = fbs.writer();
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
 	try printHelp(writer);
-	const output = fbs.getWritten();
+	const output = fbs.buffered();
 	try std.testing.expect(std.mem.indexOf(u8, output, "Usage: dirtree") != null);
 }
 

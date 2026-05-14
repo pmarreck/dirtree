@@ -4,6 +4,7 @@ const icons = @import("icons.zig");
 const dir_scan = @import("dir_scan.zig");
 const path_eval = @import("path_eval.zig");
 const i18n = @import("i18n/mod.zig");
+const runtime = @import("runtime.zig");
 
 /// Configuration for the tree renderer.
 pub const RenderConfig = struct {
@@ -74,7 +75,7 @@ pub fn renderTree(
 ) !void {
 	// When --tail is set, render into a buffer then emit last N lines
 	if (config.tail_lines) |tail_n| {
-		var buf: std.ArrayListUnmanaged(u8) = .{};
+		var buf: std.ArrayListUnmanaged(u8) = .empty;
 		defer buf.deinit(allocator);
 
 		// Render into buffer using a writer adapter
@@ -252,7 +253,7 @@ fn renderDir(
 	defer dir_scan.freeEntries(allocator, entries);
 
 	// First pass: evaluate and filter entries
-	var visible = std.ArrayListUnmanaged(VisibleEntry){};
+	var visible = std.ArrayListUnmanaged(VisibleEntry).empty;
 	defer visible.deinit(allocator);
 
 	for (entries) |entry| {
@@ -441,9 +442,9 @@ pub fn countVisibleEntries(
 /// which are the targets themselves, and provides query methods.
 pub const FocusSet = struct {
 	/// Directories that are ancestors of target paths (need focused recursion)
-	ancestors: std.StringHashMapUnmanaged(void) = .{},
+	ancestors: std.StringHashMapUnmanaged(void) = .empty,
 	/// The target directories themselves (get full-depth normal rendering)
-	targets: std.StringHashMapUnmanaged(void) = .{},
+	targets: std.StringHashMapUnmanaged(void) = .empty,
 	allocator: std.mem.Allocator,
 
 	pub fn init(allocator: std.mem.Allocator) FocusSet {
@@ -555,7 +556,7 @@ fn renderDirFocused(
 	defer dir_scan.freeEntries(allocator, entries);
 
 	// First pass: evaluate and filter entries
-	var visible = std.ArrayListUnmanaged(VisibleEntry){};
+	var visible = std.ArrayListUnmanaged(VisibleEntry).empty;
 	defer visible.deinit(allocator);
 
 	for (entries) |entry| {
@@ -850,12 +851,13 @@ fn renderFileEntry(
 
 /// Read a symlink's target path. Returns owned slice or null on failure.
 fn readSymlinkTarget(allocator: std.mem.Allocator, abs_dir: []const u8, child_rel: []const u8) ?[]const u8 {
-	var dir = std.fs.cwd().openDir(abs_dir, .{}) catch return null;
-	defer dir.close();
+	const io = runtime.io();
+	var dir = std.Io.Dir.cwd().openDir(io, abs_dir, .{}) catch return null;
+	defer dir.close(io);
 
-	var buf: [std.fs.max_path_bytes]u8 = undefined;
-	const target = dir.readLink(child_rel, &buf) catch return null;
-	return allocator.dupe(u8, target) catch return null;
+	var buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
+	const n = dir.readLink(io, child_rel, &buf) catch return null;
+	return allocator.dupe(u8, buf[0..n]) catch return null;
 }
 
 // Tests
@@ -863,8 +865,8 @@ fn readSymlinkTarget(allocator: std.mem.Allocator, abs_dir: []const u8, child_re
 test "renderRootHeader: simple mode shows absolute path" {
 	const allocator = std.testing.allocator;
 	var buf: [1024]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	const writer = fbs.writer();
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
 
 	try renderRootHeader(allocator, writer, "/tmp/test_dir", .{
 		.use_color = false,
@@ -873,7 +875,7 @@ test "renderRootHeader: simple mode shows absolute path" {
 		.simple_mode = true,
 	});
 
-	const output = fbs.getWritten();
+	const output = fbs.buffered();
 	// Should show absolute path with icon and trailing /
 	try std.testing.expect(std.mem.indexOf(u8, output, "/tmp/test_dir/") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, icons.dir_icon) != null);
@@ -882,8 +884,8 @@ test "renderRootHeader: simple mode shows absolute path" {
 test "renderRootHeader: no icons shows absolute path" {
 	const allocator = std.testing.allocator;
 	var buf: [1024]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	const writer = fbs.writer();
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
 
 	try renderRootHeader(allocator, writer, "/tmp/test_dir", .{
 		.use_color = false,
@@ -892,15 +894,15 @@ test "renderRootHeader: no icons shows absolute path" {
 		.simple_mode = true,
 	});
 
-	const output = fbs.getWritten();
+	const output = fbs.buffered();
 	try std.testing.expectEqualStrings("/tmp/test_dir/\n", output);
 }
 
 test "renderRootHeader: with color shows parent path and basename" {
 	const allocator = std.testing.allocator;
 	var buf: [1024]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	const writer = fbs.writer();
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
 
 	try renderRootHeader(allocator, writer, "/tmp/test_dir", .{
 		.use_color = true,
@@ -909,7 +911,7 @@ test "renderRootHeader: with color shows parent path and basename" {
 		.simple_mode = false,
 	});
 
-	const output = fbs.getWritten();
+	const output = fbs.buffered();
 	try std.testing.expect(std.mem.indexOf(u8, output, ansi.cyan) != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, ansi.bold_blue) != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, ansi.reset) != null);

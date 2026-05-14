@@ -199,11 +199,12 @@ pub fn parseLocaleCode(code_str: []const u8) ?Locale {
 /// Detect locale from environment variables.
 /// Priority: LC_MESSAGES > LANG > fallback to English.
 pub fn detectLocaleFromEnv() Locale {
-    if (std.posix.getenv("LC_MESSAGES")) |val| {
-        if (parseLocaleCode(std.mem.sliceTo(val, 0))) |loc| return loc;
+    const runtime = @import("../runtime.zig");
+    if (runtime.getEnv("LC_MESSAGES")) |val| {
+        if (parseLocaleCode(val)) |loc| return loc;
     }
-    if (std.posix.getenv("LANG")) |val| {
-        if (parseLocaleCode(std.mem.sliceTo(val, 0))) |loc| return loc;
+    if (runtime.getEnv("LANG")) |val| {
+        if (parseLocaleCode(val)) |loc| return loc;
     }
     return .en;
 }
@@ -311,34 +312,39 @@ fn envAliasesFor(comptime env_var: EnvVar) []const [:0]const u8 {
     };
 
     // Count matching entries
-    var count: usize = 0;
-    for (locale_aliases) |entries| {
-        for (entries) |entry| {
+    comptime var count: usize = 0;
+    inline for (locale_aliases) |entries| {
+        inline for (entries) |entry| {
             if (entry.var_id == env_var) count += 1;
         }
     }
 
-    // Build array
-    var result: [count][:0]const u8 = undefined;
-    var idx: usize = 0;
-    for (locale_aliases) |entries| {
-        for (entries) |entry| {
-            if (entry.var_id == env_var) {
-                result[idx] = entry.name;
-                idx += 1;
+    // Build array as comptime constant so its address remains valid after return.
+    const result = comptime blk: {
+        var arr: [count][:0]const u8 = undefined;
+        var idx: usize = 0;
+        for (locale_aliases) |entries| {
+            for (entries) |entry| {
+                if (entry.var_id == env_var) {
+                    arr[idx] = entry.name;
+                    idx += 1;
+                }
             }
         }
-    }
+        const final = arr;
+        break :blk final;
+    };
 
     return &result;
 }
 
 /// Look up an environment variable by its canonical EnvVar id,
 /// checking all locale aliases. Returns the first match.
-pub fn getEnvLocalized(comptime env_var: EnvVar) ?[:0]const u8 {
+pub fn getEnvLocalized(comptime env_var: EnvVar) ?[]const u8 {
+    const runtime = @import("../runtime.zig");
     const names = comptime envAliasesFor(env_var);
     inline for (names) |name| {
-        if (std.posix.getenv(name)) |val| return val;
+        if (runtime.getEnv(name)) |val| return val;
     }
     return null;
 }

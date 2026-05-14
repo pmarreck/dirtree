@@ -74,16 +74,16 @@ pub const StateFile = struct {
 	max_lines: ?u32 = null,
 
 	// Collections
-	open_entries: std.ArrayListUnmanaged(StateEntry) = .{},
-	close_entries: std.ArrayListUnmanaged(StateEntry) = .{},
-	show_entries: std.ArrayListUnmanaged(StateEntry) = .{},
-	hide_entries: std.ArrayListUnmanaged(StateEntry) = .{},
+	open_entries: std.ArrayListUnmanaged(StateEntry) = .empty,
+	close_entries: std.ArrayListUnmanaged(StateEntry) = .empty,
+	show_entries: std.ArrayListUnmanaged(StateEntry) = .empty,
+	hide_entries: std.ArrayListUnmanaged(StateEntry) = .empty,
 
 	// Passthrough (unknown keys/lines preserved as-is)
-	passthrough_lines: std.ArrayListUnmanaged([]const u8) = .{},
+	passthrough_lines: std.ArrayListUnmanaged([]const u8) = .empty,
 
 	// All allocated strings tracked for cleanup
-	strings: std.ArrayListUnmanaged([]const u8) = .{},
+	strings: std.ArrayListUnmanaged([]const u8) = .empty,
 
 	pub fn deinit(self: *StateFile) void {
 		const a = self.allocator;
@@ -143,9 +143,9 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 	var format: enum { undetermined, inima, legacy } = .undetermined;
 	var current_array: ?[]const u8 = null;
 	var collecting_unknown = false;
-	var unknown_buffer: std.ArrayListUnmanaged([]const u8) = .{};
+	var unknown_buffer: std.ArrayListUnmanaged([]const u8) = .empty;
 	defer unknown_buffer.deinit(allocator);
-	var comment_buffer: std.ArrayListUnmanaged(u8) = .{};
+	var comment_buffer: std.ArrayListUnmanaged(u8) = .empty;
 	defer comment_buffer.deinit(allocator);
 
 	while (lines_iter.next()) |raw_line| {
@@ -945,9 +945,9 @@ test "round-trip: parse then write produces equivalent output" {
 	defer state.deinit();
 
 	var buf: [4096]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	try writeStateFile(&state, fbs.writer());
-	const output = fbs.getWritten();
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStateFile(&state, &fbs);
+	const output = fbs.buffered();
 
 	// The output should have the header comment and ver=1.2,
 	// then the same structure
@@ -1052,9 +1052,9 @@ test "write state file with all fields" {
 	try state.addEntry(&state.close_entries, .{ .value = val2, .kind = .regex, .negated = false });
 
 	var buf: [4096]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	try writeStateFile(&state, fbs.writer());
-	const output = fbs.getWritten();
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStateFile(&state, &fbs);
+	const output = fbs.buffered();
 
 	try std.testing.expect(std.mem.indexOf(u8, output, "default=closed") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "depth=5") != null);
@@ -1083,9 +1083,9 @@ test "legacy state sort order matches bash" {
 	defer sf.deinit();
 
 	var buf: [4096]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	try writeStateFile(&sf, fbs.writer());
-	const output = fbs.getWritten();
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStateFile(&sf, &fbs);
+	const output = fbs.buffered();
 
 	// After migration, ^docs/.*/index$ is converted to glob docs/**/index
 	// Expected sort order: README.md < docs/**/index < docs/index.md (ASCII: '*' < '/')
@@ -1127,9 +1127,9 @@ test "v1.1 to v1.2 migration converts regex to glob" {
 
 	// Written output should have ver=1.2 and bare globs
 	var buf: [4096]u8 = undefined;
-	var fbs = std.io.fixedBufferStream(&buf);
-	try writeStateFile(&sf, fbs.writer());
-	const output = fbs.getWritten();
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStateFile(&sf, &fbs);
+	const output = fbs.buffered();
 
 	try std.testing.expect(std.mem.indexOf(u8, output, "ver=1.2") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "\t*.log\n") != null);

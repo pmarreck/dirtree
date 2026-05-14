@@ -1,4 +1,5 @@
 const std = @import("std");
+const runtime = @import("runtime.zig");
 
 pub const EntryKind = enum {
 	directory,
@@ -36,20 +37,21 @@ pub fn scanDir(
 	sort_mode: SortMode,
 	sort_direction: SortDirection,
 ) ![]DirEntry {
-	var entries: std.ArrayListUnmanaged(DirEntry) = .{};
+	var entries: std.ArrayListUnmanaged(DirEntry) = .empty;
 	defer entries.deinit(allocator);
 
-	var dir = std.fs.cwd().openDir(dir_path, .{ .iterate = true }) catch |err| {
+	const io = runtime.io();
+	var dir = std.Io.Dir.cwd().openDir(io, dir_path, .{ .iterate = true }) catch |err| {
 		switch (err) {
 			error.AccessDenied, error.FileNotFound => return try entries.toOwnedSlice(allocator),
 			else => return err,
 		}
 	};
-	defer dir.close();
+	defer dir.close(io);
 
 	const need_stat = sort_mode == .modified;
 	var iter = dir.iterate();
-	while (try iter.next()) |entry| {
+	while (try iter.next(io)) |entry| {
 		const kind: EntryKind = switch (entry.kind) {
 			.directory => .directory,
 			.sym_link => .symlink,
@@ -91,22 +93,26 @@ pub fn scanDir(
 
 /// Check if a directory has any children (non-empty).
 pub fn dirHasChildren(dir_path: []const u8) bool {
-	var dir = std.fs.cwd().openDir(dir_path, .{ .iterate = true }) catch return false;
-	defer dir.close();
+	const io = runtime.io();
+	var dir = std.Io.Dir.cwd().openDir(io, dir_path, .{ .iterate = true }) catch return false;
+	defer dir.close(io);
 	var iter = dir.iterate();
-	if ((iter.next() catch null)) |_| {
+	if ((iter.next(io) catch null)) |_| {
 		return true;
 	}
 	return false;
 }
 
-fn getStatInfo(dir: std.fs.Dir, name: []const u8) StatInfo {
-	const stat = dir.statFile(name) catch |err| {
+fn getStatInfo(dir: std.Io.Dir, name: []const u8) StatInfo {
+	const stat = dir.statFile(runtime.io(), name, .{}) catch |err| {
 		switch (err) {
 			else => return .{ .mtime = 0, .mode = 0 },
 		}
 	};
-	return .{ .mtime = stat.mtime, .mode = @intCast(stat.mode) };
+	return .{
+		.mtime = @intCast(stat.mtime.nanoseconds),
+		.mode = @intCast(stat.permissions.toMode()),
+	};
 }
 
 // Sort comparisons

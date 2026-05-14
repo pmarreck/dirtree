@@ -1,14 +1,15 @@
 const std = @import("std");
 const i18n = @import("i18n/mod.zig");
+const runtime = @import("runtime.zig");
 
 /// Priority paths collected from SCM (git/jj) for changed files/dirs.
 /// These override hide/close for paths with uncommitted changes.
 pub const PriorityPaths = struct {
 	allocator: std.mem.Allocator,
-	files: std.StringHashMapUnmanaged(void) = .{},
-	dirs: std.StringHashMapUnmanaged(void) = .{},
+	files: std.StringHashMapUnmanaged(void) = .empty,
+	dirs: std.StringHashMapUnmanaged(void) = .empty,
 	enabled: bool = false,
-	strings: std.ArrayListUnmanaged([]const u8) = .{},
+	strings: std.ArrayListUnmanaged([]const u8) = .empty,
 
 	pub fn deinit(self: *PriorityPaths) void {
 		const a = self.allocator;
@@ -125,8 +126,8 @@ fn collectGitPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: 
 			defer allocator.free(full_path);
 
 			const is_dir = blk: {
-				var dir = std.fs.cwd().openDir(full_path, .{}) catch break :blk false;
-				dir.close();
+				var dir = std.Io.Dir.cwd().openDir(runtime.io(), full_path, .{}) catch break :blk false;
+				dir.close(runtime.io());
 				break :blk true;
 			};
 
@@ -159,8 +160,8 @@ fn collectJjPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: *
 			defer allocator.free(full_path);
 
 			const is_dir = blk: {
-				var dir = std.fs.cwd().openDir(full_path, .{}) catch break :blk false;
-				dir.close();
+				var dir = std.Io.Dir.cwd().openDir(runtime.io(), full_path, .{}) catch break :blk false;
+				dir.close(runtime.io());
 				break :blk true;
 			};
 
@@ -177,7 +178,7 @@ fn getGitRoot(allocator: std.mem.Allocator, abs_dir: []const u8) ![]const u8 {
 	defer allocator.free(output);
 
 	// Trim trailing newline
-	const trimmed = std.mem.trimRight(u8, output, "\n\r");
+	const trimmed = std.mem.trimEnd(u8, output, "\n\r");
 	if (trimmed.len == 0) return error.NotAGitRepo;
 
 	return try allocator.dupe(u8, trimmed);
@@ -188,7 +189,7 @@ fn getJjRoot(allocator: std.mem.Allocator, abs_dir: []const u8) ![]const u8 {
 	const output = try runCommand(allocator, &.{ "jj", "-R", abs_dir, "root" });
 	defer allocator.free(output);
 
-	const trimmed = std.mem.trimRight(u8, output, "\n\r");
+	const trimmed = std.mem.trimEnd(u8, output, "\n\r");
 	if (trimmed.len == 0) return error.NotAJjRepo;
 
 	return try allocator.dupe(u8, trimmed);
@@ -230,20 +231,32 @@ fn computeRelativePath(
 
 /// Run a command and return its stdout output.
 fn runCommand(allocator: std.mem.Allocator, argv: []const []const u8) ![]const u8 {
-	var child = std.process.Child.init(argv, allocator);
-	child.stdout_behavior = .Pipe;
-	child.stderr_behavior = .Ignore;
-
-	try child.spawn();
+	const io = runtime.io();
+	var child = try std.process.spawn(io, .{
+		.argv = argv,
+		.stdout = .pipe,
+		.stderr = .ignore,
+	});
 
 	// Read all stdout from the pipe file
-	const stdout_output = try child.stdout.?.readToEndAlloc(allocator, 1024 * 1024);
+	var read_buf: [4096]u8 = undefined;
+	var pipe_reader = child.stdout.?.readerStreaming(io, &read_buf);
+	const stdout_output = pipe_reader.interface.allocRemaining(allocator, .limited(1024 * 1024)) catch |err| {
+		_ = child.wait(io) catch {};
+		return err;
+	};
 	errdefer allocator.free(stdout_output);
 
-	const term = try child.wait();
-	if (term.Exited != 0) {
-		allocator.free(stdout_output);
-		return error.CommandFailed;
+	const term = try child.wait(io);
+	switch (term) {
+		.exited => |code| if (code != 0) {
+			allocator.free(stdout_output);
+			return error.CommandFailed;
+		},
+		else => {
+			allocator.free(stdout_output);
+			return error.CommandFailed;
+		},
 	}
 
 	return stdout_output;
