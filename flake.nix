@@ -4,12 +4,17 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    zig-overlay = {
+      url = "github:mitchellh/zig-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, zig-overlay }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        zig = zig-overlay.packages.${system}."0.16.0";
         isDarwin = pkgs.stdenv.isDarwin;
         pname = "dirtree";
         version = "0.1.0";
@@ -20,7 +25,7 @@
           pname = "${pname}-zig-deps";
           inherit version;
           src = self;
-          nativeBuildInputs = [ pkgs.zig pkgs.git pkgs.cacert ]
+          nativeBuildInputs = [ zig pkgs.git pkgs.cacert ]
             ++ pkgs.lib.optionals isDarwin [
               pkgs.darwin.cctools
               pkgs.apple-sdk
@@ -42,14 +47,14 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = [
-            pkgs.zig
+            zig
           ];
         };
 
         packages.default = pkgs.stdenv.mkDerivation {
           inherit pname version;
           src = self;
-          nativeBuildInputs = [ pkgs.zig ]
+          nativeBuildInputs = [ zig ]
             ++ pkgs.lib.optionals isDarwin [
               pkgs.darwin.cctools
               pkgs.apple-sdk
