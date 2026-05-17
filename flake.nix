@@ -19,7 +19,7 @@
         pname = "dirtree";
         version = "0.1.0";
 
-        zigDepsHash = "sha256-uY8TcSP6wSIKNvfo6eunuxiYRjQGIJMgaXrX1meUWT4=";
+        zigDepsHash = "sha256-CZYaUzlhZdEIT0Wep+Pw7yvyDcfJMsrgJUMZJIS0OBo=";
 
         zigDeps = pkgs.stdenv.mkDerivation {
           pname = "${pname}-zig-deps";
