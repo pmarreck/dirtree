@@ -176,6 +176,13 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		if (arg.len > 1 and arg[0] == '-' and arg[1] == '-') {
 			if (i18n.matchLongFlag(arg)) |cli_arg| {
 				switch (cli_arg) {
+					.annotate => {
+						// annotate is a positional subcommand, not a flag.
+						// It is dispatched before this loop runs. If it appears
+						// here (e.g., as --annotate), treat as unknown option.
+						config.deinit(allocator);
+						return .{ .err = s.err_unknown_option };
+					},
 					.help => {
 						config.deinit(allocator);
 						return .help;
