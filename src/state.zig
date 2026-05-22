@@ -562,6 +562,22 @@ pub fn writeStateFile(state: *const StateFile, writer: anytype) !void {
 		}
 	}
 
+	// Annotations (sorted alphabetically by path)
+	if (state.annotate_entries.items.len > 0) {
+		if (wrote_block) try writer.print("\n", .{});
+		try writer.print("annotate=[\n", .{});
+
+		// Sort entries alphabetically by path (stable order for deterministic output).
+		// Done inline (vs. sortEntriesForOutput) because AnnotateEntry has a simpler
+		// shape than StateEntry and doesn't need the wrapped-key comparison logic.
+		std.mem.sort(AnnotateEntry, state.annotate_entries.items, {}, annotateLessThan);
+		for (state.annotate_entries.items) |entry| {
+			try writer.print("\t{s} = {s}\n", .{ entry.path, entry.description });
+		}
+		try writer.print("]\n", .{});
+		wrote_block = true;
+	}
+
 	// Passthrough
 	if (state.passthrough_lines.items.len > 0) {
 		if (wrote_block) try writer.print("\n", .{});
@@ -583,6 +599,10 @@ fn entryLessThan(_: void, a: StateEntry, b: StateEntry) bool {
 	// Compare by serialized form: regex entries are wrapped as /pattern/ or !/pattern/
 	// Literals are compared as-is
 	return compareEntrySerialized(a, b);
+}
+
+fn annotateLessThan(_: void, a: AnnotateEntry, b: AnnotateEntry) bool {
+	return std.mem.lessThan(u8, a.path, b.path);
 }
 
 /// Compare two entries by their serialized form (as they'd appear in the state file, minus tab prefix).
@@ -1256,4 +1276,67 @@ test "parseStateFile: annotate description preserves embedded equals" {
 	defer sf.deinit();
 	try std.testing.expectEqual(@as(usize, 1), sf.annotate_entries.items.len);
 	try std.testing.expectEqualStrings("a = b + c", sf.annotate_entries.items[0].description);
+}
+
+test "writeStateFile: annotate block round-trips" {
+	const allocator = std.testing.allocator;
+	var sf = StateFile{ .allocator = allocator };
+	defer sf.deinit();
+
+	const p1 = try sf.dupeStr("src/main.zig");
+	const d1 = try sf.dupeStr("Entry point");
+	const p2 = try sf.dupeStr("README.md");
+	const d2 = try sf.dupeStr("Project readme");
+	try sf.annotate_entries.append(allocator, .{ .path = p1, .description = d1 });
+	try sf.annotate_entries.append(allocator, .{ .path = p2, .description = d2 });
+
+	var buf: [4096]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStateFile(&sf, &fbs);
+	const output = fbs.buffered();
+
+	// Byte-level checks
+	try std.testing.expect(std.mem.indexOf(u8, output, "annotate=[") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "\tREADME.md = Project readme\n") != null);
+	try std.testing.expect(std.mem.indexOf(u8, output, "\tsrc/main.zig = Entry point\n") != null);
+	const readme_pos = std.mem.indexOf(u8, output, "\tREADME.md").?;
+	const main_pos = std.mem.indexOf(u8, output, "\tsrc/main.zig").?;
+	try std.testing.expect(readme_pos < main_pos);
+
+	// Real round-trip: parse output back and verify structure
+	var sf2 = try parseStateFile(allocator, output);
+	defer sf2.deinit();
+	try std.testing.expectEqual(@as(usize, 2), sf2.annotate_entries.items.len);
+	// Sorted on write, so parsed order is alphabetical:
+	try std.testing.expectEqualStrings("README.md", sf2.annotate_entries.items[0].path);
+	try std.testing.expectEqualStrings("Project readme", sf2.annotate_entries.items[0].description);
+	try std.testing.expectEqualStrings("src/main.zig", sf2.annotate_entries.items[1].path);
+	try std.testing.expectEqualStrings("Entry point", sf2.annotate_entries.items[1].description);
+}
+
+test "writeStateFile: annotate empty when no entries" {
+	const allocator = std.testing.allocator;
+	var sf = StateFile{ .allocator = allocator };
+	defer sf.deinit();
+
+	var buf: [4096]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStateFile(&sf, &fbs);
+	const output = fbs.buffered();
+	try std.testing.expect(std.mem.indexOf(u8, output, "annotate=[") == null);
+}
+
+test "writeStateFile: annotate preserves empty description" {
+	const allocator = std.testing.allocator;
+	var sf = StateFile{ .allocator = allocator };
+	defer sf.deinit();
+	const p = try sf.dupeStr("src/dead.zig");
+	const d = try sf.dupeStr("");
+	try sf.annotate_entries.append(allocator, .{ .path = p, .description = d });
+
+	var buf: [4096]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	try writeStateFile(&sf, &fbs);
+	const output = fbs.buffered();
+	try std.testing.expect(std.mem.indexOf(u8, output, "\tsrc/dead.zig = \n") != null);
 }
