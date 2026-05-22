@@ -505,8 +505,110 @@ pub fn buildEffectiveState(allocator: std.mem.Allocator, abs_dir: []const u8) !E
 		}
 	}
 
-	// Build effective state
-	return rebuildEffectiveState(allocator, &inherited, if (local_state) |*ls| ls else null);
+	// ── Build annotations map (gitignore-style inheritance) ──
+	// Step 1: accumulate (absolute_path → description) across the chain.
+	// Deeper files win because we walk root→target order and `put` overwrites.
+	var abs_annotations = std.StringHashMapUnmanaged([]const u8){};
+	defer abs_annotations.deinit(allocator);
+	// Track strings we own so we can free them after re-basing.
+	var owned_strings: std.ArrayListUnmanaged([]const u8) = .empty;
+	defer {
+		for (owned_strings.items) |s| allocator.free(s);
+		owned_strings.deinit(allocator);
+	}
+
+	// Re-walk state_dirs in root→target order (state_dirs is reverse-sorted: index 0 is target).
+	// We need to re-read each ancestor's annotate entries.
+	var ai: usize = state_dirs.items.len;
+	while (ai > 0) {
+		ai -= 1;
+		const dir = state_dirs.items[ai];
+		const sp = try std.fs.path.join(allocator, &.{ dir, ".dirtree-state" });
+		defer allocator.free(sp);
+
+		const content = std.Io.Dir.cwd().readFileAlloc(runtime.io(), sp, allocator, .limited(1024 * 1024)) catch continue;
+		defer allocator.free(content);
+
+		var sf = state_mod.parseStateFile(allocator, content) catch continue;
+		defer sf.deinit();
+
+		for (sf.annotate_entries.items) |entry| {
+			const abs_path = blk: {
+				if (std.mem.eql(u8, entry.path, ".")) {
+					break :blk try allocator.dupe(u8, dir);
+				}
+				break :blk try std.fs.path.join(allocator, &.{ dir, entry.path });
+			};
+			try owned_strings.append(allocator, abs_path);
+			const desc_owned = try allocator.dupe(u8, entry.description);
+			try owned_strings.append(allocator, desc_owned);
+
+			// Deeper wins — fetchPut overwrites previous mapping
+			_ = try abs_annotations.fetchPut(allocator, abs_path, desc_owned);
+		}
+	}
+
+	// Step 2: re-base each absolute path to relative-to-target.
+	// Build the final map in the effective state.
+	var rebased = std.StringHashMapUnmanaged([]const u8){};
+	defer rebased.deinit(allocator);
+
+	{
+		var iter = abs_annotations.iterator();
+		while (iter.next()) |kv| {
+			const abs_path = kv.key_ptr.*;
+			const desc = kv.value_ptr.*;
+
+			// Compute relative path from abs_dir to abs_path
+			const rel_path = try computeRelative(allocator, abs_dir, abs_path);
+			defer allocator.free(rel_path);
+
+			// Discard entries outside the target tree (rel starts with "..")
+			if (rel_path.len >= 2 and rel_path[0] == '.' and rel_path[1] == '.') continue;
+
+			// Step 3: drop empty-description tombstones
+			if (desc.len == 0) continue;
+
+			// Store in rebased map for later transfer
+			const key_owned = try allocator.dupe(u8, rel_path);
+			try owned_strings.append(allocator, key_owned);
+			try rebased.put(allocator, key_owned, desc);
+		}
+	}
+
+	// Build effective state (existing logic)
+	var effective = try rebuildEffectiveState(allocator, &inherited, if (local_state) |*ls| ls else null);
+	errdefer effective.deinit();
+
+	// Transfer rebased annotations into effective.annotations with owned copies
+	{
+		var rb_iter = rebased.iterator();
+		while (rb_iter.next()) |kv| {
+			const k = try effective.dupeStr(kv.key_ptr.*);
+			const v = try effective.dupeStr(kv.value_ptr.*);
+			try effective.annotations.put(allocator, k, v);
+		}
+	}
+
+	return effective;
+}
+
+/// Compute the relative path from `base` to `target`, both absolute.
+/// Returns ".." if target is outside the base subtree.
+/// Caller owns the returned slice.
+fn computeRelative(allocator: std.mem.Allocator, base: []const u8, target: []const u8) ![]const u8 {
+	if (std.mem.eql(u8, base, target)) {
+		return try allocator.dupe(u8, ".");
+	}
+	// Check if target starts with base + "/"
+	if (std.mem.startsWith(u8, target, base) and
+		target.len > base.len and
+		target[base.len] == '/')
+	{
+		return try allocator.dupe(u8, target[base.len + 1 ..]);
+	}
+	// Outside the tree
+	return try allocator.dupe(u8, "..");
 }
 
 /// Dump the effective state in INI-MA format (same as .dirtree-state).
@@ -1287,4 +1389,94 @@ test "EffectiveState: annotations map initializes empty and deinit cleans up" {
 	try es.annotations.put(allocator, path, desc);
 	try std.testing.expectEqual(@as(u32, 1), es.annotations.count());
 	try std.testing.expectEqualStrings("Entry point", es.annotations.get("src/main.zig").?);
+}
+
+test "annotations: local file populates the map" {
+	const allocator = std.testing.allocator;
+	var tmp = std.testing.tmpDir(.{});
+	defer tmp.cleanup();
+
+	const state_content = "ver=1.2\nannotate=[\n\tfoo.zig = First file\n\tbar.zig = Second file\n]";
+	try tmp.dir.writeFile(runtime.io(), .{ .sub_path = ".dirtree-state", .data = state_content });
+
+	const abs_dir = try tmp.dir.realPathFileAlloc(runtime.io(), ".", allocator);
+	defer allocator.free(abs_dir);
+
+	var es = try buildEffectiveState(allocator, abs_dir);
+	defer es.deinit();
+
+	try std.testing.expectEqualStrings("First file", es.annotations.get("foo.zig").?);
+	try std.testing.expectEqualStrings("Second file", es.annotations.get("bar.zig").?);
+}
+
+test "annotations: empty description acts as tombstone (excluded from map)" {
+	const allocator = std.testing.allocator;
+	var tmp = std.testing.tmpDir(.{});
+	defer tmp.cleanup();
+
+	const state_content = "ver=1.2\nannotate=[\n\tlive.zig = Active\n\tdead.zig = \n]";
+	try tmp.dir.writeFile(runtime.io(), .{ .sub_path = ".dirtree-state", .data = state_content });
+
+	const abs_dir = try tmp.dir.realPathFileAlloc(runtime.io(), ".", allocator);
+	defer allocator.free(abs_dir);
+
+	var es = try buildEffectiveState(allocator, abs_dir);
+	defer es.deinit();
+
+	try std.testing.expectEqualStrings("Active", es.annotations.get("live.zig").?);
+	try std.testing.expect(es.annotations.get("dead.zig") == null);
+}
+
+test "annotations: inherited from parent, with local override" {
+	const allocator = std.testing.allocator;
+	var parent_tmp = std.testing.tmpDir(.{});
+	defer parent_tmp.cleanup();
+
+	// Parent state file references sub/inner.zig
+	const parent_content = "ver=1.2\nannotate=[\n\tsub/inner.zig = Parent says inner\n\tsub/other.zig = Parent says other\n\tabove.zig = Outside scope\n]";
+	try parent_tmp.dir.writeFile(runtime.io(), .{ .sub_path = ".dirtree-state", .data = parent_content });
+	try parent_tmp.dir.createDirPath(runtime.io(), "sub");
+
+	// Child state file overrides one annotation
+	const child_content = "ver=1.2\nannotate=[\n\tinner.zig = Child overrides\n]";
+	try parent_tmp.dir.writeFile(runtime.io(), .{ .sub_path = "sub/.dirtree-state", .data = child_content });
+
+	const parent_abs = try parent_tmp.dir.realPathFileAlloc(runtime.io(), ".", allocator);
+	defer allocator.free(parent_abs);
+	const child_abs = try std.fs.path.join(allocator, &.{ parent_abs, "sub" });
+	defer allocator.free(child_abs);
+
+	var es = try buildEffectiveState(allocator, child_abs);
+	defer es.deinit();
+
+	// Child override wins
+	try std.testing.expectEqualStrings("Child overrides", es.annotations.get("inner.zig").?);
+	// Parent's entry for sub/other.zig re-bases to "other.zig" and is inherited
+	try std.testing.expectEqualStrings("Parent says other", es.annotations.get("other.zig").?);
+	// above.zig is outside the rendered tree → must not appear
+	try std.testing.expect(es.annotations.get("../above.zig") == null);
+	try std.testing.expect(es.annotations.get("above.zig") == null);
+}
+
+test "annotations: child empty value suppresses parent annotation" {
+	const allocator = std.testing.allocator;
+	var parent_tmp = std.testing.tmpDir(.{});
+	defer parent_tmp.cleanup();
+
+	const parent_content = "ver=1.2\nannotate=[\n\tsub/inner.zig = Parent description\n]";
+	try parent_tmp.dir.writeFile(runtime.io(), .{ .sub_path = ".dirtree-state", .data = parent_content });
+	try parent_tmp.dir.createDirPath(runtime.io(), "sub");
+
+	const child_content = "ver=1.2\nannotate=[\n\tinner.zig = \n]";
+	try parent_tmp.dir.writeFile(runtime.io(), .{ .sub_path = "sub/.dirtree-state", .data = child_content });
+
+	const parent_abs = try parent_tmp.dir.realPathFileAlloc(runtime.io(), ".", allocator);
+	defer allocator.free(parent_abs);
+	const child_abs = try std.fs.path.join(allocator, &.{ parent_abs, "sub" });
+	defer allocator.free(child_abs);
+
+	var es = try buildEffectiveState(allocator, child_abs);
+	defer es.deinit();
+
+	try std.testing.expect(es.annotations.get("inner.zig") == null);
 }
