@@ -105,9 +105,15 @@ pub const CliConfig = struct {
 	}
 };
 
+pub const AnnotateArgs = struct {
+	path: []const u8,
+	description: []const u8,
+};
+
 /// Result of argument parsing - either a config or an early exit.
 pub const ParseResult = union(enum) {
 	config: CliConfig,
+	annotate: AnnotateArgs,
 	help,
 	about,
 	test_mode,
@@ -155,6 +161,41 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 
 	// Skip program name
 	const args = if (raw_args.len > 0) raw_args[1..] else raw_args;
+
+	// Subcommand: annotate / note (and localized variants).
+	// Must appear as the first positional argument. Flags before it
+	// (other than --lang) are not supported in v1.
+	if (args.len > 0) {
+		if (i18n.matchLongFlag(args[0])) |maybe_arg| {
+			if (maybe_arg == .annotate) {
+				if (args.len < 2) {
+					config.deinit(allocator);
+					return .{ .err = s.err_annotate_requires_path };
+				}
+				if (args.len < 3) {
+					config.deinit(allocator);
+					return .{ .err = s.err_annotate_requires_description };
+				}
+				if (args.len > 3) {
+					config.deinit(allocator);
+					return .{ .err = s.err_annotate_too_many_args };
+				}
+				const desc = args[2];
+				if (std.mem.indexOfScalar(u8, desc, '\n') != null) {
+					config.deinit(allocator);
+					return .{ .err = s.err_annotate_multiline };
+				}
+				// Normalize path: strip leading ./ and /, strip trailing /
+				var p: []const u8 = args[1];
+				if (p.len >= 2 and p[0] == '.' and p[1] == '/') p = p[2..];
+				while (p.len > 0 and p[0] == '/') p = p[1..];
+				while (p.len > 0 and p[p.len - 1] == '/') p = p[0 .. p.len - 1];
+				if (p.len == 0) p = ".";
+				config.deinit(allocator);
+				return .{ .annotate = .{ .path = p, .description = desc } };
+			}
+		}
+	}
 
 	var i: usize = 0;
 	var dir_pending = true;
@@ -883,6 +924,26 @@ pub fn main(init: std.process.Init) !u8 {
 			try stderr.flush();
 			return 1;
 		},
+		.annotate => |args2| {
+			const s2 = i18n.tr();
+			// Resolve target directory (CWD) to absolute
+			const abs_dir = resolveAbsDir(allocator, ".") catch {
+				var err_buf: [512]u8 = undefined;
+				const msg = i18n.fmtRuntime(&err_buf, s2.err_not_a_directory, &.{"."});
+				try stderr.writeAll(msg);
+				try stderr.writeAll("\n");
+				try stderr.flush();
+				return 1;
+			};
+			defer allocator.free(abs_dir);
+
+			persistAnnotation(allocator, abs_dir, args2.path, args2.description) catch |err| {
+				try stderr.print("Error: could not persist annotation: {}\n", .{err});
+				try stderr.flush();
+				return 1;
+			};
+			return 0;
+		},
 		.config => |config| {
 			const s = i18n.tr();
 			var cfg = config;
@@ -1401,6 +1462,64 @@ fn removeEntryByValue(list: *std.ArrayListUnmanaged(state_mod.StateEntry), value
 	}
 }
 
+/// Persist an annotation to the local .dirtree-state file.
+/// Empty description writes an empty value (tombstone).
+/// Replaces any existing entry for the same path.
+fn persistAnnotation(
+	allocator: std.mem.Allocator,
+	abs_dir: []const u8,
+	path: []const u8,
+	description: []const u8,
+) !void {
+	const state_path = try std.fs.path.join(allocator, &.{ abs_dir, ".dirtree-state" });
+	defer allocator.free(state_path);
+
+	const io = runtime.io();
+	var sf: state_mod.StateFile = blk: {
+		const content = std.Io.Dir.cwd().readFileAlloc(io, state_path, allocator, .limited(1024 * 1024)) catch |err| {
+			switch (err) {
+				error.FileNotFound => {
+					break :blk state_mod.StateFile{ .allocator = allocator };
+				},
+				else => return err,
+			}
+		};
+		defer allocator.free(content);
+		break :blk try state_mod.parseStateFile(allocator, content);
+	};
+	defer sf.deinit();
+
+	// Remove any existing entry for this path
+	var i: usize = 0;
+	while (i < sf.annotate_entries.items.len) {
+		if (std.mem.eql(u8, sf.annotate_entries.items[i].path, path)) {
+			_ = sf.annotate_entries.swapRemove(i);
+			continue;
+		}
+		i += 1;
+	}
+
+	// Add new entry (including empty description for tombstone)
+	const path_owned = try sf.dupeStr(path);
+	const desc_owned = try sf.dupeStr(description);
+	try sf.annotate_entries.append(allocator, .{ .path = path_owned, .description = desc_owned });
+
+	// Write atomically via temp file + rename
+	const tmp_path = try std.fmt.allocPrint(allocator, "{s}.tmp", .{state_path});
+	defer allocator.free(tmp_path);
+
+	{
+		const file = try std.Io.Dir.cwd().createFile(io, tmp_path, .{});
+		defer file.close(io);
+		var buf: [8192]u8 = undefined;
+		var bw = file.writer(io, &buf);
+		try state_mod.writeStateFile(&sf, &bw.interface);
+		try bw.interface.flush();
+	}
+
+	try std.Io.Dir.cwd().rename(tmp_path, std.Io.Dir.cwd(), state_path, io);
+}
+
 // Tests
 test "help output contains usage" {
 	var buf: [8192]u8 = undefined;
@@ -1591,6 +1710,80 @@ test "parseArgs: --lang en accepted" {
 			try std.testing.expect(cfg.simple_mode);
 		},
 		else => return error.TestExpectedConfig,
+	}
+}
+
+test "parseArgs: annotate subcommand detected" {
+	const args = &[_][:0]const u8{ "dirtree", "annotate", "src/main.zig", "Entry point" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.annotate => |a| {
+			try std.testing.expectEqualStrings("src/main.zig", a.path);
+			try std.testing.expectEqualStrings("Entry point", a.description);
+		},
+		else => return error.TestExpectedAnnotate,
+	}
+}
+
+test "parseArgs: note synonym detected" {
+	const args = &[_][:0]const u8{ "dirtree", "note", "src/state.zig", "INI-MA parser" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.annotate => |a| {
+			try std.testing.expectEqualStrings("src/state.zig", a.path);
+			try std.testing.expectEqualStrings("INI-MA parser", a.description);
+		},
+		else => return error.TestExpectedAnnotate,
+	}
+}
+
+test "parseArgs: annotate empty description allowed (tombstone)" {
+	const args = &[_][:0]const u8{ "dirtree", "annotate", "src/dead.zig", "" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.annotate => |a| {
+			try std.testing.expectEqualStrings("src/dead.zig", a.path);
+			try std.testing.expectEqualStrings("", a.description);
+		},
+		else => return error.TestExpectedAnnotate,
+	}
+}
+
+test "parseArgs: annotate missing description errors" {
+	const args = &[_][:0]const u8{ "dirtree", "annotate", "src/main.zig" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.err => {},
+		else => return error.TestExpectedError,
+	}
+}
+
+test "parseArgs: annotate too many args errors" {
+	const args = &[_][:0]const u8{ "dirtree", "annotate", "a", "b", "c" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.err => {},
+		else => return error.TestExpectedError,
+	}
+}
+
+test "parseArgs: annotate multiline description rejected" {
+	const args = &[_][:0]const u8{ "dirtree", "annotate", "a", "first\nsecond" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.err => {},
+		else => return error.TestExpectedError,
+	}
+}
+
+test "parseArgs: annotate path normalization" {
+	const args = &[_][:0]const u8{ "dirtree", "annotate", "./src/main.zig", "Entry" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.annotate => |a| {
+			try std.testing.expectEqualStrings("src/main.zig", a.path);
+		},
+		else => return error.TestExpectedAnnotate,
 	}
 }
 
