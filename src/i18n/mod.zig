@@ -441,6 +441,11 @@ test "fmtRuntime: no substitutions" {
     try std.testing.expectEqualStrings("plain message", result);
 }
 
+test "matchLongFlag: annotate and note aliases" {
+    try std.testing.expectEqual(CliArg.annotate, matchLongFlag("annotate").?);
+    try std.testing.expectEqual(CliArg.annotate, matchLongFlag("note").?);
+}
+
 test {
     _ = @import("strings.zig");
     _ = @import("cli_aliases.zig");

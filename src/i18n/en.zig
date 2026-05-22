@@ -133,6 +133,8 @@ pub const aliases = LocaleAliases{
         .{ .name = "--head", .arg = .head },
         .{ .name = "--tail", .arg = .tail },
         .{ .name = "--only", .arg = .only },
+        .{ .name = "annotate", .arg = .annotate },
+        .{ .name = "note", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DIRTREE_SIMPLE", .var_id = .dirtree_simple },
