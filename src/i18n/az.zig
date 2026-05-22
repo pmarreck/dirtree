@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--konfiqurasiya", .arg = .config },
                 .{ .name = "--sinaq", .arg = .@"test" },
         .{ .name = "--dil", .arg = .lang },
+        .{ .name = "qeyd", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "AGAC_SADECE", .var_id = .dirtree_simple },

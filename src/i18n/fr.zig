@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--configuration", .arg = .config },
                 .{ .name = "--tester", .arg = .@"test" },
         .{ .name = "--langue", .arg = .lang },
+        .{ .name = "annoter", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "ARBORESCENCE_SIMPLE", .var_id = .dirtree_simple },

@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--takween", .arg = .config },
                 .{ .name = "--ikhtbar", .arg = .@"test" },
         .{ .name = "--lugha", .arg = .lang },
+        .{ .name = "mulahaza", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "SHAJARA_BASIT", .var_id = .dirtree_simple },

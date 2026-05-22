@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--rythmisi", .arg = .config },
                 .{ .name = "--dokimi", .arg = .@"test" },
         .{ .name = "--glossa", .arg = .lang },
+        .{ .name = "simeiosi", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DENTRO_APLO", .var_id = .dirtree_simple },

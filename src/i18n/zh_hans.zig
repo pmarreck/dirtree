@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--peizhi", .arg = .config },
                 .{ .name = "--ceshi", .arg = .@"test" },
         .{ .name = "--yuyan", .arg = .lang },
+        .{ .name = "zhushi", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DIRTREE_ZH_SIMPLE", .var_id = .dirtree_simple },

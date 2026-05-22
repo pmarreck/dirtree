@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--konfiguratsiya", .arg = .config },
                 .{ .name = "--testuvaty", .arg = .@"test" },
         .{ .name = "--mova", .arg = .lang },
+        .{ .name = "notatka", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DEREVO_UK_PROSTYY", .var_id = .dirtree_simple },

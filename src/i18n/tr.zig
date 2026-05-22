@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--yapilandirma", .arg = .config },
                 .{ .name = "--deneme", .arg = .@"test" },
         .{ .name = "--lisan", .arg = .lang },
+        .{ .name = "not", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DIZIN_AGACI_BASIT", .var_id = .dirtree_simple },

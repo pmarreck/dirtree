@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--pikarband", .arg = .config },
                 .{ .name = "--azmayesh", .arg = .@"test" },
         .{ .name = "--zaban", .arg = .lang },
+        .{ .name = "yaddasht", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DERAKHT_SADE", .var_id = .dirtree_simple },

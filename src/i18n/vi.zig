@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--cau-hinh", .arg = .config },
                 .{ .name = "--kiem-tra", .arg = .@"test" },
         .{ .name = "--ngon-ngu", .arg = .lang },
+        .{ .name = "ghichu", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "CAYTHUMUC_DON_GIAN", .var_id = .dirtree_simple },

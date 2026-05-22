@@ -446,6 +446,13 @@ test "matchLongFlag: annotate and note aliases" {
     try std.testing.expectEqual(CliArg.annotate, matchLongFlag("note").?);
 }
 
+test "matchLongFlag: localized annotate aliases" {
+    try std.testing.expectEqual(CliArg.annotate, matchLongFlag("nota").?);    // es/it/pt_br
+    try std.testing.expectEqual(CliArg.annotate, matchLongFlag("notiz").?);   // de
+    try std.testing.expectEqual(CliArg.annotate, matchLongFlag("notatka").?); // pl/uk
+    try std.testing.expectEqual(CliArg.annotate, matchLongFlag("memo").?);    // ja
+}
+
 test {
     _ = @import("strings.zig");
     _ = @import("cli_aliases.zig");

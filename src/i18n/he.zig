@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--tatzura", .arg = .config },
                 .{ .name = "--bdika", .arg = .@"test" },
         .{ .name = "--safa", .arg = .lang },
+        .{ .name = "heara", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "ETZ_PASHUT", .var_id = .dirtree_simple },

@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--kaamnot", .arg = .config },
                 .{ .name = "--saakl-bang", .arg = .@"test" },
         .{ .name = "--pheasa", .arg = .lang },
+        .{ .name = "chamna", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DOMNERBERKAS_SARAL", .var_id = .dirtree_simple },

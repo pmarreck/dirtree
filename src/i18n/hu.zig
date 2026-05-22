@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--beallitas", .arg = .config },
                 .{ .name = "--tesztel", .arg = .@"test" },
         .{ .name = "--nyelv", .arg = .lang },
+        .{ .name = "jegyzet", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "KONYVTAR_FA_EGYSZERU", .var_id = .dirtree_simple },

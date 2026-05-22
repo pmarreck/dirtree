@@ -115,6 +115,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--settei", .arg = .config },
                 .{ .name = "--tesuto", .arg = .@"test" },
         .{ .name = "--gengo", .arg = .lang },
+        .{ .name = "memo", .arg = .annotate },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DIRTREE_JA_SIMPLE", .var_id = .dirtree_simple },
