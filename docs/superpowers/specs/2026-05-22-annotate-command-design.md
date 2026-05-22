@@ -12,14 +12,44 @@ Users (and LLMs working in a directory) need a way to attach short, human-readab
 
 ```
 dirtree annotate <path> "<description>"
-dirtree note <path> "<description>"          # English-only synonym
+dirtree note <path> "<description>"          # English synonym
 ```
 
 - `<path>` is a relative path, with or without a `./` prefix. Leading `./` and `/` are stripped on store.
 - `<description>` is a single-line string. Empty string clears the annotation locally (see "Tombstone clearing" below).
 - The subcommand writes to the local `.dirtree-state` and exits. It does not render a tree.
 - Multiline descriptions are rejected: if `<description>` contains `\n`, the command errors out and exits non-zero.
-- `note` is an English-only synonym for `annotate`. Other locales register only their localized form of `annotate` (matching the pattern used by other CLI commands).
+
+### Localized command names
+
+Each locale registers one or more colloquial words for the "take a note about a file" action. English uses both `annotate` and `note`. Other locales pick whichever native term(s) best convey the colloquial "jot down a note" sense — that may be one word or two, at the locale's translator's discretion. All registered names dispatch to the same subcommand. Suggested choices (translators may refine):
+
+| Locale | Canonical | Synonym(s) |
+|--------|-----------|------------|
+| en | `annotate` | `note` |
+| de | `notiz` | `anmerken` |
+| es | `nota` | `anotar` |
+| fr | `note` | `annoter` |
+| it | `nota` | `annota` |
+| pt_br | `nota` | `anotar` |
+| ro | `noteaza` | `adnota` |
+| pl | `notatka` | `oznacz` |
+| ru | `zametka` | `pometit` |
+| uk | `notatka` | `poznachyty` |
+| el | `simeiosi` | `simeiose` |
+| tr | `not` | `notla` |
+| az | `qeyd` | `nota` |
+| hu | `jegyzet` | `megjegyez` |
+| ar | `mulahaza` | `dawwin` |
+| fa | `yaddasht` | `noteh` |
+| he | `heara` | `harshom` |
+| ja | `memo` | `chuushaku` |
+| ko | `memo` | `juseok` |
+| zh_hans | `note` | `zhushi` |
+| vi | `ghichu` | `chuthich` |
+| km | `kamnotsamkal` | `chamna` |
+
+The list is advisory. Final spellings (including diacritics, native scripts, and whether to expose two synonyms or one) are decided per-locale during implementation by whoever owns that locale file; English ships with both `annotate` and `note`.
 
 ## Storage Format
 
@@ -111,7 +141,7 @@ Flags that come before the subcommand keyword (e.g., `dirtree --lang en annotate
 | `src/path_eval.zig` | Add `annotations: StringHashMapUnmanaged([]const u8)` to `EffectiveState`. In `buildEffectiveState`, after the existing walk merges other state, walk the chain again (or merge during the existing walk) merging annotations deepest-first, applying tombstones. Re-base ancestor paths so they're relative to the target directory. |
 | `src/main.zig` | Add subcommand dispatch at the top of `parseArgs` (or in `main` before `parseArgs`): if `args[1]` matches `annotate` / `note` / localized form, run the annotate flow (path + description, write, exit). Add `annotate` to the localized alias map. Reuse `persistState` infrastructure where possible. |
 | `src/tree_render.zig` | At the points that finish writing a single line for an entry (after the name, after symlink target), look up the path in `effective.annotations` and append ` # <desc>` if present. Apply to both the root header line and child entries. |
-| `src/i18n/mod.zig` and locale files | Add localized command name entries for `annotate`. Add `note` as an English-only synonym (only in `en.zig`). Add help text strings: `help_opt_annotate`, the subcommand description for the help section. Add error strings: `err_annotate_requires_path`, `err_annotate_requires_description`, `err_annotate_multiline`, `err_annotate_too_many_args`. |
+| `src/i18n/mod.zig` and locale files | Extend the alias map to support positional subcommand names (currently `--flag` style only). Add `annotate` arg id. Each locale file lists its colloquial subcommand names — `en.zig` lists both `annotate` and `note`; other locales list whichever native terms convey "take a note about a file" (see "Localized command names" table). Add help text strings (subcommand description). Add error strings: `err_annotate_requires_path`, `err_annotate_requires_description`, `err_annotate_multiline`, `err_annotate_too_many_args`. |
 | `src/main.zig` printHelp | Add a line describing the `annotate` / `note` subcommand. |
 | `test/dirtree_test` | Integration tests covering: set annotation; clear annotation locally; inherited annotation from parent state file; local override of parent annotation; empty-string tombstone hides parent annotation; rendering format; multiline rejected; rendering with `--simple`. |
 | Unit tests in `state.zig` | Parse/write round-trip for `annotate=[ ... ]`. Empty description preserved as empty value. Sorting on write. |
