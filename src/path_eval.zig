@@ -64,6 +64,9 @@ pub const EffectiveState = struct {
 	hyperlink_preference: ?bool = null,
 	max_lines: ?u32 = null,
 
+	// Annotations: path → description (re-based to target directory)
+	annotations: std.StringHashMapUnmanaged([]const u8) = .empty,
+
 	// Literal hash maps
 	open_literals: std.StringHashMapUnmanaged(void) = .empty,
 	close_literals: std.StringHashMapUnmanaged(void) = .empty,
@@ -94,6 +97,7 @@ pub const EffectiveState = struct {
 			a.free(s);
 		}
 		self.strings.deinit(a);
+		self.annotations.deinit(a);
 
 		self.open_literals.deinit(a);
 		self.close_literals.deinit(a);
@@ -1270,4 +1274,17 @@ test "InheritedState.mergeFrom: mutual exclusion" {
 
 	try std.testing.expect(inherited.open_literals.contains(".git"));
 	try std.testing.expect(!inherited.close_literals.contains(".git"));
+}
+
+test "EffectiveState: annotations map initializes empty and deinit cleans up" {
+	const allocator = std.testing.allocator;
+	var es = EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+	try std.testing.expectEqual(@as(u32, 0), es.annotations.count());
+
+	const path = try es.dupeStr("src/main.zig");
+	const desc = try es.dupeStr("Entry point");
+	try es.annotations.put(allocator, path, desc);
+	try std.testing.expectEqual(@as(u32, 1), es.annotations.count());
+	try std.testing.expectEqualStrings("Entry point", es.annotations.get("src/main.zig").?);
 }
