@@ -74,6 +74,11 @@ pub const strings = Strings{
     .err_regex_conflict_open = "  megnyit\xc3\xa1si minta: {s}",
     .err_regex_conflict_close = "  bez\xc3\xa1r\xc3\xa1si minta: {s}",
     .err_unknown_lang = "Hiba: ismeretlen nyelvk\xc3\xb3d '{s}'. El\xc3\xa9rhet\xc5\x91: {s}",
+    .err_annotate_requires_path = "Error: annotate requires a path",
+    .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",
+    .err_annotate_multiline = "Error: annotation description must be a single line",
+    .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
+    .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
 
     // ── Figyelmeztet\xc3\xa9sek ─────────────────────────────────────────
     .warn_persist_state = "Figyelmeztet\xc3\xa9s: az \xc3\xa1llapot nem menthet\xc5\x91: {}",

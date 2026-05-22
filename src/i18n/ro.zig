@@ -74,6 +74,11 @@ pub const strings = Strings{
     .err_regex_conflict_open = "  pattern open: {s}",
     .err_regex_conflict_close = "  pattern close: {s}",
     .err_unknown_lang = "Eroare: cod de limb\xc4\x83 necunoscut '{s}'. Disponibile: {s}",
+    .err_annotate_requires_path = "Error: annotate requires a path",
+    .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",
+    .err_annotate_multiline = "Error: annotation description must be a single line",
+    .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
+    .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
 
     // ── Avertismente ──────────────────────────────────────────
     .warn_persist_state = "Avertisment: nu s-a putut persista starea: {}",

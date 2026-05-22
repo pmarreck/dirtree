@@ -74,6 +74,11 @@ pub const strings = Strings{
     .err_regex_conflict_open = "  m\xe1\xba\xabu m\xe1\xbb\x9f: {s}",
     .err_regex_conflict_close = "  m\xe1\xba\xabu \xc4\x91\xc3\xb3ng: {s}",
     .err_unknown_lang = "L\xe1\xbb\x97i: m\xc3\xa3 ng\xc3\xb4n ng\xe1\xbb\xaf kh\xc3\xb4ng x\xc3\xa1c \xc4\x91\xe1\xbb\x8bnh '{s}'. C\xc3\xb3 s\xe1\xba\xb5n: {s}",
+    .err_annotate_requires_path = "Error: annotate requires a path",
+    .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",
+    .err_annotate_multiline = "Error: annotation description must be a single line",
+    .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
+    .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
 
     // ── C\xe1\xba\xa3nh b\xc3\xa1o ──────────────────────────────────────────────────
     .warn_persist_state = "C\xe1\xba\xa3nh b\xc3\xa1o: kh\xc3\xb4ng th\xe1\xbb\x83 l\xc6\xb0u tr\xe1\xba\xa1ng th\xc3\xa1i: {}",

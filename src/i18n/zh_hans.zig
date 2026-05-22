@@ -74,6 +74,11 @@ pub const strings = Strings{
     .err_regex_conflict_open = "  open模式: {s}",
     .err_regex_conflict_close = "  close模式: {s}",
     .err_unknown_lang = "错误: 未知语言代码 '{s}'。可用: {s}",
+    .err_annotate_requires_path = "Error: annotate requires a path",
+    .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",
+    .err_annotate_multiline = "Error: annotation description must be a single line",
+    .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
+    .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
 
     // ── 警告信息 ───────────────────────────────────────────────
     .warn_persist_state = "警告: 无法保存状态: {}",

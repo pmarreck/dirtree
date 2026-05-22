@@ -74,6 +74,11 @@ pub const strings = Strings{
     .err_regex_conflict_open = "  a\xc3\xa7\xc4\xb1q \xc5\x9fablonu: {s}",
     .err_regex_conflict_close = "  ba\xc4\x9fl\xc4\xb1 \xc5\x9fablonu: {s}",
     .err_unknown_lang = "X\xc9\x99ta: nabilinm\xc9\x99y\xc9\x99n dil kodu '{s}'. M\xc3\xb6vcud: {s}",
+    .err_annotate_requires_path = "Error: annotate requires a path",
+    .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",
+    .err_annotate_multiline = "Error: annotation description must be a single line",
+    .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
+    .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
 
     // ── X\xc9\x99b\xc9\x99rdarlıqlar ──────────────────────────────────────────
     .warn_persist_state = "X\xc9\x99b\xc9\x99rdarlıq: v\xc9\x99ziyy\xc9\x99ti saxlamaq m\xc3\xbcmk\xc3\xbcn olmadı: {}",

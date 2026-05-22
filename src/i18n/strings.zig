@@ -89,6 +89,11 @@ pub const Strings = struct {
     err_regex_conflict_open: [:0]const u8,
     err_regex_conflict_close: [:0]const u8,
     err_unknown_lang: [:0]const u8,
+    err_annotate_requires_path: []const u8,
+    err_annotate_requires_description: []const u8,
+    err_annotate_multiline: []const u8,
+    err_annotate_too_many_args: []const u8,
+    help_opt_annotate: []const u8,
 
     // ── Warning messages ───────────────────────────────────────
     warn_persist_state: [:0]const u8,

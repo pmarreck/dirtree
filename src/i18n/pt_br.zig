@@ -74,6 +74,11 @@ pub const strings = Strings{
     .err_regex_conflict_open = "  padr\xc3\xa3o open: {s}",
     .err_regex_conflict_close = "  padr\xc3\xa3o close: {s}",
     .err_unknown_lang = "Erro: c\xc3\xb3digo de idioma desconhecido '{s}'. Dispon\xc3\xadveis: {s}",
+    .err_annotate_requires_path = "Error: annotate requires a path",
+    .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",
+    .err_annotate_multiline = "Error: annotation description must be a single line",
+    .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
+    .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
 
     // ── Avisos ──────────────────────────────────────────────────
     .warn_persist_state = "Aviso: n\xc3\xa3o foi poss\xc3\xadvel persistir o estado: {}",
