@@ -47,6 +47,12 @@ pub const PatternKind = enum {
 	glob,
 };
 
+/// An annotation entry: path → description.
+pub const AnnotateEntry = struct {
+	path: []const u8,
+	description: []const u8,
+};
+
 /// A state entry that can be a literal path, regex pattern, or glob pattern.
 pub const StateEntry = struct {
 	value: []const u8,
@@ -78,6 +84,8 @@ pub const StateFile = struct {
 	close_entries: std.ArrayListUnmanaged(StateEntry) = .empty,
 	show_entries: std.ArrayListUnmanaged(StateEntry) = .empty,
 	hide_entries: std.ArrayListUnmanaged(StateEntry) = .empty,
+	// Annotations: path → description
+	annotate_entries: std.ArrayListUnmanaged(AnnotateEntry) = .empty,
 
 	// Passthrough (unknown keys/lines preserved as-is)
 	passthrough_lines: std.ArrayListUnmanaged([]const u8) = .empty,
@@ -95,6 +103,7 @@ pub const StateFile = struct {
 		self.close_entries.deinit(a);
 		self.show_entries.deinit(a);
 		self.hide_entries.deinit(a);
+		self.annotate_entries.deinit(a);
 		self.passthrough_lines.deinit(a);
 	}
 
@@ -1166,4 +1175,23 @@ test "unconvertible regex stays as regex during migration" {
 	// \d+ pattern can't be converted — stays as regex
 	try std.testing.expectEqual(PatternKind.regex, sf.hide_entries.items[1].kind);
 	try std.testing.expectEqualStrings("^custom\\d+$", sf.hide_entries.items[1].value);
+}
+
+test "AnnotateEntry: StateFile starts with empty annotate_entries" {
+	const allocator = std.testing.allocator;
+	var sf = StateFile{ .allocator = allocator };
+	defer sf.deinit();
+	try std.testing.expectEqual(@as(usize, 0), sf.annotate_entries.items.len);
+}
+
+test "AnnotateEntry: can append entries and deinit cleans up" {
+	const allocator = std.testing.allocator;
+	var sf = StateFile{ .allocator = allocator };
+	defer sf.deinit();
+	const path = try sf.dupeStr("src/main.zig");
+	const desc = try sf.dupeStr("Entry point");
+	try sf.annotate_entries.append(allocator, .{ .path = path, .description = desc });
+	try std.testing.expectEqual(@as(usize, 1), sf.annotate_entries.items.len);
+	try std.testing.expectEqualStrings("src/main.zig", sf.annotate_entries.items[0].path);
+	try std.testing.expectEqualStrings("Entry point", sf.annotate_entries.items[0].description);
 }
