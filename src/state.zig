@@ -198,6 +198,27 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 			const entry_str = strip(line);
 			if (entry_str.len == 0) continue;
 
+			// Special handling for annotate block: parse as path = description
+			if (std.mem.eql(u8, arr_key, "annotate")) {
+				// Lines without '=' are silently ignored (matches the lenient parsing
+				// other array blocks use for malformed entries).
+				if (std.mem.indexOfScalar(u8, entry_str, '=')) |eq_pos| {
+					const path_str = stripTrailing(entry_str[0..eq_pos]);
+					var desc_str = entry_str[eq_pos + 1 ..];
+					// Strip one leading space after = (round-trip with writer)
+					if (desc_str.len > 0 and desc_str[0] == ' ') desc_str = desc_str[1..];
+					if (path_str.len == 0) {
+						comment_buffer.clearRetainingCapacity();
+						continue;
+					}
+					const path_val = try state.dupeStr(path_str);
+					const desc_val = try state.dupeStr(desc_str);
+					try state.annotate_entries.append(allocator, .{ .path = path_val, .description = desc_val });
+				}
+				comment_buffer.clearRetainingCapacity();
+				continue;
+			}
+
 			// Try to parse as regex
 			const parsed = regex_mod.parseWrappedRegexToken(entry_str) catch {
 				// Empty pattern - skip
@@ -623,7 +644,8 @@ fn isKnownArrayKey(key: []const u8) bool {
 	return std.mem.eql(u8, key, "open") or
 		std.mem.eql(u8, key, "close") or
 		std.mem.eql(u8, key, "show") or
-		std.mem.eql(u8, key, "hide");
+		std.mem.eql(u8, key, "hide") or
+		std.mem.eql(u8, key, "annotate");
 }
 
 fn isInlineArray(value: []const u8) bool {
@@ -1194,4 +1216,44 @@ test "AnnotateEntry: can append entries and deinit cleans up" {
 	try std.testing.expectEqual(@as(usize, 1), sf.annotate_entries.items.len);
 	try std.testing.expectEqualStrings("src/main.zig", sf.annotate_entries.items[0].path);
 	try std.testing.expectEqualStrings("Entry point", sf.annotate_entries.items[0].description);
+}
+
+test "parseStateFile: annotate block" {
+	const content = "ver=1.2\nannotate=[\n\tsrc/main.zig = Entry point\n\tREADME.md = Project readme\n]";
+	var sf = try parseStateFile(std.testing.allocator, content);
+	defer sf.deinit();
+
+	try std.testing.expectEqual(@as(usize, 2), sf.annotate_entries.items.len);
+
+	// Verify both entries are present (order not asserted to keep the test robust)
+	var found_main = false;
+	var found_readme = false;
+	for (sf.annotate_entries.items) |e| {
+		if (std.mem.eql(u8, e.path, "src/main.zig")) {
+			try std.testing.expectEqualStrings("Entry point", e.description);
+			found_main = true;
+		} else if (std.mem.eql(u8, e.path, "README.md")) {
+			try std.testing.expectEqualStrings("Project readme", e.description);
+			found_readme = true;
+		}
+	}
+	try std.testing.expect(found_main);
+	try std.testing.expect(found_readme);
+}
+
+test "parseStateFile: annotate block with empty description (tombstone)" {
+	const content = "ver=1.2\nannotate=[\n\tsrc/legacy.zig = \n]";
+	var sf = try parseStateFile(std.testing.allocator, content);
+	defer sf.deinit();
+	try std.testing.expectEqual(@as(usize, 1), sf.annotate_entries.items.len);
+	try std.testing.expectEqualStrings("src/legacy.zig", sf.annotate_entries.items[0].path);
+	try std.testing.expectEqualStrings("", sf.annotate_entries.items[0].description);
+}
+
+test "parseStateFile: annotate description preserves embedded equals" {
+	const content = "ver=1.2\nannotate=[\n\tsrc/foo.zig = a = b + c\n]";
+	var sf = try parseStateFile(std.testing.allocator, content);
+	defer sf.deinit();
+	try std.testing.expectEqual(@as(usize, 1), sf.annotate_entries.items.len);
+	try std.testing.expectEqualStrings("a = b + c", sf.annotate_entries.items[0].description);
 }
