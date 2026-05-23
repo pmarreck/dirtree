@@ -341,7 +341,7 @@ fn renderDir(
 				}
 			}
 
-			try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config);
+			try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config, effective);
 			stats.total_lines += 1;
 
 			// Recurse into non-closed directories
@@ -366,7 +366,7 @@ fn renderDir(
 			const is_executable = (vis.entry.mode & 0o111) != 0;
 			const is_symlink = vis.entry.kind == .symlink;
 
-			try renderFileEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, is_executable, is_symlink, config);
+			try renderFileEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, is_executable, is_symlink, config, effective);
 			stats.total_lines += 1;
 		}
 	}
@@ -636,7 +636,7 @@ fn renderDirFocused(
 					defer allocator.free(child_path);
 					if (dir_scan.dirHasChildren(child_path)) target_marker = "/*";
 				}
-				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, target_marker, config);
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, target_marker, config, effective);
 				stats.total_lines += 1;
 				if (!vis.is_closed and depth_left > 1) {
 					try renderDir(
@@ -649,7 +649,7 @@ fn renderDirFocused(
 				}
 			} else if (is_ancestor) {
 				// Ancestor dir: render and recurse with focus
-				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, "/", config);
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, "/", config, effective);
 				stats.total_lines += 1;
 				if (depth_left > 1) {
 					try renderDirFocused(
@@ -671,7 +671,7 @@ fn renderDirFocused(
 					defer allocator.free(child_path);
 					if (dir_scan.dirHasChildren(child_path)) marker = "/*";
 				}
-				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config);
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config, effective);
 				stats.total_lines += 1;
 				if (!vis.is_closed and depth_left > 1) {
 					try renderDir(
@@ -690,7 +690,7 @@ fn renderDirFocused(
 					try std.fs.path.join(allocator, &.{ abs_dir, vis.child_rel });
 				defer allocator.free(child_path);
 				const marker: []const u8 = if (dir_scan.dirHasChildren(child_path)) "/*" else "/";
-				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config);
+				try renderDirEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, marker, config, effective);
 				stats.total_lines += 1;
 				// No recursion — collapsed
 			}
@@ -698,7 +698,7 @@ fn renderDirFocused(
 			// Files always rendered
 			const is_executable = (vis.entry.mode & 0o111) != 0;
 			const is_symlink = vis.entry.kind == .symlink;
-			try renderFileEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, is_executable, is_symlink, config);
+			try renderFileEntry(allocator, writer, abs_dir, vis.entry.name, vis.child_rel, prefix, connector, is_executable, is_symlink, config, effective);
 			stats.total_lines += 1;
 		}
 	}
@@ -721,6 +721,7 @@ fn renderDirEntry(
 	connector: []const u8,
 	marker: []const u8,
 	config: RenderConfig,
+	effective: *path_eval.EffectiveState,
 ) !void {
 	try writer.writeAll(prefix);
 	try writer.writeAll(connector);
@@ -764,6 +765,14 @@ fn renderDirEntry(
 		try ansi.writeOsc8End(writer);
 	}
 
+	// Annotation, if any
+	if (effective.annotations.get(child_rel)) |desc| {
+		if (desc.len > 0) {
+			try writer.writeAll(" # ");
+			try writer.writeAll(desc);
+		}
+	}
+
 	try writer.writeAll("\n");
 }
 
@@ -779,6 +788,7 @@ fn renderFileEntry(
 	is_executable: bool,
 	is_symlink: bool,
 	config: RenderConfig,
+	effective: *path_eval.EffectiveState,
 ) !void {
 	try writer.writeAll(prefix);
 	try writer.writeAll(connector);
@@ -843,6 +853,14 @@ fn renderFileEntry(
 			if (needs_quote) try writer.writeAll("'");
 			try writer.writeAll(target);
 			if (needs_quote) try writer.writeAll("'");
+		}
+	}
+
+	// Annotation, if any
+	if (effective.annotations.get(child_rel)) |desc| {
+		if (desc.len > 0) {
+			try writer.writeAll(" # ");
+			try writer.writeAll(desc);
 		}
 	}
 
@@ -925,5 +943,72 @@ test "tree connectors" {
 	try std.testing.expectEqualStrings("└── ", LAST);
 	try std.testing.expectEqualStrings("│   ", VERT);
 	try std.testing.expectEqualStrings("    ", SPACE);
+}
+
+test "renderDirEntry: appends annotation after name" {
+	const allocator = std.testing.allocator;
+	var buf: [1024]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
+
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+	const k = try es.dupeStr("src");
+	const v = try es.dupeStr("Source code");
+	try es.annotations.put(allocator, k, v);
+
+	try renderDirEntry(allocator, writer, "/tmp", "src", "src", "", "├── ", "/", .{
+		.use_color = false,
+		.use_icons = false,
+		.use_hyperlinks = false,
+		.simple_mode = true,
+	}, &es);
+
+	const output = fbs.buffered();
+	try std.testing.expect(std.mem.indexOf(u8, output, " # Source code") != null);
+	try std.testing.expect(std.mem.endsWith(u8, output, "\n"));
+}
+
+test "renderFileEntry: appends annotation after name" {
+	const allocator = std.testing.allocator;
+	var buf: [1024]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
+
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+	const k = try es.dupeStr("foo.zig");
+	const v = try es.dupeStr("Demo file");
+	try es.annotations.put(allocator, k, v);
+
+	try renderFileEntry(allocator, writer, "/tmp", "foo.zig", "foo.zig", "", "└── ", false, false, .{
+		.use_color = false,
+		.use_icons = false,
+		.use_hyperlinks = false,
+		.simple_mode = true,
+	}, &es);
+
+	const output = fbs.buffered();
+	try std.testing.expect(std.mem.indexOf(u8, output, " # Demo file") != null);
+}
+
+test "renderFileEntry: no annotation when not in map" {
+	const allocator = std.testing.allocator;
+	var buf: [1024]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
+
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
+	try renderFileEntry(allocator, writer, "/tmp", "foo.zig", "foo.zig", "", "└── ", false, false, .{
+		.use_color = false,
+		.use_icons = false,
+		.use_hyperlinks = false,
+		.simple_mode = true,
+	}, &es);
+
+	const output = fbs.buffered();
+	try std.testing.expect(std.mem.indexOf(u8, output, "#") == null);
 }
 
