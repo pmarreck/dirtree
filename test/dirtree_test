@@ -1103,6 +1103,7 @@ Options:
   --head N           Stop output after N lines
   --tail N           Show only the last N lines (prefer piping to tail -N)
   --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)
+  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)
 
 Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.
 Paths supplied to --show/--hide must be relative (no leading '/').
