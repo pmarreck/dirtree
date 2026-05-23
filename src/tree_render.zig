@@ -82,7 +82,7 @@ pub fn renderTree(
 		var buf_writer = BufListWriter{ .buf = &buf, .allocator = allocator };
 
 		// Render root header to buffer
-		try renderRootHeader(allocator, &buf_writer, abs_dir, config);
+		try renderRootHeader(allocator, &buf_writer, abs_dir, config, effective);
 
 		var stats = TreeStats{};
 		stats.total_lines = 1;
@@ -123,7 +123,7 @@ pub fn renderTree(
 	}
 
 	// Normal (non-tail) rendering path
-	try renderRootHeader(allocator, stdout, abs_dir, config);
+	try renderRootHeader(allocator, stdout, abs_dir, config, effective);
 
 	var stats = TreeStats{};
 	stats.total_lines = 1; // root header line
@@ -169,6 +169,7 @@ fn renderRootHeader(
 	writer: anytype,
 	abs_dir: []const u8,
 	config: RenderConfig,
+	effective: *path_eval.EffectiveState,
 ) !void {
 	const basename = std.fs.path.basename(abs_dir);
 	const display_name = if (basename.len == 0) "/" else basename;
@@ -217,6 +218,14 @@ fn renderRootHeader(
 
 		try writer.writeAll(abs_dir);
 		try writer.writeAll("/");
+	}
+
+	// Annotation for the root directory itself, if any
+	if (effective.annotations.get(".")) |desc| {
+		if (desc.len > 0) {
+			try writer.writeAll(" # ");
+			try writer.writeAll(desc);
+		}
 	}
 
 	try writer.writeAll("\n");
@@ -886,12 +895,15 @@ test "renderRootHeader: simple mode shows absolute path" {
 	var fbs = std.Io.Writer.fixed(&buf);
 	const writer = &fbs;
 
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
 	try renderRootHeader(allocator, writer, "/tmp/test_dir", .{
 		.use_color = false,
 		.use_icons = true,
 		.use_hyperlinks = false,
 		.simple_mode = true,
-	});
+	}, &es);
 
 	const output = fbs.buffered();
 	// Should show absolute path with icon and trailing /
@@ -905,12 +917,15 @@ test "renderRootHeader: no icons shows absolute path" {
 	var fbs = std.Io.Writer.fixed(&buf);
 	const writer = &fbs;
 
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
 	try renderRootHeader(allocator, writer, "/tmp/test_dir", .{
 		.use_color = false,
 		.use_icons = false,
 		.use_hyperlinks = false,
 		.simple_mode = true,
-	});
+	}, &es);
 
 	const output = fbs.buffered();
 	try std.testing.expectEqualStrings("/tmp/test_dir/\n", output);
@@ -922,12 +937,15 @@ test "renderRootHeader: with color shows parent path and basename" {
 	var fbs = std.Io.Writer.fixed(&buf);
 	const writer = &fbs;
 
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
 	try renderRootHeader(allocator, writer, "/tmp/test_dir", .{
 		.use_color = true,
 		.use_icons = false,
 		.use_hyperlinks = false,
 		.simple_mode = false,
-	});
+	}, &es);
 
 	const output = fbs.buffered();
 	try std.testing.expect(std.mem.indexOf(u8, output, ansi.cyan) != null);
@@ -935,6 +953,29 @@ test "renderRootHeader: with color shows parent path and basename" {
 	try std.testing.expect(std.mem.indexOf(u8, output, ansi.reset) != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "/tmp/") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "test_dir") != null);
+}
+
+test "renderRootHeader: appends annotation when '.' is annotated" {
+	const allocator = std.testing.allocator;
+	var buf: [1024]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
+
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+	const k = try es.dupeStr(".");
+	const v = try es.dupeStr("Project root");
+	try es.annotations.put(allocator, k, v);
+
+	try renderRootHeader(allocator, writer, "/tmp/test_dir", .{
+		.use_color = false,
+		.use_icons = false,
+		.use_hyperlinks = false,
+		.simple_mode = true,
+	}, &es);
+
+	const output = fbs.buffered();
+	try std.testing.expect(std.mem.indexOf(u8, output, " # Project root") != null);
 }
 
 test "tree connectors" {
