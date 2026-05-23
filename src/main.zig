@@ -825,6 +825,8 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll(s.help_opt_tail);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_only);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_annotate);
 	try writer.writeAll("\n\n");
 	try writer.writeAll(s.help_regex_note);
 	try writer.writeAll("\n");
