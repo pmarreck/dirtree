@@ -21,6 +21,26 @@
 - Share tree snapshots that match what you normally see locally, so collaborators (human or AI) have the same mental model of the project layout.
 - Switch between a decorated tree (with icons, hyperlinks, colors) and a simplified, glyph-free output that's LLM-friendly.
 
+## Download
+
+Pre-built binaries are attached to each [release](https://github.com/pmarreck/dirtree/releases). Grab the one for your platform:
+
+| Platform                | Binary                                                                                                                  |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| macOS (Apple Silicon)   | [dirtree-aarch64-macos](https://github.com/pmarreck/dirtree/releases/latest/download/dirtree-aarch64-macos)             |
+| macOS (Intel)           | [dirtree-x86_64-macos](https://github.com/pmarreck/dirtree/releases/latest/download/dirtree-x86_64-macos)               |
+| Linux (x86_64, musl)    | [dirtree-x86_64-linux-musl](https://github.com/pmarreck/dirtree/releases/latest/download/dirtree-x86_64-linux-musl)     |
+| Linux (aarch64, musl)   | [dirtree-aarch64-linux-musl](https://github.com/pmarreck/dirtree/releases/latest/download/dirtree-aarch64-linux-musl)   |
+
+Then make it executable and put it on your `PATH`:
+
+```bash
+chmod +x dirtree-*
+sudo mv dirtree-* /usr/local/bin/dirtree
+```
+
+Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prerelease](https://github.com/pmarreck/dirtree/releases/tag/latest) (same filenames, different tag).
+
 ## Features
 
 - **Persistent state per directory** via `.dirtree-state` (stored in a concise INI-MA format):
