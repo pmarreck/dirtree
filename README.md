@@ -23,6 +23,7 @@
   - Default directory state (`opened`/`closed`).
   - Explicit open/close rules.
   - Show/hide filters for literals and regex patterns.
+  - Per-path annotations (one-line descriptions rendered inline as `# comment` in dim text).
   - Automatic migration from legacy key/value state.
 - **Flexible matching**
   - Regexes operate on full relative paths, enabling scoped rules like `src/.*_test`.
@@ -44,6 +45,7 @@
   - `--default` and `--sort` options to tune depth and ordering.
   - `--test` hook to run the bash test suite.
   - `--no-icons`, `--no-color`, and `--no-hyperlinks` disable individual decorations (and persist that choice) when you truly need plain text.
+  - `dirtree annotate PATH "description"` (alias `note`) persists a one-line note about a file or directory; pass an empty string to clear it. Notes display inline next to the entry as a dim `# comment`. Notes are also inherited from parent `.dirtree-state` files, with the closer file overriding.
 - **Safety niceties**
   - Number of hidden directories/files logged to stderr so you know what's filtered out.
   - Conflicting rules (e.g., same regex in open/close) surface as errors.
@@ -72,6 +74,11 @@ dirtree --close vendor --hide '/\.log$/'
 
 # Temporarily show everything that is hidden
 dirtree --show-hidden
+
+# Annotate a file (or directory) — appears inline as a dim '# comment'
+dirtree annotate src/main.zig "CLI entry point"
+dirtree note     src/state.zig "INI-MA parser/writer"  # 'note' is a synonym
+dirtree annotate src/main.zig ""                       # clears the note
 ```
 
 ### Using Nix
