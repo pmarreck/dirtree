@@ -9,6 +9,10 @@
 </tr><tr>
 <td><picture><source srcset="assets/images/open.jxl" type="image/jxl" /><img src="assets/images/open.png" alt="dirtree with directories opened" /></picture></td>
 <td><picture><source srcset="assets/images/closed.jxl" type="image/jxl" /><img src="assets/images/closed.png" alt="dirtree with directories closed" /></picture></td>
+</tr><tr>
+<td colspan="2" align="center"><strong>With annotations</strong></td>
+</tr><tr>
+<td colspan="2"><picture><source srcset="assets/images/annotations.jxl" type="image/jxl" /><img src="assets/images/annotations.png" alt="dirtree showing per-path annotations rendered as dim inline comments" /></picture></td>
 </tr></table>
 
 ## Use case
