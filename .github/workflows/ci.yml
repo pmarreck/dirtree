@@ -53,11 +53,11 @@ jobs:
 
       - name: Install test dependencies
         if: matrix.can-test && runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y luajit
+        run: sudo apt-get update && sudo apt-get install -y luajit ripgrep
 
       - name: Install test dependencies (macOS)
         if: matrix.can-test && runner.os == 'macOS'
-        run: brew install bash luajit || true
+        run: brew install bash luajit ripgrep || true
 
       - name: Install printable-binary (test dependency)
         if: matrix.can-test

@@ -121,7 +121,7 @@ TMPDIR="${TMPDIR%/}"  # drop any trailing slash
 export TMPDIR
 
 is_compiled_binary() {
-	file "$DIRTREE_BIN" 2>/dev/null | grep -qE 'Mach-O|ELF|PE32'
+	file "$DIRTREE_BIN" 2>/dev/null | rg -q 'Mach-O|ELF|PE32'
 }
 
 declare -a TEST_TEMP_PATHS=()
@@ -3381,11 +3381,11 @@ test_head_truncates_output() {
 		echo "--head run failed with rc=$rc" >&2
 		return 1
 	fi
-	# Count lines in stdout (grep -c '' counts lines including the last without trailing newline)
+	# Count lines in stdout (rg -c '' counts lines including the last without trailing newline)
 	local plain=""
 	decode_printable plain "$stdout_pb"
 	local line_count
-	line_count=$(printf '%s\n' "$plain" | grep -c '')
+	line_count=$(printf '%s\n' "$plain" | rg -c '')
 	if [[ "$line_count" -ne 3 ]]; then
 		echo "Expected 3 lines but got $line_count" >&2
 		printf '%s' "$plain" >&2
@@ -3492,7 +3492,7 @@ test_tail_shows_last_n_lines() {
 	decode_printable plain "$stdout_pb"
 	# Should only have 2 lines (the last two entries)
 	local line_count
-	line_count=$(printf '%s\n' "$plain" | grep -c '')
+	line_count=$(printf '%s\n' "$plain" | rg -c '')
 	if [[ "$line_count" -ne 2 ]]; then
 		echo "Expected 2 lines but got $line_count" >&2
 		printf '%s' "$plain" >&2
@@ -3689,12 +3689,12 @@ test_annotate_persists_in_state_file() {
 	path=$(fixture_simple_tree)
 	(cd "$path" && "$DIRTREE_BIN" annotate src/file.txt "A demo file") >/dev/null 2>&1
 	# Expect the state file to contain an annotate block
-	if ! grep -q '^annotate=\[' "$path/.dirtree-state"; then
+	if ! rg -q '^annotate=\[' "$path/.dirtree-state"; then
 		echo "expected annotate block not found in state file" >&2
 		cat "$path/.dirtree-state" >&2
 		return 1
 	fi
-	if ! grep -qP '^\tsrc/file\.txt = A demo file$' "$path/.dirtree-state"; then
+	if ! rg -q '^\tsrc/file\.txt = A demo file$' "$path/.dirtree-state"; then
 		echo "expected annotation entry not found" >&2
 		cat "$path/.dirtree-state" >&2
 		return 1
@@ -3706,7 +3706,7 @@ test_annotate_renders_inline_in_simple_mode() {
 	path=$(fixture_simple_tree)
 	(cd "$path" && "$DIRTREE_BIN" annotate src/file.txt "Source file") >/dev/null 2>&1
 	output=$("$DIRTREE_BIN" --simple --no-icons "$path" 2>/dev/null)
-	if ! grep -q 'file.txt # Source file' <<<"$output"; then
+	if ! rg -q 'file.txt # Source file' <<<"$output"; then
 		echo "expected ' # Source file' in output, got:" >&2
 		echo "$output" >&2
 		return 1
@@ -3719,7 +3719,7 @@ test_annotate_empty_clears_local_entry() {
 	(cd "$path" && "$DIRTREE_BIN" annotate src/file.txt "Original") >/dev/null 2>&1
 	(cd "$path" && "$DIRTREE_BIN" annotate src/file.txt "") >/dev/null 2>&1
 	# The entry should still exist but with empty description (tombstone)
-	if ! grep -qP '^\tsrc/file\.txt = $' "$path/.dirtree-state"; then
+	if ! rg -q '^\tsrc/file\.txt = $' "$path/.dirtree-state"; then
 		echo "expected empty annotation entry, got:" >&2
 		cat "$path/.dirtree-state" >&2
 		return 1
@@ -3727,7 +3727,7 @@ test_annotate_empty_clears_local_entry() {
 	# And it must NOT render
 	local output
 	output=$("$DIRTREE_BIN" --simple --no-icons "$path" 2>/dev/null)
-	if grep -q 'file.txt #' <<<"$output"; then
+	if rg -q 'file.txt #' <<<"$output"; then
 		echo "expected no annotation in output, got:" >&2
 		echo "$output" >&2
 		return 1
@@ -3739,12 +3739,12 @@ test_annotate_overwrites_existing() {
 	path=$(fixture_simple_tree)
 	(cd "$path" && "$DIRTREE_BIN" annotate src/file.txt "First") >/dev/null 2>&1
 	(cd "$path" && "$DIRTREE_BIN" annotate src/file.txt "Second") >/dev/null 2>&1
-	if ! grep -qP '^\tsrc/file\.txt = Second$' "$path/.dirtree-state"; then
+	if ! rg -q '^\tsrc/file\.txt = Second$' "$path/.dirtree-state"; then
 		echo "expected updated annotation, got:" >&2
 		cat "$path/.dirtree-state" >&2
 		return 1
 	fi
-	if grep -qP '^\tsrc/file\.txt = First$' "$path/.dirtree-state"; then
+	if rg -q '^\tsrc/file\.txt = First$' "$path/.dirtree-state"; then
 		echo "old annotation still present" >&2
 		return 1
 	fi
@@ -3754,7 +3754,7 @@ test_note_synonym_works() {
 	local path
 	path=$(fixture_simple_tree)
 	(cd "$path" && "$DIRTREE_BIN" note src/file.txt "Via note synonym") >/dev/null 2>&1
-	if ! grep -qP '^\tsrc/file\.txt = Via note synonym$' "$path/.dirtree-state"; then
+	if ! rg -q '^\tsrc/file\.txt = Via note synonym$' "$path/.dirtree-state"; then
 		echo "expected annotation via 'note' synonym" >&2
 		cat "$path/.dirtree-state" >&2
 		return 1
@@ -3775,7 +3775,7 @@ test_annotate_inherits_from_parent() {
 	child="$parent/sub"
 	local output
 	output=$("$DIRTREE_BIN" --simple --no-icons "$child" 2>/dev/null)
-	if ! grep -q 'inner.txt # From parent' <<<"$output"; then
+	if ! rg -q 'inner.txt # From parent' <<<"$output"; then
 		echo "expected inherited annotation, got:" >&2
 		echo "$output" >&2
 		return 1
