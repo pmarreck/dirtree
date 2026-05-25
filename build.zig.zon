@@ -1,7 +1,7 @@
 .{
 	.name = .dirtree,
 	.version = "1.0.0",
-	.minimum_zig_version = "0.15.0",
+	.minimum_zig_version = "0.16.0",
 	.dependencies = .{
 		.pcre2 = .{
 			.url = "https://github.com/pmarreck/pcre2/archive/refs/tags/zig-0.16.0.tar.gz",

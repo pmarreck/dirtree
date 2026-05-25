@@ -82,7 +82,7 @@ Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prer
 **None at runtime.** `dirtree` is a self-contained native binary.
 
 Build dependencies:
-- [Zig](https://ziglang.org/) 0.15+ (or use the Nix flake)
+- [Zig](https://ziglang.org/) 0.16+ (or use the Nix flake)
 
 ## Getting started
 
