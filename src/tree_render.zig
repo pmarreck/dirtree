@@ -223,8 +223,10 @@ fn renderRootHeader(
 	// Annotation for the root directory itself, if any
 	if (effective.annotations.get(".")) |desc| {
 		if (desc.len > 0) {
+			if (config.use_color) try writer.writeAll(ansi.dim);
 			try writer.writeAll(" # ");
 			try writer.writeAll(desc);
+			if (config.use_color) try writer.writeAll(ansi.reset);
 		}
 	}
 
@@ -777,8 +779,10 @@ fn renderDirEntry(
 	// Annotation, if any
 	if (effective.annotations.get(child_rel)) |desc| {
 		if (desc.len > 0) {
+			if (config.use_color) try writer.writeAll(ansi.dim);
 			try writer.writeAll(" # ");
 			try writer.writeAll(desc);
+			if (config.use_color) try writer.writeAll(ansi.reset);
 		}
 	}
 
@@ -868,8 +872,10 @@ fn renderFileEntry(
 	// Annotation, if any
 	if (effective.annotations.get(child_rel)) |desc| {
 		if (desc.len > 0) {
+			if (config.use_color) try writer.writeAll(ansi.dim);
 			try writer.writeAll(" # ");
 			try writer.writeAll(desc);
+			if (config.use_color) try writer.writeAll(ansi.reset);
 		}
 	}
 
@@ -1053,3 +1059,49 @@ test "renderFileEntry: no annotation when not in map" {
 	try std.testing.expect(std.mem.indexOf(u8, output, "#") == null);
 }
 
+test "renderFileEntry: annotation is dim-styled when use_color=true" {
+	const allocator = std.testing.allocator;
+	var buf: [1024]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
+
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+	const k = try es.dupeStr("foo.zig");
+	const v = try es.dupeStr("Demo file");
+	try es.annotations.put(allocator, k, v);
+
+	try renderFileEntry(allocator, writer, "/tmp", "foo.zig", "foo.zig", "", "└── ", false, false, .{
+		.use_color = true,
+		.use_icons = false,
+		.use_hyperlinks = false,
+		.simple_mode = false,
+	}, &es);
+
+	const output = fbs.buffered();
+	try std.testing.expect(std.mem.indexOf(u8, output, ansi.dim ++ " # Demo file" ++ ansi.reset) != null);
+}
+
+test "renderFileEntry: annotation has no ANSI when use_color=false" {
+	const allocator = std.testing.allocator;
+	var buf: [1024]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	const writer = &fbs;
+
+	var es = path_eval.EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+	const k = try es.dupeStr("foo.zig");
+	const v = try es.dupeStr("Demo file");
+	try es.annotations.put(allocator, k, v);
+
+	try renderFileEntry(allocator, writer, "/tmp", "foo.zig", "foo.zig", "", "└── ", false, false, .{
+		.use_color = false,
+		.use_icons = false,
+		.use_hyperlinks = false,
+		.simple_mode = true,
+	}, &es);
+
+	const output = fbs.buffered();
+	try std.testing.expect(std.mem.indexOf(u8, output, "\x1b[") == null);
+	try std.testing.expect(std.mem.indexOf(u8, output, " # Demo file") != null);
+}
