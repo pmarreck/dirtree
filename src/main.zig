@@ -9,6 +9,7 @@ const dir_scan = @import("dir_scan.zig");
 const ansi_mod = @import("ansi.zig");
 const i18n = @import("i18n/mod.zig");
 const runtime = @import("runtime.zig");
+const update_check = @import("update_check.zig");
 
 pub const SortMode = enum {
 	modified,
@@ -116,6 +117,8 @@ pub const ParseResult = union(enum) {
 	annotate: AnnotateArgs,
 	help,
 	about,
+	version,
+	version_check,
 	test_mode,
 	err: []const u8,
 };
@@ -235,6 +238,14 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.@"test" => {
 						config.deinit(allocator);
 						return .test_mode;
+					},
+					.version => {
+						config.deinit(allocator);
+						return .version;
+					},
+					.version_check => {
+						config.deinit(allocator);
+						return .version_check;
 					},
 					.lang => {
 						// Already handled in first pass; skip the value
@@ -827,6 +838,10 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll(s.help_opt_only);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_annotate);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_version);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_version_check);
 	try writer.writeAll("\n\n");
 	try writer.writeAll(s.help_regex_note);
 	try writer.writeAll("\n");
@@ -884,6 +899,19 @@ pub fn main(init: std.process.Init) !u8 {
 			try stdout.writeAll("\n");
 			try stdout.flush();
 			return 0;
+		},
+		.version => {
+			try printVersionLine(stdout);
+			try emitCachedUpdateNotice(allocator, stdout);
+			try stdout.flush();
+			return 0;
+		},
+		.version_check => {
+			try printVersionLine(stdout);
+			const exit = try runVersionCheck(allocator, stdout, stderr);
+			try stdout.flush();
+			try stderr.flush();
+			return exit;
 		},
 		.test_mode => {
 			const s = i18n.tr();
@@ -1465,8 +1493,87 @@ fn removeEntryByValue(list: *std.ArrayListUnmanaged(state_mod.StateEntry), value
 }
 
 /// Persist an annotation to the local .dirtree-state file.
-/// Empty description writes an empty value (tombstone).
-/// Replaces any existing entry for the same path.
+/// Print "dirtree X.Y.Z" line. Does not flush.
+fn printVersionLine(writer: anytype) !void {
+	try writer.writeAll("dirtree ");
+	try writer.writeAll(@import("build_options").version);
+	try writer.writeAll("\n");
+}
+
+/// If the update-check cache says a newer version exists, print a one-line
+/// notice in yellow (or plain if --no-color / NO_COLOR is set). Silent on any
+/// failure (missing cache, parse error, etc).
+fn emitCachedUpdateNotice(allocator: std.mem.Allocator, writer: anytype) !void {
+	const path = update_check.cachePath(allocator) catch return;
+	defer allocator.free(path);
+	const state = update_check.loadCache(allocator, path) orelse return;
+	const latest = state.last_known_version orelse return;
+	const current = @import("build_options").version;
+	if (update_check.compareSemver(current, latest) != .older) return;
+	const use_color = runtime.getEnv("NO_COLOR") == null;
+	if (use_color) try writer.writeAll(ansi_mod.yellow);
+	try writer.print("Update available: {s} (current: {s})\n", .{ latest, current });
+	if (use_color) try writer.writeAll(ansi_mod.reset);
+}
+
+/// Run a fresh network check, update the cache, and print results.
+/// Returns nonzero on network failure (so callers/CI can detect it).
+fn runVersionCheck(allocator: std.mem.Allocator, stdout: anytype, stderr: anytype) !u8 {
+	const path = update_check.cachePath(allocator) catch {
+		try stderr.writeAll("Error: cannot determine cache path ($HOME / $XDG_CACHE_HOME missing)\n");
+		return 2;
+	};
+	defer allocator.free(path);
+
+	const exe_path_buf = std.process.executablePathAlloc(runtime.io(), allocator) catch null;
+	const exe_mtime: i128 = if (exe_path_buf) |p| blk: {
+		defer allocator.free(p);
+		break :blk update_check.binaryMtime(p);
+	} else 0;
+
+	const now_ts = std.Io.Timestamp.now(runtime.io(), .real);
+	const now_unix: i64 = @intCast(@divFloor(now_ts.nanoseconds, std.time.ns_per_s));
+	const today = update_check.todayUtc(now_unix);
+
+	// Load existing cache (may be null on first run)
+	const prior = update_check.loadCache(allocator, path);
+
+	const tag = update_check.fetchLatestTag(allocator) catch |err| {
+		// Failure path: record the failure, increment fail_count, write back.
+		var state = prior orelse update_check.CacheState{};
+		state.fail_count +|= 1;
+		state.last_fail_ts = now_unix;
+		state.binary_mtime = exe_mtime;
+		update_check.saveCache(allocator, path, state) catch {};
+		try stderr.print("Error: update check failed ({s})\n", .{@errorName(err)});
+		return 1;
+	};
+	defer allocator.free(tag);
+
+	// Success path: reset counters, store the new known version.
+	const state = update_check.CacheState{
+		.last_known_version = tag,
+		.last_check_date = today,
+		.binary_mtime = exe_mtime,
+		.fail_count = 0,
+		.last_fail_ts = 0,
+	};
+	update_check.saveCache(allocator, path, state) catch {};
+
+	const current = @import("build_options").version;
+	const use_color = runtime.getEnv("NO_COLOR") == null;
+	switch (update_check.compareSemver(current, tag)) {
+		.older => {
+			if (use_color) try stdout.writeAll(ansi_mod.yellow);
+			try stdout.print("Update available: {s} (current: {s})\n", .{ tag, current });
+			if (use_color) try stdout.writeAll(ansi_mod.reset);
+		},
+		.equal => try stdout.writeAll("Up to date.\n"),
+		.newer => try stdout.print("You are ahead of the latest release ({s}).\n", .{tag}),
+	}
+	return 0;
+}
+
 fn persistAnnotation(
 	allocator: std.mem.Allocator,
 	abs_dir: []const u8,

@@ -1104,6 +1104,8 @@ Options:
   --tail N           Show only the last N lines (prefer piping to tail -N)
   --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)
   annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)
+  --version          Show version (offline; reads cached update-available notice)
+  --version-check    Force a fresh online check against the GitHub releases API
 
 Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.
 Paths supplied to --show/--hide must be relative (no leading '/').
@@ -3793,6 +3795,74 @@ test_annotate_multiline_rejected() {
 	fi
 }
 
+test_version_flag_prints_semver() {
+	local output rc
+	output=$("$DIRTREE_BIN" --version 2>&1)
+	rc=$?
+	if (( rc != 0 )); then
+		echo "--version returned non-zero exit code $rc" >&2
+		echo "output: $output" >&2
+		return 1
+	fi
+	# Expect "dirtree X.Y.Z" — semver with at least major.minor.patch
+	if ! rg -q '^dirtree [0-9]+\.[0-9]+\.[0-9]+' <<<"$output"; then
+		echo "expected 'dirtree X.Y.Z' in --version output, got:" >&2
+		echo "$output" >&2
+		return 1
+	fi
+}
+
+test_version_check_failure_writes_cache() {
+	local cache_dir cache_file
+	cache_dir=$(new_tmpdir)
+	# Use a bogus URL that will fail fast (reserved-port loopback)
+	if XDG_CACHE_HOME="$cache_dir" DIRTREE_UPDATE_URL="https://127.0.0.1:1/nope" "$DIRTREE_BIN" --version-check >/dev/null 2>&1; then
+		echo "expected --version-check to fail with bogus URL" >&2
+		return 1
+	fi
+	cache_file="$cache_dir/dirtree/update_check"
+	if [[ ! -f "$cache_file" ]]; then
+		echo "cache file not created after failure" >&2
+		return 1
+	fi
+	if ! rg -q '^fail_count=[1-9]' "$cache_file"; then
+		echo "expected fail_count>=1 in cache, got:" >&2
+		cat "$cache_file" >&2
+		return 1
+	fi
+}
+
+test_version_shows_cached_update_available() {
+	local cache_dir
+	cache_dir=$(new_tmpdir)
+	mkdir -p "$cache_dir/dirtree"
+	# Plant a cache claiming v99.0.0 is the latest known
+	printf '# fake\nlast_known_version=v99.0.0\nlast_check_date=20260525\nbinary_mtime=0\nfail_count=0\nlast_fail_ts=0\n' \
+		> "$cache_dir/dirtree/update_check"
+	local output
+	output=$(XDG_CACHE_HOME="$cache_dir" "$DIRTREE_BIN" --version 2>&1)
+	if ! rg -q 'Update available: v99\.0\.0' <<<"$output"; then
+		echo "expected 'Update available: v99.0.0' in output, got:" >&2
+		echo "$output" >&2
+		return 1
+	fi
+}
+
+test_version_quiet_when_cache_matches() {
+	local cache_dir
+	cache_dir=$(new_tmpdir)
+	mkdir -p "$cache_dir/dirtree"
+	# Plant a cache claiming v0.0.1 (older than current); no notice should print
+	printf '# fake\nlast_known_version=v0.0.1\nlast_check_date=20260525\nbinary_mtime=0\nfail_count=0\nlast_fail_ts=0\n' \
+		> "$cache_dir/dirtree/update_check"
+	local output
+	output=$(XDG_CACHE_HOME="$cache_dir" "$DIRTREE_BIN" --version 2>&1)
+	if rg -q 'Update available' <<<"$output"; then
+		echo "expected no 'Update available' notice when cache is older, got:" >&2
+		echo "$output" >&2
+		return 1
+	fi
+}
 run_all_tests() {
 	run_test "dirtree root resolves repo" \
 		test_dirtree_root_points_to_repo_root
@@ -4042,6 +4112,14 @@ run_all_tests() {
 		test_annotate_inherits_from_parent
 	run_test "annotate multiline description rejected" \
 		test_annotate_multiline_rejected
+	run_test "--version prints semver" \
+		test_version_flag_prints_semver
+	run_test "--version-check failure path writes cache" \
+		test_version_check_failure_writes_cache
+	run_test "--version shows cached update notice" \
+		test_version_shows_cached_update_available
+	run_test "--version quiet when cache is older" \
+		test_version_quiet_when_cache_matches
 }
 
 run_all_tests

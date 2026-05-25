@@ -132,6 +132,18 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 - `DIRTREE_AUTO_SIMPLE=1` automatically switches to simple mode whenever stdout isn't a TTY.
 - `PIPED_STDOUT=0|1` lets you override dirtree's TTY detection in non-interactive contexts (e.g., `PIPED_STDOUT=0` treats a pipe as if it were an interactive terminal, restoring hyperlinks and color for tests or automated runs).
 
+### Version and update checking
+
+`dirtree --version` prints the version number and, if the local cache says a newer release exists, a yellow `Update available: vX.Y.Z` line. No network call is made on this path — the cache is refreshed by `--version-check`.
+
+`dirtree --version-check` hits the GitHub releases API once and:
+- updates the cache (success or failure),
+- prints `Update available`, `Up to date.`, or "ahead of latest" accordingly,
+- exits non-zero on network failure and prints the error to stderr.
+
+The cache lives at `${XDG_CACHE_HOME:-$HOME/.cache}/dirtree/update_check`. It's refreshed automatically once per UTC day, or whenever the binary's mtime changes (i.e., after an install). Failed checks back off exponentially (1s, 2s, 4s, …, capped at one day) so a network outage doesn't slow every invocation. Set `DIRTREE_UPDATE_URL` to override the endpoint (useful for tests).
+
+Respecting `NO_COLOR` is automatic.
 ## Tests
 
 Run all tests (Zig unit tests + bash integration tests):

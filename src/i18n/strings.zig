@@ -94,6 +94,8 @@ pub const Strings = struct {
     err_annotate_multiline: []const u8,
     err_annotate_too_many_args: []const u8,
     help_opt_annotate: []const u8,
+    help_opt_version: []const u8,
+    help_opt_version_check: []const u8,
 
     // ── Warning messages ───────────────────────────────────────
     warn_persist_state: [:0]const u8,

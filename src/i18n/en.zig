@@ -97,6 +97,8 @@ pub const strings = Strings{
     .err_annotate_multiline = "Error: annotation description must be a single line",
     .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
+    .help_opt_version = "  --version          Show version (offline; reads cached update-available notice)",
+    .help_opt_version_check = "  --version-check    Force a fresh online check against the GitHub releases API",
 
     // ── Warning messages ───────────────────────────────────────
     .warn_persist_state = "Warning: could not persist state: {}",
@@ -140,6 +142,8 @@ pub const aliases = LocaleAliases{
         .{ .name = "--only", .arg = .only },
         .{ .name = "annotate", .arg = .annotate },
         .{ .name = "note", .arg = .annotate },
+        .{ .name = "--version", .arg = .version },
+        .{ .name = "--version-check", .arg = .version_check },
     },
     .env = &[_]EnvAliasEntry{
         .{ .name = "DIRTREE_SIMPLE", .var_id = .dirtree_simple },

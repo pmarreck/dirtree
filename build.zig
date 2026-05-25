@@ -4,6 +4,19 @@ pub fn build(b: *std.Build) void {
 	const target = b.standardTargetOptions(.{});
 	const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode (default: ReleaseFast)") orelse .ReleaseFast;
 
+	// Parse version out of build.zig.zon so the binary can report it
+	const version = blk: {
+		const zon = @embedFile("build.zig.zon");
+		const marker = ".version = \"";
+		const start = std.mem.indexOf(u8, zon, marker) orelse @panic("missing .version in build.zig.zon");
+		const after = start + marker.len;
+		const end = std.mem.indexOfScalarPos(u8, zon, after, '"') orelse @panic("malformed .version in build.zig.zon");
+		break :blk zon[after..end];
+	};
+
+	const build_options = b.addOptions();
+	build_options.addOption([]const u8, "version", version);
+
 	// Get the PCRE2 dependency (C library, statically linked)
 	const pcre2_dep = b.dependency("pcre2", .{
 		.target = target,
@@ -25,6 +38,7 @@ pub fn build(b: *std.Build) void {
 	exe.root_module.addIncludePath(pcre2_lib.getEmittedIncludeTree());
 	exe.root_module.linkLibrary(pcre2_lib);
 	exe.root_module.link_libc = true;
+	exe.root_module.addOptions("build_options", build_options);
 
 	b.installArtifact(exe);
 
@@ -48,7 +62,7 @@ pub fn build(b: *std.Build) void {
 	unit_tests.root_module.addIncludePath(pcre2_lib.getEmittedIncludeTree());
 	unit_tests.root_module.linkLibrary(pcre2_lib);
 	unit_tests.root_module.link_libc = true;
-
+	unit_tests.root_module.addOptions("build_options", build_options);
 	const run_unit_tests = b.addRunArtifact(unit_tests);
 	const test_step = b.step("test", "Run unit tests");
 	test_step.dependOn(&run_unit_tests.step);

@@ -79,6 +79,8 @@ pub const strings = Strings{
     .err_annotate_multiline = "Error: annotation description must be a single line",
     .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
+    .help_opt_version = "  --version          Show version (offline; reads cached update-available notice)",
+    .help_opt_version_check = "  --version-check    Force a fresh online check against the GitHub releases API",
 
     // ── C\xe1\xba\xa3nh b\xc3\xa1o ──────────────────────────────────────────────────
     .warn_persist_state = "C\xe1\xba\xa3nh b\xc3\xa1o: kh\xc3\xb4ng th\xe1\xbb\x83 l\xc6\xb0u tr\xe1\xba\xa1ng th\xc3\xa1i: {}",

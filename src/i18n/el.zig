@@ -79,6 +79,8 @@ pub const strings = Strings{
     .err_annotate_multiline = "Error: annotation description must be a single line",
     .err_annotate_too_many_args = "Error: annotate accepts exactly two positional arguments: <path> <description>",
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
+    .help_opt_version = "  --version          Show version (offline; reads cached update-available notice)",
+    .help_opt_version_check = "  --version-check    Force a fresh online check against the GitHub releases API",
 
     // ── \xce\xa0\xcf\x81\xce\xbf\xce\xb5\xce\xb9\xce\xb4\xce\xbf\xcf\x80\xce\xbf\xce\xb9\xce\xae\xcf\x83\xce\xb5\xce\xb9\xcf\x82 ──────────────────────────────────────────
     .warn_persist_state = "\xce\xa0\xcf\x81\xce\xbf\xce\xb5\xce\xb9\xce\xb4\xce\xbf\xcf\x80\xce\xbf\xce\xaf\xce\xb7\xcf\x83\xce\xb7: \xce\xb1\xce\xb4\xcf\x85\xce\xbd\xce\xb1\xce\xbc\xce\xaf\xce\xb1 \xce\xb1\xcf\x80\xce\xbf\xce\xb8\xce\xae\xce\xba\xce\xb5\xcf\x85\xcf\x83\xce\xb7\xcf\x82 \xce\xba\xce\xb1\xcf\x84\xce\xac\xcf\x83\xcf\x84\xce\xb1\xcf\x83\xce\xb7\xcf\x82: {}",

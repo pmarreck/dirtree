@@ -28,6 +28,8 @@ pub const CliArg = enum {
     tail,
     only,
     annotate,
+    version,
+    version_check,
 };
 
 /// Per-locale CLI aliases: array of (string, CliArg) pairs.
