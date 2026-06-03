@@ -6,3 +6,6 @@ zig-out/
 zig-pkg/
 ZIG_RECENT_API_CHANGES_2025.md
 .direnv/
+
+# Nix build output symlink
+result

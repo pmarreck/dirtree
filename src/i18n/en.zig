@@ -91,6 +91,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Error: path '{s}' matches both open and close patterns",
     .err_regex_conflict_open = "  open pattern: {s}",
     .err_regex_conflict_close = "  close pattern: {s}",
+    .err_regex_invalid = "Error: invalid regex pattern: {s}",
     .err_unknown_lang = "Error: unknown language code '{s}'. Available: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

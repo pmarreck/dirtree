@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "오류: 경로 '{s}'이(가) open 패턴과 close 패턴 모두에 일치합니다",
     .err_regex_conflict_open = "  open 패턴: {s}",
     .err_regex_conflict_close = "  close 패턴: {s}",
+    .err_regex_invalid = "오류: 잘못된 정규식 패턴: {s}",
     .err_unknown_lang = "오류: 알 수 없는 언어 코드 '{s}'. 사용 가능: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

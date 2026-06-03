@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Hiba: a '{s}' \xc3\xbatvonal mind a megnyit\xc3\xa1si, mind a bez\xc3\xa1r\xc3\xa1si mint\xc3\xa1ra illeszkedik",
     .err_regex_conflict_open = "  megnyit\xc3\xa1si minta: {s}",
     .err_regex_conflict_close = "  bez\xc3\xa1r\xc3\xa1si minta: {s}",
+    .err_regex_invalid = "Hiba: érvénytelen regex minta: {s}",
     .err_unknown_lang = "Hiba: ismeretlen nyelvk\xc3\xb3d '{s}'. El\xc3\xa9rhet\xc5\x91: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

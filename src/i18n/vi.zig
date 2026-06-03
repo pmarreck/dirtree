@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "L\xe1\xbb\x97i: \xc4\x91\xc6\xb0\xe1\xbb\x9dng d\xe1\xba\xabn '{s}' kh\xe1\xbb\x9bp v\xe1\xbb\x9bi c\xe1\xba\xa3 m\xe1\xba\xabu m\xe1\xbb\x9f v\xc3\xa0 \xc4\x91\xc3\xb3ng",
     .err_regex_conflict_open = "  m\xe1\xba\xabu m\xe1\xbb\x9f: {s}",
     .err_regex_conflict_close = "  m\xe1\xba\xabu \xc4\x91\xc3\xb3ng: {s}",
+    .err_regex_invalid = "Lỗi: mẫu regex không hợp lệ: {s}",
     .err_unknown_lang = "L\xe1\xbb\x97i: m\xc3\xa3 ng\xc3\xb4n ng\xe1\xbb\xaf kh\xc3\xb4ng x\xc3\xa1c \xc4\x91\xe1\xbb\x8bnh '{s}'. C\xc3\xb3 s\xe1\xba\xb5n: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

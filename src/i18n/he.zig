@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "שגיאה: הנתיב '{s}' תואם גם לתבניות פתיחה וגם לתבניות סגירה",
     .err_regex_conflict_open = "  תבנית פתיחה: {s}",
     .err_regex_conflict_close = "  תבנית סגירה: {s}",
+    .err_regex_invalid = "שגיאה: תבנית regex לא חוקית: {s}",
     .err_unknown_lang = "שגיאה: קוד שפה לא מוכר '{s}'. זמינים: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

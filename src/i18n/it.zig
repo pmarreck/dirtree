@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Errore: il percorso '{s}' corrisponde sia al pattern open che close",
     .err_regex_conflict_open = "  pattern open: {s}",
     .err_regex_conflict_close = "  pattern close: {s}",
+    .err_regex_invalid = "Errore: pattern regex non valido: {s}",
     .err_unknown_lang = "Errore: codice lingua sconosciuto '{s}'. Disponibili: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

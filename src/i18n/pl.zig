@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Błąd: ścieżka '{s}' pasuje zarówno do wzorca otwarcia, jak i zamknięcia",
     .err_regex_conflict_open = "  wzorzec otwarcia: {s}",
     .err_regex_conflict_close = "  wzorzec zamknięcia: {s}",
+    .err_regex_invalid = "Błąd: nieprawidłowy wzorzec regex: {s}",
     .err_unknown_lang = "Błąd: nieznany kod języka '{s}'. Dostępne: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

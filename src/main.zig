@@ -1003,7 +1003,18 @@ pub fn main(init: std.process.Init) !u8 {
 			defer effective.deinit();
 
 			// Apply CLI overrides to effective state
-			applyCliOverrides(allocator, &cfg, &effective) catch {};
+			try applyCliOverrides(allocator, &cfg, &effective);
+
+			// Fail loudly if any CLI or state-file regex pattern was invalid,
+			// instead of silently rendering a tree that ignores it.
+			if (effective.invalid_regex) |bad_pattern| {
+				var err_buf: [512]u8 = undefined;
+				const msg = i18n.fmtRuntime(&err_buf, s.err_regex_invalid, &.{bad_pattern});
+				try stderr.writeAll(msg);
+				try stderr.writeAll("\n");
+				try stderr.flush();
+				return 1;
+			}
 
 			// --config: dump effective state and exit
 			if (cfg.show_config) {
@@ -1226,16 +1237,16 @@ fn applyCliOverrides(allocator: std.mem.Allocator, cfg: *const CliConfig, effect
 
 	// Apply CLI open/close/show/hide regexes
 	for (cfg.open_regexes.items) |re| {
-		try addCliRegex(allocator, &effective.open_regexes, &effective.strings, re.value, re.negated);
+		try addCliRegex(allocator, &effective.open_regexes, &effective.strings, re.value, re.negated, re.kind == .regex, &effective.invalid_regex);
 	}
 	for (cfg.close_regexes.items) |re| {
-		try addCliRegex(allocator, &effective.close_regexes, &effective.strings, re.value, re.negated);
+		try addCliRegex(allocator, &effective.close_regexes, &effective.strings, re.value, re.negated, re.kind == .regex, &effective.invalid_regex);
 	}
 	for (cfg.show_regexes.items) |re| {
-		try addCliRegex(allocator, &effective.show_regexes, &effective.strings, re.value, re.negated);
+		try addCliRegex(allocator, &effective.show_regexes, &effective.strings, re.value, re.negated, re.kind == .regex, &effective.invalid_regex);
 	}
 	for (cfg.hide_regexes.items) |re| {
-		try addCliRegex(allocator, &effective.hide_regexes, &effective.strings, re.value, re.negated);
+		try addCliRegex(allocator, &effective.hide_regexes, &effective.strings, re.value, re.negated, re.kind == .regex, &effective.invalid_regex);
 	}
 
 	// Apply CLI color/hyperlink preferences
@@ -1259,10 +1270,21 @@ fn addCliRegex(
 	strings: *std.ArrayListUnmanaged([]const u8),
 	pattern: []const u8,
 	negated: bool,
+	// Only genuine regex patterns (kind == .regex) are validated. Globs are
+	// stored bare and converted to regex at eval time, so a bare glob like
+	// `*.log` legitimately fails raw compilation here and must be skipped
+	// silently rather than reported as a user error.
+	is_regex: bool,
+	invalid_out: *?[]const u8,
 ) !void {
 	const owned_pattern = try allocator.dupe(u8, pattern);
 	try strings.append(allocator, owned_pattern);
-	const compiled = regex_lib.Regex.compile(allocator, owned_pattern) catch return;
+	const compiled = regex_lib.Regex.compile(allocator, owned_pattern) catch {
+		// Record the first invalid *regex* pattern so the caller can fail loudly.
+		// owned_pattern is owned by `strings` and freed on deinit.
+		if (is_regex and invalid_out.* == null) invalid_out.* = owned_pattern;
+		return;
+	};
 	try list.append(allocator, .{
 		.pattern = owned_pattern,
 		.negated = negated,

@@ -88,6 +88,7 @@ pub const Strings = struct {
     err_regex_conflict_path: [:0]const u8,
     err_regex_conflict_open: [:0]const u8,
     err_regex_conflict_close: [:0]const u8,
+    err_regex_invalid: [:0]const u8,
     err_unknown_lang: [:0]const u8,
     err_annotate_requires_path: []const u8,
     err_annotate_requires_description: []const u8,

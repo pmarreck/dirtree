@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "エラー: パス '{s}' がopenパターンとcloseパターンの両方に一致します",
     .err_regex_conflict_open = "  openパターン: {s}",
     .err_regex_conflict_close = "  closeパターン: {s}",
+    .err_regex_invalid = "エラー: 無効な正規表現パターン: {s}",
     .err_unknown_lang = "エラー: 不明な言語コード '{s}'。利用可能: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

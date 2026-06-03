@@ -158,3 +158,108 @@ pub fn getErrorMessage(error_code: c_int, buffer: []u8) ?[]const u8 {
     }
     return buffer[0..@intCast(len)];
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+//
+// These exercise the C-FFI wrapper directly: compilation, the anchored vs
+// unanchored match distinction, Unicode property support, compile failure,
+// the DFA workspace-growth path, and the standalone error-message helper.
+// std.testing.allocator detects any leak of the Zig-owned workspace buffer.
+// ---------------------------------------------------------------------------
+
+const testing = std.testing;
+
+test "compile + matches: trivial literal full match" {
+    var re = try Regex.compile(testing.allocator, "abc");
+    defer re.deinit();
+    try testing.expect(re.matches("abc"));
+    try testing.expect(!re.matches("abcd")); // anchored at both ends
+    try testing.expect(!re.matches("xabc"));
+    try testing.expect(!re.matches(""));
+}
+
+test "find: unanchored substring match" {
+    var re = try Regex.compile(testing.allocator, "abc");
+    defer re.deinit();
+    try testing.expect(re.find("abc"));
+    try testing.expect(re.find("xabcy")); // unanchored: matches anywhere
+    try testing.expect(re.find("abcd"));
+    try testing.expect(!re.find("ab"));
+    try testing.expect(!re.find("xyz"));
+}
+
+test "anchored matches vs unanchored find differ on the same pattern" {
+    var re = try Regex.compile(testing.allocator, "abc");
+    defer re.deinit();
+    // The option-flag wiring must actually differ between the two calls.
+    try testing.expect(!re.matches("abcd"));
+    try testing.expect(re.find("abcd"));
+}
+
+test "partialMatch is the error-union alias of find" {
+    var re = try Regex.compile(testing.allocator, "abc");
+    defer re.deinit();
+    try testing.expect(try re.partialMatch("xabcy"));
+    try testing.expect(!try re.partialMatch("xyz"));
+}
+
+test "Unicode property class \\p{L} matches letters across scripts (UTF+UCP)" {
+    var re = try Regex.compile(testing.allocator, "\\p{L}+");
+    defer re.deinit();
+    try testing.expect(re.matches("café")); // accented latin — all letters
+    try testing.expect(re.matches("Москва")); // cyrillic
+    try testing.expect(re.find("12é34")); // contains a letter
+    try testing.expect(!re.matches("123")); // digits are not \p{L}
+}
+
+test "compile failure: malformed pattern returns CompileFailed" {
+    try testing.expectError(Error.CompileFailed, Regex.compile(testing.allocator, "["));
+    try testing.expectError(Error.CompileFailed, Regex.compile(testing.allocator, "(abc"));
+    try testing.expectError(Error.CompileFailed, Regex.compile(testing.allocator, "*.log"));
+}
+
+test "growWorkspace doubles the buffer and the regex stays usable + deinits cleanly" {
+    var re = try Regex.compile(testing.allocator, "abc");
+    defer re.deinit();
+    const initial = re.workspace.len;
+    try testing.expectEqual(Regex.DEFAULT_WORKSPACE_SIZE, initial);
+    try testing.expect(re.growWorkspace());
+    try testing.expectEqual(initial * 2, re.workspace.len);
+    // Matching must still work after the realloc (no use-after-free / stale ptr).
+    try testing.expect(re.matches("abc"));
+    // A second grow keeps doubling and terminates.
+    try testing.expect(re.growWorkspace());
+    try testing.expectEqual(initial * 4, re.workspace.len);
+    // deinit (via defer) frees the *grown* workspace — testing.allocator
+    // would flag a leak or wrong-size free otherwise.
+}
+
+test "matches retry loop terminates on a complex alternation pattern" {
+    // Exercises the while(true) DFA loop end-to-end; if growWorkspace's
+    // doubling+realloc ever failed to terminate this would hang.
+    var re = try Regex.compile(testing.allocator, "(a|b|c|d|e|f|g)+");
+    defer re.deinit();
+    try testing.expect(re.matches("abcdefgabcdefg"));
+    try testing.expect(!re.matches("abcXdef"));
+}
+
+test "getErrorMessage returns a message for a real compile error code" {
+    // Reproduce a compile failure at the C level to obtain a genuine code.
+    var error_code: c_int = 0;
+    var error_offset: c.PCRE2_SIZE = 0;
+    const bad = c.pcre2_compile_8("[".ptr, 1, c.PCRE2_UTF | c.PCRE2_UCP, &error_code, &error_offset, null);
+    try testing.expect(bad == null); // compile genuinely failed
+    var buf: [256]u8 = undefined;
+    const msg = getErrorMessage(error_code, &buf);
+    try testing.expect(msg != null);
+    try testing.expect(msg.?.len > 0);
+}
+
+test "getErrorMessage returns null when the buffer is too small" {
+    var error_code: c_int = 0;
+    var error_offset: c.PCRE2_SIZE = 0;
+    _ = c.pcre2_compile_8("[".ptr, 1, c.PCRE2_UTF | c.PCRE2_UCP, &error_code, &error_offset, null);
+    var tiny: [1]u8 = undefined;
+    try testing.expect(getErrorMessage(error_code, &tiny) == null);
+}

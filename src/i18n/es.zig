@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Error: la ruta '{s}' coincide con patrones open y close",
     .err_regex_conflict_open = "  patr\xc3\xb3n open: {s}",
     .err_regex_conflict_close = "  patr\xc3\xb3n close: {s}",
+    .err_regex_invalid = "Error: patrón regex no válido: {s}",
     .err_unknown_lang = "Error: c\xc3\xb3digo de idioma desconocido '{s}'. Disponibles: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

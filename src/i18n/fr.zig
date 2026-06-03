@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Erreur : le chemin '{s}' correspond aux motifs open et close",
     .err_regex_conflict_open = "  motif open : {s}",
     .err_regex_conflict_close = "  motif close : {s}",
+    .err_regex_invalid = "Erreur : motif regex invalide : {s}",
     .err_unknown_lang = "Erreur : code de langue inconnu '{s}'. Disponibles : {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

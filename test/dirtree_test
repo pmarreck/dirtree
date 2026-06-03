@@ -2690,6 +2690,39 @@ test_regex_open_close_conflict_raises_error() {
 	compare_printable "regex/open close conflict raises error" "$actual_pb" "$expected_pb"
 }
 
+test_cli_invalid_regex_raises_error() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/cli-invalid-regex"
+	mkdir -p "$target/src"
+	capture_dirtree_printable stdout_pb stderr_pb rc --show "/[/" "$target" || true
+	if [[ "$rc" -eq 0 ]]; then
+		echo "expected non-zero rc for invalid CLI regex" >&2
+		return 1
+	fi
+	actual_pb="$stderr_pb"
+	expected_plain=$'Error: invalid regex pattern: [\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "regex/invalid CLI regex raises error" "$actual_pb" "$expected_pb"
+}
+
+test_state_invalid_regex_raises_error() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/state-invalid-regex"
+	mkdir -p "$target/src"
+	printf 'ver=1.2\ndefault=closed\n\nshow=[\n/[/\n]\n' > "$target/.dirtree-state"
+	capture_dirtree_printable stdout_pb stderr_pb rc "$target" || true
+	if [[ "$rc" -eq 0 ]]; then
+		echo "expected non-zero rc for invalid state-file regex" >&2
+		return 1
+	fi
+	actual_pb="$stderr_pb"
+	expected_plain=$'Error: invalid regex pattern: [\n'
+	encode_printable expected_pb "$expected_plain"
+	compare_printable "regex/invalid state-file regex raises error" "$actual_pb" "$expected_pb"
+}
+
 test_hide_literal_suppresses_node() {
 	local workspace target stdout_pb="" stderr_pb="" rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
@@ -3996,6 +4029,10 @@ run_all_tests() {
 		test_close_slash_regex_persists_in_state
 	run_test "regex/open close conflict raises error" \
 		test_regex_open_close_conflict_raises_error
+	run_test "regex/invalid CLI regex raises error" \
+		test_cli_invalid_regex_raises_error
+	run_test "regex/invalid state-file regex raises error" \
+		test_state_invalid_regex_raises_error
 	run_test "--hide literal suppresses node" \
 		test_hide_literal_suppresses_node
 	run_test "--hide regex suppresses matches" \

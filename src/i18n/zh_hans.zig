@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "错误: 路径 '{s}' 同时匹配open和close模式",
     .err_regex_conflict_open = "  open模式: {s}",
     .err_regex_conflict_close = "  close模式: {s}",
+    .err_regex_invalid = "错误: 无效的正则表达式模式: {s}",
     .err_unknown_lang = "错误: 未知语言代码 '{s}'。可用: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

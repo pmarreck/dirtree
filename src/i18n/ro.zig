@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Eroare: calea '{s}' corespunde at\xc3\xa2t pattern-ului open c\xc3\xa2t \xc8\x99i close",
     .err_regex_conflict_open = "  pattern open: {s}",
     .err_regex_conflict_close = "  pattern close: {s}",
+    .err_regex_invalid = "Eroare: pattern regex invalid: {s}",
     .err_unknown_lang = "Eroare: cod de limb\xc4\x83 necunoscut '{s}'. Disponibile: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

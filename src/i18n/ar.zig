@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "خطأ: المسار '{s}' يطابق أنماط الفتح والإغلاق معاً",
     .err_regex_conflict_open = "  نمط الفتح: {s}",
     .err_regex_conflict_close = "  نمط الإغلاق: {s}",
+    .err_regex_invalid = "خطأ: نمط تعبير نمطي غير صالح: {s}",
     .err_unknown_lang = "خطأ: رمز لغة غير معروف '{s}'. المتاحة: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

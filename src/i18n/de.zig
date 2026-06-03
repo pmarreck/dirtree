@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Fehler: Pfad '{s}' passt auf Open- und Close-Muster",
     .err_regex_conflict_open = "  Open-Muster: {s}",
     .err_regex_conflict_close = "  Close-Muster: {s}",
+    .err_regex_invalid = "Fehler: ungültiges Regex-Muster: {s}",
     .err_unknown_lang = "Fehler: Unbekannter Sprachcode '{s}'. Verfügbar: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

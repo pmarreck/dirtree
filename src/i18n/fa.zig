@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "خطا: مسیر '{s}' با هر دو الگوی بازکردن و بستن مطابقت دارد",
     .err_regex_conflict_open = "  الگوی بازکردن: {s}",
     .err_regex_conflict_close = "  الگوی بستن: {s}",
+    .err_regex_invalid = "خطا: الگوی regex نامعتبر: {s}",
     .err_unknown_lang = "خطا: کد زبان ناشناخته '{s}'. موجود: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Erro: o caminho '{s}' corresponde aos padr\xc3\xb5es open e close",
     .err_regex_conflict_open = "  padr\xc3\xa3o open: {s}",
     .err_regex_conflict_close = "  padr\xc3\xa3o close: {s}",
+    .err_regex_invalid = "Erro: padrão regex inválido: {s}",
     .err_unknown_lang = "Erro: c\xc3\xb3digo de idioma desconhecido '{s}'. Dispon\xc3\xadveis: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

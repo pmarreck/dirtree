@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Помилка: шлях '{s}' відповідає і шаблону відкриття, і шаблону закриття",
     .err_regex_conflict_open = "  шаблон відкриття: {s}",
     .err_regex_conflict_close = "  шаблон закриття: {s}",
+    .err_regex_invalid = "Помилка: неправильний шаблон regex: {s}",
     .err_unknown_lang = "Помилка: невідомий код мови '{s}'. Доступні: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

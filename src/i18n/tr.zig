@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "Hata: '{s}' yolu hem a\xc3\xa7\xc4\xb1k hem kapal\xc4\xb1 kal\xc4\xb1plara uyuyor",
     .err_regex_conflict_open = "  a\xc3\xa7\xc4\xb1k kal\xc4\xb1b\xc4\xb1: {s}",
     .err_regex_conflict_close = "  kapal\xc4\xb1 kal\xc4\xb1b\xc4\xb1: {s}",
+    .err_regex_invalid = "Hata: geçersiz regex kalıbı: {s}",
     .err_unknown_lang = "Hata: bilinmeyen dil kodu '{s}'. Mevcut: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",

@@ -479,3 +479,28 @@ test {
     _ = @import("vi.zig");
     _ = @import("zh_hans.zig");
 }
+
+test "every locale resolves and has all Strings fields populated" {
+    @setEvalBranchQuota(100000);
+    // Strings fields carry English defaults, so a locale that omits a field
+    // silently inherits English rather than failing to compile. This loop
+    // forces every locale's dispatch arm to resolve and asserts no field was
+    // blanked out, catching a missing/empty translation in any of the locales.
+    inline for (all_locales) |loc| {
+        const s = stringsFor(loc);
+        inline for (std.meta.fields(Strings)) |field| {
+            const value = @field(s, field.name);
+            if (value.len == 0) {
+                std.debug.print("locale '{s}' has empty field '{s}'\n", .{ loc.code(), field.name });
+                return error.EmptyLocaleField;
+            }
+        }
+        // The new invalid-regex error string must be present and carry the {s}
+        // placeholder for the offending pattern in every locale.
+        try std.testing.expect(std.mem.indexOf(u8, s.err_regex_invalid, "{s}") != null);
+    }
+}
+
+test "all_locales covers every Locale enum value" {
+    try std.testing.expectEqual(@typeInfo(Locale).@"enum".fields.len, all_locales.len);
+}

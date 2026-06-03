@@ -63,6 +63,10 @@ pub const EffectiveState = struct {
 	color_preference: ?bool = null,
 	hyperlink_preference: ?bool = null,
 	max_lines: ?u32 = null,
+	/// First regex pattern that failed to compile (borrowed from `strings`),
+	/// or null if all patterns compiled. Lets callers fail loudly instead of
+	/// silently dropping invalid patterns.
+	invalid_regex: ?[]const u8 = null,
 
 	// Annotations: path → description (re-based to target directory)
 	annotations: std.StringHashMapUnmanaged([]const u8) = .empty,
@@ -964,10 +968,10 @@ fn rebuildEffectiveState(
 	}
 
 	// Compile all regexes
-	try compileRegexMap(allocator, &open_regex_map, &effective.open_regexes, &effective.strings);
-	try compileRegexMap(allocator, &close_regex_map, &effective.close_regexes, &effective.strings);
-	try compileRegexMap(allocator, &show_regex_map, &effective.show_regexes, &effective.strings);
-	try compileRegexMap(allocator, &hide_regex_map, &effective.hide_regexes, &effective.strings);
+	try compileRegexMap(allocator, &open_regex_map, &effective.open_regexes, &effective.strings, &effective.invalid_regex);
+	try compileRegexMap(allocator, &close_regex_map, &effective.close_regexes, &effective.strings, &effective.invalid_regex);
+	try compileRegexMap(allocator, &show_regex_map, &effective.show_regexes, &effective.strings, &effective.invalid_regex);
+	try compileRegexMap(allocator, &hide_regex_map, &effective.hide_regexes, &effective.strings, &effective.invalid_regex);
 
 	// Build combined regexes for fast non-negated matching
 	effective.open_combined = try buildCombinedRegex(allocator, &effective.open_regexes, &effective.strings);
@@ -984,6 +988,7 @@ fn compileRegexMap(
 	map: *const std.StringHashMapUnmanaged(RegexInfo),
 	list: *std.ArrayListUnmanaged(CompiledRegex),
 	strings: *std.ArrayListUnmanaged([]const u8),
+	invalid_out: *?[]const u8,
 ) !void {
 	var iter = map.iterator();
 	while (iter.next()) |entry| {
@@ -996,7 +1001,9 @@ fn compileRegexMap(
 		try strings.append(allocator, owned_original);
 
 		const compiled = regex_lib.Regex.compile(allocator, owned_pattern) catch {
-			// Skip patterns that fail to compile
+			// Record the first invalid pattern so the caller can fail loudly
+			// instead of silently dropping it. owned_original is owned by `strings`.
+			if (invalid_out.* == null) invalid_out.* = owned_original;
 			continue;
 		};
 		try list.append(allocator, .{

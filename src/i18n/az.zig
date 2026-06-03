@@ -73,6 +73,7 @@ pub const strings = Strings{
     .err_regex_conflict_path = "X\xc9\x99ta: '{s}' yolu h\xc9\x99m a\xc3\xa7\xc4\xb1q, h\xc9\x99m ba\xc4\x9fl\xc4\xb1 \xc5\x9fablonlara uy\xc4\x9fundur",
     .err_regex_conflict_open = "  a\xc3\xa7\xc4\xb1q \xc5\x9fablonu: {s}",
     .err_regex_conflict_close = "  ba\xc4\x9fl\xc4\xb1 \xc5\x9fablonu: {s}",
+    .err_regex_invalid = "Xəta: yanlış regex şablonu: {s}",
     .err_unknown_lang = "X\xc9\x99ta: nabilinm\xc9\x99y\xc9\x99n dil kodu '{s}'. M\xc3\xb6vcud: {s}",
     .err_annotate_requires_path = "Error: annotate requires a path",
     .err_annotate_requires_description = "Error: annotate requires a description (use \"\" to clear)",
