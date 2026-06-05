@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Показати детальний опис",
     .help_opt_depth = "  -d, --depth N      Встановити максимальну глибину (за замовчуванням: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Встановити максимальну глибину лише для цього запуску (не зберігається)",
+    .help_opt_path = "  -p, --path PATH    Показати PATH, навіть якщо він схожий на прапорець чи підкоманду",
     .help_opt_simple = "  --simple           Простий вивід дерева, зручний для LLM",
     .help_opt_decorated = "  --decorated        Примусовий оздоблений вивід (навіть при перенаправленні)",
     .help_opt_no_icons = "  --no-icons         Вимкнути піктограми (простий режим + оздоблений заголовок)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Повідомлення про помилки ────────────────────────────────
     .err_depth_requires_number = "Помилка: --depth потребує числовий аргумент",
     .err_temp_depth_requires_number = "Помилка: --temp-depth потребує числовий аргумент",
+    .err_path_requires_arg = "Помилка: --path потребує аргумент-каталог",
     .err_sort_requires_mode = "Помилка: --sort потребує 'modified' або 'alpha'",
     .err_default_requires_value = "Помилка: --default потребує принаймні одне значення",
     .err_default_state_conflict = "Помилка: конфлікт стану --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--pro", .arg = .about },
         .{ .name = "--hlybyna", .arg = .depth },
         .{ .name = "--temp-hlybyna", .arg = .temp_depth },
+        .{ .name = "--shliakh", .arg = .path },
         .{ .name = "--prostyy", .arg = .simple },
         .{ .name = "--ozdoblenyy", .arg = .decorated },
         .{ .name = "--bez-piktohram", .arg = .no_icons },

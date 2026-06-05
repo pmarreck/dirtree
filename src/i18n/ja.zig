@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        詳細な説明を表示",
     .help_opt_depth = "  -d, --depth N      最大深度を設定 (デフォルト: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N 今回のみ最大深度を設定 (保存されません)",
+    .help_opt_path = "  -p, --path PATH    フラグやサブコマンドに見えても PATH を表示",
     .help_opt_simple = "  --simple           シンプルなLLM向けステートフルツリーを出力",
     .help_opt_decorated = "  --decorated        装飾付き出力を強制 (パイプ時も有効)",
     .help_opt_no_icons = "  --no-icons         アイコンを無効化 (シンプルモード + 装飾ヘッダー)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── エラーメッセージ ────────────────────────────────────────
     .err_depth_requires_number = "エラー: --depth には数値引数が必要です",
     .err_temp_depth_requires_number = "エラー: --temp-depth には数値引数が必要です",
+    .err_path_requires_arg = "エラー: --path にはディレクトリ引数が必要です",
     .err_sort_requires_mode = "エラー: --sort には 'modified' または 'alpha' が必要です",
     .err_default_requires_value = "エラー: --default には少なくとも1つの値が必要です",
     .err_default_state_conflict = "エラー: --default 状態の競合",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--shoosai", .arg = .about },
         .{ .name = "--fukasa", .arg = .depth },
         .{ .name = "--temp-fukasa", .arg = .temp_depth },
+        .{ .name = "--pasu", .arg = .path },
         .{ .name = "--kantan", .arg = .simple },
         .{ .name = "--sooshoku", .arg = .decorated },
         .{ .name = "--aikon-nashi", .arg = .no_icons },

@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Pokaż szczegółowy opis",
     .help_opt_depth = "  -d, --depth N      Ustaw maksymalną głębokość (domyślnie: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Ustaw maksymalną głębokość tylko dla tego uruchomienia (niezapisywane)",
+    .help_opt_path = "  -p, --path PATH    Renderuj PATH, nawet jeśli wygląda jak flaga lub podkomenda",
     .help_opt_simple = "  --simple           Prosty format wyjściowy, przyjazny dla LLM",
     .help_opt_decorated = "  --decorated        Wymuś ozdobne wyjście (nawet przy przekierowaniu)",
     .help_opt_no_icons = "  --no-icons         Wyłącz ikony (tryb prosty + ozdobny nagłówek)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Komunikaty o błędach ────────────────────────────────────
     .err_depth_requires_number = "Błąd: --depth wymaga argumentu liczbowego",
     .err_temp_depth_requires_number = "Błąd: --temp-depth wymaga argumentu liczbowego",
+    .err_path_requires_arg = "Błąd: --path wymaga argumentu katalogu",
     .err_sort_requires_mode = "Błąd: --sort wymaga 'modified' lub 'alpha'",
     .err_default_requires_value = "Błąd: --default wymaga co najmniej jednej wartości",
     .err_default_state_conflict = "Błąd: konflikt stanu --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--o-programie", .arg = .about },
         .{ .name = "--glebokosc", .arg = .depth },
         .{ .name = "--temp-glebokosc", .arg = .temp_depth },
+        .{ .name = "--sciezka", .arg = .path },
         .{ .name = "--prosty", .arg = .simple },
         .{ .name = "--ozdobny", .arg = .decorated },
         .{ .name = "--bez-ikon", .arg = .no_icons },

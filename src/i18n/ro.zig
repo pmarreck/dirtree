@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Afi\xc8\x99eaz\xc4\x83 descrierea detaliat\xc4\x83",
     .help_opt_depth = "  -d, --depth N      Seteaz\xc4\x83 ad\xc3\xa2ncimea maxim\xc4\x83 (implicit: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Setează adâncimea maximă doar pentru această rulare (nu se salvează)",
+    .help_opt_path = "  -p, --path PATH    Redă PATH chiar dacă pare o opțiune sau o subcomandă",
     .help_opt_simple = "  --simple           Ie\xc8\x99ire simpl\xc4\x83, prietenoas\xc4\x83 pentru LLM-uri",
     .help_opt_decorated = "  --decorated        For\xc8\x9beaz\xc4\x83 ie\xc8\x99irea decorat\xc4\x83 (chiar \xc8\x99i \xc3\xaen pipe)",
     .help_opt_no_icons = "  --no-icons         Dezactiveaz\xc4\x83 pictogramele (mod simplu + antet decorat)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Mesaje de eroare ──────────────────────────────────────
     .err_depth_requires_number = "Eroare: --depth necesit\xc4\x83 un argument numeric",
     .err_temp_depth_requires_number = "Eroare: --temp-depth necesit\xc4\x83 un argument numeric",
+    .err_path_requires_arg = "Eroare: --path necesită un argument de director",
     .err_sort_requires_mode = "Eroare: --sort necesit\xc4\x83 'modified' sau 'alpha'",
     .err_default_requires_value = "Eroare: --default necesit\xc4\x83 cel pu\xc8\x9bin o valoare",
     .err_default_state_conflict = "Eroare: conflict de stare \xc3\xaen --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--despre", .arg = .about },
         .{ .name = "--adancime", .arg = .depth },
         .{ .name = "--temp-adancime", .arg = .temp_depth },
+        .{ .name = "--cale", .arg = .path },
         .{ .name = "--simplu", .arg = .simple },
         .{ .name = "--decorat", .arg = .decorated },
         .{ .name = "--fara-pictograme", .arg = .no_icons },

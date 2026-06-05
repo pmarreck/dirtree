@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        R\xc3\xa9szletes le\xc3\xadr\xc3\xa1s megjelen\xc3\xadt\xc3\xa9se",
     .help_opt_depth = "  -d, --depth N      Maxim\xc3\xa1lis m\xc3\xa9lys\xc3\xa9g be\xc3\xa1ll\xc3\xadt\xc3\xa1sa (alap\xc3\xa9rtelmezett: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Maximális mélység beállítása csak ehhez a futáshoz (nem mentődik)",
+    .help_opt_path = "  -p, --path PATH    A PATH megjelenítése akkor is, ha kapcsolónak vagy alparancsnak tűnik",
     .help_opt_simple = "  --simple           Egyszer\xc5\xb1, LLM-bar\xc3\xa1t \xc3\xa1llapottart\xc3\xb3 fa kimenet",
     .help_opt_decorated = "  --decorated        D\xc3\xadsz\xc3\xadtett kimenet k\xc3\xa9nyszer\xc3\xadt\xc3\xa9se (cs\xc5\x91vez\xc3\xa9s eset\xc3\xa9n is)",
     .help_opt_no_icons = "  --no-icons         Ikonok letilt\xc3\xa1sa (egyszer\xc5\xb1 m\xc3\xb3d + d\xc3\xadsz\xc3\xadtett fejl\xc3\xa9c)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Hiba\xc3\xbczenetek ──────────────────────────────────────────────
     .err_depth_requires_number = "Hiba: --depth sz\xc3\xa1mszer\xc5\xb1 argumentumot ig\xc3\xa9nyel",
     .err_temp_depth_requires_number = "Hiba: --temp-depth sz\xc3\xa1mszer\xc5\xb1 argumentumot ig\xc3\xa9nyel",
+    .err_path_requires_arg = "Hiba: a --path könyvtár-argumentumot igényel",
     .err_sort_requires_mode = "Hiba: --sort 'modified' vagy 'alpha' sz\xc3\xbcks\xc3\xa9ges",
     .err_default_requires_value = "Hiba: --default legal\xc3\xa1bb egy \xc3\xa9rt\xc3\xa9ket ig\xc3\xa9nyel",
     .err_default_state_conflict = "Hiba: --default \xc3\xa1llapot\xc3\xbctk\xc3\xb6z\xc3\xa9s",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--rolunk", .arg = .about },
         .{ .name = "--melyseg", .arg = .depth },
         .{ .name = "--temp-melyseg", .arg = .temp_depth },
+        .{ .name = "--utvonal", .arg = .path },
         .{ .name = "--egyszeruu", .arg = .simple },
         .{ .name = "--diszitett", .arg = .decorated },
         .{ .name = "--ikonok-nelkul", .arg = .no_icons },

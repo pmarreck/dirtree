@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        نمایش توضیحات تفصیلی",
     .help_opt_depth = "  -d, --depth N      تنظیم عمق بیشینه (پیش‌فرض: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N تنظیم عمق بیشینه فقط برای این اجرا (ذخیره نمی‌شود)",
+    .help_opt_path = "  -p, --path PATH    نمایش PATH حتی اگر شبیه گزینه یا زیرفرمان باشد",
     .help_opt_simple = "  --simple           خروجی ساده و سازگار با مدل‌های زبانی بزرگ",
     .help_opt_decorated = "  --decorated        خروجی آراسته اجباری (حتی در حالت لوله)",
     .help_opt_no_icons = "  --no-icons         غیرفعال‌سازی نمادها (حالت ساده + سرآیند آراسته)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── پیام‌های خطا ─────────────────────────────────────────
     .err_depth_requires_number = "خطا: --depth به یک آرگومان عددی نیاز دارد",
     .err_temp_depth_requires_number = "خطا: --temp-depth به یک آرگومان عددی نیاز دارد",
+    .err_path_requires_arg = "خطا: --path به یک آرگومان دایرکتوری نیاز دارد",
     .err_sort_requires_mode = "خطا: --sort به 'modified' یا 'alpha' نیاز دارد",
     .err_default_requires_value = "خطا: --default حداقل به یک مقدار نیاز دارد",
     .err_default_state_conflict = "خطا: تعارض وضعیت --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--darbare", .arg = .about },
         .{ .name = "--omgh", .arg = .depth },
         .{ .name = "--temp-omgh", .arg = .temp_depth },
+        .{ .name = "--masir", .arg = .path },
         .{ .name = "--sade", .arg = .simple },
         .{ .name = "--arasteh", .arg = .decorated },
         .{ .name = "--bedun-nemad", .arg = .no_icons },

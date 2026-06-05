@@ -71,6 +71,7 @@ Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prer
   - `--no-icons`, `--no-color`, and `--no-hyperlinks` disable individual decorations (and persist that choice) when you truly need plain text.
   - `dirtree annotate PATH "description"` (alias `note`) persists a one-line note about a file or directory; pass an empty string to clear it. Notes display inline next to the entry as a dim `# comment`. Notes are also inherited from parent `.dirtree-state` files, with the closer file overriding.
   - `dirtree orphaned-notes [DIR]` lists notes in the current directory's `.dirtree-state` whose target paths no longer exist; `dirtree purge-orphaned-notes [DIR]` removes them (reporting each one). After any listing, dirtree also prints a one-line stderr warning when such orphaned notes exist — suppress it for a run with `--no-orphan-warning`.
+  - If a directory name looks like a flag or a subcommand (e.g. `--config` or `annotate`), force it to be read as the path: `dirtree --path <name>` (alias `-p`), or use the standard end-of-options separator `dirtree -- <name>` — everything after `--` is treated as the path, never as a flag or subcommand (so `dirtree -- --path` even lists a directory literally named `--path`).
 - **Safety niceties**
   - Number of hidden directories/files logged to stderr so you know what's filtered out.
   - Conflicting rules (e.g., same regex in open/close) surface as errors.

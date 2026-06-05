@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        显示详细说明",
     .help_opt_depth = "  -d, --depth N      设置最大深度 (默认: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N 仅本次运行设置最大深度 (不保存)",
+    .help_opt_path = "  -p, --path PATH    即使 PATH 看起来像选项或子命令也将其作为目录渲染",
     .help_opt_simple = "  --simple           输出简洁的LLM友好型有状态树",
     .help_opt_decorated = "  --decorated        强制装饰输出 (管道时也生效)",
     .help_opt_no_icons = "  --no-icons         禁用图标 (简洁模式 + 装饰标题)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── 错误信息 ───────────────────────────────────────────────
     .err_depth_requires_number = "错误: --depth 需要一个数字参数",
     .err_temp_depth_requires_number = "错误: --temp-depth 需要一个数字参数",
+    .err_path_requires_arg = "错误: --path 需要一个目录参数",
     .err_sort_requires_mode = "错误: --sort 需要 'modified' 或 'alpha'",
     .err_default_requires_value = "错误: --default 至少需要一个值",
     .err_default_state_conflict = "错误: --default 状态冲突",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--guanyu", .arg = .about },
         .{ .name = "--shendu", .arg = .depth },
         .{ .name = "--temp-shendu", .arg = .temp_depth },
+        .{ .name = "--lujing", .arg = .path },
         .{ .name = "--jiandan", .arg = .simple },
         .{ .name = "--zhuangshi", .arg = .decorated },
         .{ .name = "--wu-tubiao", .arg = .no_icons },

@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        הצגת תיאור מפורט",
     .help_opt_depth = "  -d, --depth N      הגדרת עומק מרבי (ברירת מחדל: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N הגדרת עומק מרבי להרצה זו בלבד (לא נשמר)",
+    .help_opt_path = "  -p, --path PATH    הצג את PATH גם אם הוא נראה כמו דגל או תת-פקודה",
     .help_opt_simple = "  --simple           פלט פשוט ידידותי למודלי שפה גדולים",
     .help_opt_decorated = "  --decorated        כפיית פלט מעוטר (גם בצנרת)",
     .help_opt_no_icons = "  --no-icons         ביטול סמלים (מצב פשוט + כותרת מעוטרת)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── הודעות שגיאה ─────────────────────────────────────────
     .err_depth_requires_number = "שגיאה: --depth דורש ארגומנט מספרי",
     .err_temp_depth_requires_number = "שגיאה: --temp-depth דורש ארגומנט מספרי",
+    .err_path_requires_arg = "שגיאה: --path דורש ארגומנט ספרייה",
     .err_sort_requires_mode = "שגיאה: --sort דורש 'modified' או 'alpha'",
     .err_default_requires_value = "שגיאה: --default דורש לפחות ערך אחד",
     .err_default_state_conflict = "שגיאה: התנגשות מצב ב---default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--odot", .arg = .about },
         .{ .name = "--omek", .arg = .depth },
         .{ .name = "--temp-omek", .arg = .temp_depth },
+        .{ .name = "--nativ", .arg = .path },
         .{ .name = "--pashut", .arg = .simple },
         .{ .name = "--meutat", .arg = .decorated },
         .{ .name = "--lelo-smailim", .arg = .no_icons },

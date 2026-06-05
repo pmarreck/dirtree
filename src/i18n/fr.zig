@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Afficher la description d\xc3\xa9taill\xc3\xa9e",
     .help_opt_depth = "  -d, --depth N      D\xc3\xa9finir la profondeur maximale (d\xc3\xa9faut : 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Définir la profondeur maximale pour cette exécution uniquement (non enregistré)",
+    .help_opt_path = "  -p, --path PATH    Afficher PATH même s'il ressemble à une option ou sous-commande",
     .help_opt_simple = "  --simple           Sortie simple, adapt\xc3\xa9e aux LLMs",
     .help_opt_decorated = "  --decorated        Forcer la sortie d\xc3\xa9cor\xc3\xa9e (m\xc3\xaame en pipe)",
     .help_opt_no_icons = "  --no-icons         D\xc3\xa9sactiver les ic\xc3\xb4nes (mode simple + en-t\xc3\xaate d\xc3\xa9cor\xc3\xa9)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Messages d'erreur ──────────────────────────────────────
     .err_depth_requires_number = "Erreur : --depth n\xc3\xa9cessite un argument num\xc3\xa9rique",
     .err_temp_depth_requires_number = "Erreur : --temp-depth n\xc3\xa9cessite un argument num\xc3\xa9rique",
+    .err_path_requires_arg = "Erreur : --path nécessite un argument de répertoire",
     .err_sort_requires_mode = "Erreur : --sort n\xc3\xa9cessite 'modified' ou 'alpha'",
     .err_default_requires_value = "Erreur : --default n\xc3\xa9cessite au moins une valeur",
     .err_default_state_conflict = "Erreur : conflit d'\xc3\xa9tat --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--a-propos", .arg = .about },
         .{ .name = "--profondeur", .arg = .depth },
         .{ .name = "--temp-profondeur", .arg = .temp_depth },
+        .{ .name = "--chemin", .arg = .path },
         .{ .name = "--brut", .arg = .simple },
         .{ .name = "--decore", .arg = .decorated },
         .{ .name = "--sans-icones", .arg = .no_icons },

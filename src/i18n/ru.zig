@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Показать подробное описание",
     .help_opt_depth = "  -d, --depth N      Установить максимальную глубину (по умолчанию: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Установить максимальную глубину только для этого запуска (не сохраняется)",
+    .help_opt_path = "  -p, --path PATH    Показать PATH, даже если он похож на флаг или подкоманду",
     .help_opt_simple = "  --simple           Простой вывод дерева, удобный для LLM",
     .help_opt_decorated = "  --decorated        Принудительный декорированный вывод (даже при перенаправлении)",
     .help_opt_no_icons = "  --no-icons         Отключить иконки (простой режим + декорированный заголовок)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Сообщения об ошибках ────────────────────────────────────
     .err_depth_requires_number = "Ошибка: --depth требует числовой аргумент",
     .err_temp_depth_requires_number = "Ошибка: --temp-depth требует числовой аргумент",
+    .err_path_requires_arg = "Ошибка: --path требует аргумент-каталог",
     .err_sort_requires_mode = "Ошибка: --sort требует 'modified' или 'alpha'",
     .err_default_requires_value = "Ошибка: --default требует хотя бы одно значение",
     .err_default_state_conflict = "Ошибка: конфликт состояния --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--opisanie", .arg = .about },
         .{ .name = "--glubina", .arg = .depth },
         .{ .name = "--temp-glubina", .arg = .temp_depth },
+        .{ .name = "--put", .arg = .path },
         .{ .name = "--prostoy", .arg = .simple },
         .{ .name = "--ukrashennyy", .arg = .decorated },
         .{ .name = "--bez-ikonok", .arg = .no_icons },

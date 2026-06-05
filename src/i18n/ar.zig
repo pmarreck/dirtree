@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        عرض الوصف التفصيلي",
     .help_opt_depth = "  -d, --depth N      تعيين العمق الأقصى (الافتراضي: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N تعيين العمق الأقصى لهذا التشغيل فقط (لا يُحفظ)",
+    .help_opt_path = "  -p, --path PATH    عرض PATH حتى لو بدا كخيار أو أمر فرعي",
     .help_opt_simple = "  --simple           إخراج بسيط ملائم لنماذج اللغة الكبيرة",
     .help_opt_decorated = "  --decorated        فرض الإخراج المزخرف (حتى عند التوجيه)",
     .help_opt_no_icons = "  --no-icons         تعطيل الرموز (وضع بسيط + ترويسة مزخرفة)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── رسائل الخطأ ──────────────────────────────────────────
     .err_depth_requires_number = "خطأ: --depth يتطلب معاملاً رقمياً",
     .err_temp_depth_requires_number = "خطأ: --temp-depth يتطلب معاملاً رقمياً",
+    .err_path_requires_arg = "خطأ: --path يتطلب وسيطة دليل",
     .err_sort_requires_mode = "خطأ: --sort يتطلب 'modified' أو 'alpha'",
     .err_default_requires_value = "خطأ: --default يتطلب قيمة واحدة على الأقل",
     .err_default_state_conflict = "خطأ: تعارض في حالة --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--hawla", .arg = .about },
         .{ .name = "--umq", .arg = .depth },
         .{ .name = "--temp-umq", .arg = .temp_depth },
+        .{ .name = "--masar", .arg = .path },
         .{ .name = "--basit", .arg = .simple },
         .{ .name = "--muzakhraf", .arg = .decorated },
         .{ .name = "--bidun-rumooz", .arg = .no_icons },

@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Hi\xe1\xbb\x83n th\xe1\xbb\x8b m\xc3\xb4 t\xe1\xba\xa3 chi ti\xe1\xba\xbft",
     .help_opt_depth = "  -d, --depth N      \xc4\x90\xe1\xba\xb7t \xc4\x91\xe1\xbb\x99 s\xc3\xa2u t\xe1\xbb\x91i \xc4\x91a (m\xe1\xba\xb7c \xc4\x91\xe1\xbb\x8bnh: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Đặt độ sâu tối đa chỉ cho lần chạy này (không lưu)",
+    .help_opt_path = "  -p, --path PATH    Hiển thị PATH ngay cả khi trông giống cờ hoặc lệnh con",
     .help_opt_simple = "  --simple           Xu\xe1\xba\xa5t c\xc3\xa2y th\xc6\xb0 m\xe1\xbb\xa5c \xc4\x91\xc6\xa1n gi\xe1\xba\xa3n, th\xc3\xa2n thi\xe1\xbb\x87n v\xe1\xbb\x9bi LLM",
     .help_opt_decorated = "  --decorated        Bu\xe1\xbb\x99c xu\xe1\xba\xa5t trang tr\xc3\xad (k\xe1\xbb\x83 c\xe1\xba\xa3 khi pipe)",
     .help_opt_no_icons = "  --no-icons         T\xe1\xba\xaft bi\xe1\xbb\x83u t\xc6\xb0\xe1\xbb\xa3ng (ch\xe1\xba\xbf \xc4\x91\xe1\xbb\x99 \xc4\x91\xc6\xa1n gi\xe1\xba\xa3n + ti\xc3\xaau \xc4\x91\xe1\xbb\x81 trang tr\xc3\xad)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Th\xc3\xb4ng b\xc3\xa1o l\xe1\xbb\x97i ──────────────────────────────────────────
     .err_depth_requires_number = "L\xe1\xbb\x97i: --depth y\xc3\xaau c\xe1\xba\xa7u \xc4\x91\xe1\xbb\x91i s\xe1\xbb\x91 l\xc3\xa0 s\xe1\xbb\x91",
     .err_temp_depth_requires_number = "L\xe1\xbb\x97i: --temp-depth y\xc3\xaau c\xe1\xba\xa7u \xc4\x91\xe1\xbb\x91i s\xe1\xbb\x91 l\xc3\xa0 s\xe1\xbb\x91",
+    .err_path_requires_arg = "Lỗi: --path yêu cầu một đối số thư mục",
     .err_sort_requires_mode = "L\xe1\xbb\x97i: --sort y\xc3\xaau c\xe1\xba\xa7u 'modified' ho\xe1\xba\xb7c 'alpha'",
     .err_default_requires_value = "L\xe1\xbb\x97i: --default y\xc3\xaau c\xe1\xba\xa7u \xc3\xadt nh\xe1\xba\xa5t m\xe1\xbb\x99t gi\xc3\xa1 tr\xe1\xbb\x8b",
     .err_default_state_conflict = "L\xe1\xbb\x97i: xung \xc4\x91\xe1\xbb\x99t tr\xe1\xba\xa1ng th\xc3\xa1i --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--gioi-thieu", .arg = .about },
         .{ .name = "--do-sau", .arg = .depth },
         .{ .name = "--temp-do-sau", .arg = .temp_depth },
+        .{ .name = "--duong-dan", .arg = .path },
         .{ .name = "--don-gian", .arg = .simple },
         .{ .name = "--trang-tri", .arg = .decorated },
         .{ .name = "--khong-bieu-tuong", .arg = .no_icons },

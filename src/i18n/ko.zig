@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        자세한 설명 표시",
     .help_opt_depth = "  -d, --depth N      최대 깊이 설정 (기본값: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N 이번 실행만 최대 깊이 설정 (저장 안 함)",
+    .help_opt_path = "  -p, --path PATH    플래그나 하위 명령처럼 보여도 PATH를 렌더링",
     .help_opt_simple = "  --simple           간단한 LLM 친화적 상태 트리 출력",
     .help_opt_decorated = "  --decorated        꾸며진 출력 강제 (파이프 시에도 유효)",
     .help_opt_no_icons = "  --no-icons         아이콘 비활성화 (간단 모드 + 꾸며진 헤더)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── 오류 메시지 ────────────────────────────────────────────
     .err_depth_requires_number = "오류: --depth에는 숫자 인수가 필요합니다",
     .err_temp_depth_requires_number = "오류: --temp-depth에는 숫자 인수가 필요합니다",
+    .err_path_requires_arg = "오류: --path에는 디렉터리 인수가 필요합니다",
     .err_sort_requires_mode = "오류: --sort에는 'modified' 또는 'alpha'가 필요합니다",
     .err_default_requires_value = "오류: --default에는 최소 하나의 값이 필요합니다",
     .err_default_state_conflict = "오류: --default 상태 충돌",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--jeonbo", .arg = .about },
         .{ .name = "--gipgi", .arg = .depth },
         .{ .name = "--temp-gipgi", .arg = .temp_depth },
+        .{ .name = "--gyeongno", .arg = .path },
         .{ .name = "--gandanhan", .arg = .simple },
         .{ .name = "--jangsikin", .arg = .decorated },
         .{ .name = "--aikon-eopsi", .arg = .no_icons },

@@ -1087,6 +1087,7 @@ Options:
   -a, --about        Show detailed description
   -d, --depth N      Set maximum depth (default: 4)
   -td, --temp-depth N Set max depth for this run only (not saved)
+  -p, --path PATH    Render PATH even if it looks like a flag or subcommand
   --simple           Output a simple, LLM-friendly stateful tree
   --decorated        Force decorated output (even when piped)
   --no-icons         Disable icons (simple mode + decorated header)
@@ -1338,6 +1339,91 @@ test_temp_depth_overrides_persisted_depth() {
 	fi
 	encode_file_printable after_pb "$state_file"
 	compare_printable "temp-depth leaves state file unchanged" "$after_pb" "$before_pb"
+}
+
+test_path_flag_disambiguates_subcommand_name() {
+	local workspace out="" rc=0
+	workspace=$(new_tmpdir)
+	mkdir -p "$workspace/annotate/child"
+	# `dirtree annotate` would be the annotate subcommand; `--path annotate`
+	# must instead list the directory literally named "annotate".
+	out=$(cd "$workspace" && "$DIRTREE_BIN" --path annotate --simple --no-icons 2>/dev/null)
+	rc=$?
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree --path annotate failed rc=$rc" >&2
+		return 1
+	fi
+	if [[ "$out" != *"annotate"* || "$out" != *"child"* ]]; then
+		echo "expected listing of annotate/ containing child/; got: $out" >&2
+		return 1
+	fi
+}
+
+test_path_flag_allows_flag_like_dirname() {
+	local workspace out="" rc=0
+	workspace=$(new_tmpdir)
+	mkdir -p "$workspace/--weird/sub"
+	out=$(cd "$workspace" && "$DIRTREE_BIN" --path --weird --simple --no-icons 2>/dev/null)
+	rc=$?
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree --path --weird failed rc=$rc" >&2
+		return 1
+	fi
+	if [[ "$out" != *"sub"* ]]; then
+		echo "expected sub/ in listing of --weird/; got: $out" >&2
+		return 1
+	fi
+}
+
+test_path_flag_captures_path_named_like_the_flag() {
+	local workspace out="" rc=0
+	workspace=$(new_tmpdir)
+	mkdir -p "$workspace/--path/sub"
+	# The classic: a directory literally named "--path". `--path --path` must
+	# treat the second token as the path, not re-parse it as the flag.
+	out=$(cd "$workspace" && "$DIRTREE_BIN" --path --path --simple --no-icons 2>/dev/null)
+	rc=$?
+	if [[ $rc -ne 0 ]]; then
+		echo "dirtree --path --path failed rc=$rc" >&2
+		return 1
+	fi
+	if [[ "$out" != *"sub"* ]]; then
+		echo "expected sub/ in listing of the --path/ dir; got: $out" >&2
+		return 1
+	fi
+}
+
+test_double_dash_disambiguates_subcommand_name() {
+	local workspace out="" rc=0
+	workspace=$(new_tmpdir)
+	mkdir -p "$workspace/annotate/child"
+	# `-- annotate` => list the directory named "annotate", not the subcommand.
+	out=$(cd "$workspace" && "$DIRTREE_BIN" --simple --no-icons -- annotate 2>/dev/null)
+	rc=$?
+	if [[ $rc -ne 0 ]]; then echo "dirtree -- annotate failed rc=$rc" >&2; return 1; fi
+	if [[ "$out" != *"annotate"* || "$out" != *"child"* ]]; then
+		echo "expected listing of annotate/ with child/; got: $out" >&2; return 1
+	fi
+}
+
+test_double_dash_allows_flag_like_dirname() {
+	local workspace out="" rc=0
+	workspace=$(new_tmpdir)
+	mkdir -p "$workspace/--weird/sub"
+	out=$(cd "$workspace" && "$DIRTREE_BIN" --simple --no-icons -- --weird 2>/dev/null)
+	rc=$?
+	if [[ $rc -ne 0 ]]; then echo "dirtree -- --weird failed rc=$rc" >&2; return 1; fi
+	if [[ "$out" != *"sub"* ]]; then echo "expected sub/ in listing; got: $out" >&2; return 1; fi
+}
+
+test_double_dash_bare_lists_cwd() {
+	local workspace out="" rc=0
+	workspace=$(new_tmpdir)
+	mkdir -p "$workspace/marker_dir"
+	out=$(cd "$workspace" && "$DIRTREE_BIN" --simple --no-icons -- 2>/dev/null)
+	rc=$?
+	if [[ $rc -ne 0 ]]; then echo "bare -- failed rc=$rc" >&2; return 1; fi
+	if [[ "$out" != *"marker_dir"* ]]; then echo "bare -- should list cwd; got: $out" >&2; return 1; fi
 }
 
 test_sort_flags_persist_and_apply() {
@@ -4096,6 +4182,18 @@ run_all_tests() {
 		test_temp_depth_applies_without_persisting
 	run_test "temp-depth overrides persisted depth" \
 		test_temp_depth_overrides_persisted_depth
+	run_test "--path disambiguates a subcommand-like dir name" \
+		test_path_flag_disambiguates_subcommand_name
+	run_test "--path allows a flag-like dir name" \
+		test_path_flag_allows_flag_like_dirname
+	run_test "--path captures a path named --path" \
+		test_path_flag_captures_path_named_like_the_flag
+	run_test "-- disambiguates a subcommand-like dir name" \
+		test_double_dash_disambiguates_subcommand_name
+	run_test "-- allows a flag-like dir name" \
+		test_double_dash_allows_flag_like_dirname
+	run_test "bare -- lists the current directory" \
+		test_double_dash_bare_lists_cwd
 	run_test "sort flags persist and apply" \
 		test_sort_flags_persist_and_apply
 	run_test "inherits parent .dirtree-state closing rules" \

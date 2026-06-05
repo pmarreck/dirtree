@@ -5,6 +5,7 @@ pub const CliArg = enum {
     about,
     depth,
     temp_depth,
+    path,
     simple,
     decorated,
     no_icons,

@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        \xc6\x8ftrafl\xc4\xb1 t\xc9\x99sviri g\xc3\xb6st\xc9\x99r",
     .help_opt_depth = "  -d, --depth N      Maksimum d\xc9\x99rinliyi t\xc9\x99yin et (varsay\xc4\xb1lan: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Maksimum dərinliyi yalnız bu işə salma üçün təyin et (saxlanılmır)",
+    .help_opt_path = "  -p, --path PATH    PATH bayraq və ya alt-əmr kimi görünsə də göstər",
     .help_opt_simple = "  --simple           Sad\xc9\x99, LLM-\xc3\xbc\xc3\xa7\xc3\xbcn uy\xc4\x9fun v\xc9\x99ziyy\xc9\x99tli a\xc4\x9fac \xc3\xa7\xc4\xb1x\xc4\xb1\xc5\x9f\xc4\xb1",
     .help_opt_decorated = "  --decorated        B\xc9\x99z\xc9\x99kli \xc3\xa7\xc4\xb1x\xc4\xb1\xc5\x9f\xc4\xb1 m\xc9\x99cbur et (h\xc9\x99tta pipe zaman\xc4\xb1)",
     .help_opt_no_icons = "  --no-icons         \xc4\xb0konlar\xc4\xb1 s\xc3\xb6nd\xc3\xbcr (sad\xc9\x99 rejim + b\xc9\x99z\xc9\x99kli ba\xc5\x9fl\xc4\xb1q)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── X\xc9\x99ta mesajlar\xc4\xb1 ──────────────────────────────────────────
     .err_depth_requires_number = "X\xc9\x99ta: --depth r\xc9\x99q\xc9\x99mli arqument t\xc9\x99l\xc9\x99b edir",
     .err_temp_depth_requires_number = "X\xc9\x99ta: --temp-depth r\xc9\x99q\xc9\x99mli arqument t\xc9\x99l\xc9\x99b edir",
+    .err_path_requires_arg = "Xəta: --path qovluq arqumenti tələb edir",
     .err_sort_requires_mode = "X\xc9\x99ta: --sort 'modified' v\xc9\x99 ya 'alpha' t\xc9\x99l\xc9\x99b edir",
     .err_default_requires_value = "X\xc9\x99ta: --default \xc9\x99n az\xc4\xb1 bir d\xc9\x99y\xc9\x99r t\xc9\x99l\xc9\x99b edir",
     .err_default_state_conflict = "X\xc9\x99ta: --default v\xc9\x99ziyy\xc9\x99t ziddiyy\xc9\x99ti",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--haqqinda", .arg = .about },
         .{ .name = "--derinlik", .arg = .depth },
         .{ .name = "--temp-derinlik", .arg = .temp_depth },
+        .{ .name = "--yol", .arg = .path },
         .{ .name = "--sadece", .arg = .simple },
         .{ .name = "--bezekli", .arg = .decorated },
         .{ .name = "--ikonsuz", .arg = .no_icons },

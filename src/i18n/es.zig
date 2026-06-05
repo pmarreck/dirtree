@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Mostrar descripci\xc3\xb3n detallada",
     .help_opt_depth = "  -d, --depth N      Establecer profundidad m\xc3\xa1xima (por defecto: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Establecer profundidad máxima solo para esta ejecución (no se guarda)",
+    .help_opt_path = "  -p, --path PATH    Renderizar PATH aunque parezca una opción o subcomando",
     .help_opt_simple = "  --simple           Salida simple, amigable para LLMs",
     .help_opt_decorated = "  --decorated        Forzar salida decorada (incluso en pipe)",
     .help_opt_no_icons = "  --no-icons         Desactivar iconos (modo simple + cabecera decorada)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Mensajes de error ──────────────────────────────────────
     .err_depth_requires_number = "Error: --depth requiere un argumento num\xc3\xa9rico",
     .err_temp_depth_requires_number = "Error: --temp-depth requiere un argumento num\xc3\xa9rico",
+    .err_path_requires_arg = "Error: --path requiere un argumento de directorio",
     .err_sort_requires_mode = "Error: --sort requiere 'modified' o 'alpha'",
     .err_default_requires_value = "Error: --default requiere al menos un valor",
     .err_default_state_conflict = "Error: conflicto de estado en --default",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--acerca", .arg = .about },
         .{ .name = "--profundidad", .arg = .depth },
         .{ .name = "--temp-profundidad", .arg = .temp_depth },
+        .{ .name = "--ruta", .arg = .path },
         .{ .name = "--sencillo", .arg = .simple },
         .{ .name = "--decorado", .arg = .decorated },
         .{ .name = "--sin-iconos", .arg = .no_icons },

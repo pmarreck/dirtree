@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Detaillierte Beschreibung anzeigen",
     .help_opt_depth = "  -d, --depth N      Maximale Tiefe festlegen (Standard: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Maximale Tiefe nur für diesen Lauf festlegen (nicht gespeichert)",
+    .help_opt_path = "  -p, --path PATH    PATH rendern, auch wenn es wie ein Flag oder Unterbefehl aussieht",
     .help_opt_simple = "  --simple           Einfache, LLM-freundliche Baumausgabe",
     .help_opt_decorated = "  --decorated        Dekorierte Ausgabe erzwingen (auch bei Pipe)",
     .help_opt_no_icons = "  --no-icons         Symbole deaktivieren (einfach + dekorierter Header)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Fehlermeldungen ────────────────────────────────────────
     .err_depth_requires_number = "Fehler: --depth erfordert ein numerisches Argument",
     .err_temp_depth_requires_number = "Fehler: --temp-depth erfordert ein numerisches Argument",
+    .err_path_requires_arg = "Fehler: --path erfordert ein Verzeichnisargument",
     .err_sort_requires_mode = "Fehler: --sort erfordert 'modified' oder 'alpha'",
     .err_default_requires_value = "Fehler: --default erfordert mindestens einen Wert",
     .err_default_state_conflict = "Fehler: --default Zustandskonflikt",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--ueber", .arg = .about },
         .{ .name = "--tiefe", .arg = .depth },
         .{ .name = "--temp-tiefe", .arg = .temp_depth },
+        .{ .name = "--pfad", .arg = .path },
         .{ .name = "--einfach", .arg = .simple },
         .{ .name = "--dekoriert", .arg = .decorated },
         .{ .name = "--keine-symbole", .arg = .no_icons },

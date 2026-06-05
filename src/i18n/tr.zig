@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Ayr\xc4\xb1nt\xc4\xb1l\xc4\xb1 a\xc3\xa7\xc4\xb1klamay\xc4\xb1 g\xc3\xb6ster",
     .help_opt_depth = "  -d, --depth N      Azami derinli\xc4\x9fi ayarla (varsay\xc4\xb1lan: 4)",
     .help_opt_temp_depth = "  -td, --temp-depth N Azami derinliği yalnızca bu çalıştırma için ayarla (kaydedilmez)",
+    .help_opt_path = "  -p, --path PATH    Bayrak veya alt komut gibi görünse bile PATH'i göster",
     .help_opt_simple = "  --simple           Basit, LLM dostu durumlu a\xc4\x9fa\xc3\xa7 \xc3\xa7\xc4\xb1kt\xc4\xb1s\xc4\xb1",
     .help_opt_decorated = "  --decorated        S\xc3\xbcsl\xc3\xbc \xc3\xa7\xc4\xb1kt\xc4\xb1y\xc4\xb1 zorla (pipe durumunda bile)",
     .help_opt_no_icons = "  --no-icons         Simgeleri devre d\xc4\xb1\xc5\x9f\xc4\xb1 b\xc4\xb1rak (basit mod + s\xc3\xbcsl\xc3\xbc ba\xc5\x9fl\xc4\xb1k)",
@@ -62,6 +63,7 @@ pub const strings = Strings{
     // ── Hata mesajlar\xc4\xb1 ──────────────────────────────────────────────
     .err_depth_requires_number = "Hata: --depth say\xc4\xb1sal bir arg\xc3\xbcman gerektirir",
     .err_temp_depth_requires_number = "Hata: --temp-depth say\xc4\xb1sal bir arg\xc3\xbcman gerektirir",
+    .err_path_requires_arg = "Hata: --path bir dizin argümanı gerektirir",
     .err_sort_requires_mode = "Hata: --sort 'modified' veya 'alpha' gerektirir",
     .err_default_requires_value = "Hata: --default en az bir de\xc4\x9fer gerektirir",
     .err_default_state_conflict = "Hata: --default durum \xc3\xa7at\xc4\xb1\xc5\x9fmas\xc4\xb1",
@@ -112,6 +114,7 @@ pub const aliases = LocaleAliases{
         .{ .name = "--hakkinda", .arg = .about },
         .{ .name = "--kalinlik", .arg = .depth },
         .{ .name = "--temp-kalinlik", .arg = .temp_depth },
+        .{ .name = "--patika", .arg = .path },
         .{ .name = "--basit", .arg = .simple },
         .{ .name = "--suslu", .arg = .decorated },
         .{ .name = "--simgesiz", .arg = .no_icons },

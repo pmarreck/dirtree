@@ -246,6 +246,19 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			return .about;
 		}
 
+		// End-of-options marker: everything after `--` is an operand, never a
+		// flag or subcommand (POSIX convention). dirtree's operand is the path,
+		// so the token after `--` is taken verbatim as the directory. A bare
+		// `--` simply ends option parsing and falls back to the default path.
+		if (std.mem.eql(u8, arg, "--")) {
+			i += 1;
+			if (i < args.len) {
+				config.dir = args[i];
+				dir_pending = false;
+			}
+			break;
+		}
+
 		// Long flags via i18n alias map
 		if (arg.len > 1 and arg[0] == '-' and arg[1] == '-') {
 			if (i18n.matchLongFlag(arg)) |cli_arg| {
@@ -297,6 +310,20 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								return .{ .err = lang_err_buf[0..msg.len] };
 							}
 						}
+						i += 1;
+						continue;
+					},
+					.path => {
+						// Consume the NEXT token verbatim as the target path, even if it
+						// looks like a flag or subcommand (e.g. a dir named '--config' or
+						// 'annotate', or even '--path' itself).
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_path_requires_arg };
+						}
+						config.dir = args[i];
+						dir_pending = false;
 						i += 1;
 						continue;
 					},
@@ -586,6 +613,17 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		}
 
 		// Short flags with value args (fixed, not localized)
+		if (std.mem.eql(u8, arg, "-p")) {
+			i += 1;
+			if (i >= args.len) {
+				config.deinit(allocator);
+				return .{ .err = s.err_path_requires_arg };
+			}
+			config.dir = args[i];
+			dir_pending = false;
+			i += 1;
+			continue;
+		}
 		if (std.mem.eql(u8, arg, "-td")) {
 			i += 1;
 			if (i >= args.len) {
@@ -865,6 +903,8 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll(s.help_opt_depth);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_temp_depth);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_path);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_simple);
 	try writer.writeAll("\n");
