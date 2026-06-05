@@ -203,6 +203,12 @@ encode_file_printable() {
 decode_printable() {
 	local __var="$1"
 	local data="$2"
+	# Empty input decodes to empty; short-circuit to avoid a bad array
+	# subscript when used as an associative-array key (data="").
+	if [[ -z "$data" ]]; then
+		printf -v "$__var" '%s' ""
+		return 0
+	fi
 	# memoize by printable binary path to avoid repeated subprocesses
 	if [[ -z ${DECODE_CACHE_BIN:-} || "$DECODE_CACHE_BIN" != "$PRINTABLE_BINARY_BIN" ]]; then
 		unset DECODE_CACHE
@@ -1080,10 +1086,12 @@ Options:
   -h, --help         Show this help message
   -a, --about        Show detailed description
   -d, --depth N      Set maximum depth (default: 4)
+  -td, --temp-depth N Set max depth for this run only (not saved)
   --simple           Output a simple, LLM-friendly stateful tree
   --decorated        Force decorated output (even when piped)
   --no-icons         Disable icons (simple mode + decorated header)
   --no-color        Disable ANSI colors and persist preference
+  --no-orphan-warning Suppress the orphaned-notes warning
   --no-hyperlinks   Disable OSC8 hyperlinks and persist preference
   --default X        Persist default state: opened|closed
   -o, --open DIR...  Open one or more subdirs (repeat flag to add more)
@@ -1104,6 +1112,8 @@ Options:
   --tail N           Show only the last N lines (prefer piping to tail -N)
   --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)
   annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)
+  orphaned-notes [DIR] List notes whose target paths no longer exist
+  purge-orphaned-notes [DIR] Remove notes whose target paths no longer exist
   --version          Show version (offline; reads cached update-available notice)
   --version-check    Force a fresh online check against the GitHub releases API
 
@@ -1282,6 +1292,52 @@ test_depth_flag_persists_and_applies() {
 	printf -v expected_tree_plain ' %s/\n└──  sub/*\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	compare_printable "depth flag persists and applies" "$actual_tree_pb" "$expected_tree_pb"
+}
+
+test_temp_depth_applies_without_persisting() {
+	local workspace target state_file stdout_pb="" stderr_pb="" rc=0 actual_tree_pb expected_tree_plain expected_tree_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/temp-depth"
+	mkdir -p "$target/sub/deep"
+	state_file="$target/.dirtree-state"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc -td 1 "$target"; then
+		echo "capture helper failed for temp-depth" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "dirtree -td 1 failed with rc=$rc" >&2
+		return 1
+	fi
+	if [[ -e "$state_file" ]]; then
+		echo "temp-depth must not create .dirtree-state, but it exists" >&2
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
+	printf -v expected_tree_plain '\xee\x97\xbf %s/\n\xe2\x94\x94\xe2\x94\x80\xe2\x94\x80 \xee\x97\xbf sub/*\n' "$target"
+	encode_printable expected_tree_pb "$expected_tree_plain"
+	compare_printable "temp-depth applies without persisting" "$actual_tree_pb" "$expected_tree_pb"
+}
+
+test_temp_depth_overrides_persisted_depth() {
+	local workspace target state_file stdout_pb="" stderr_pb="" rc=0 actual_tree_pb expected_tree_plain expected_tree_pb before_pb after_pb
+	workspace=$(new_tmpdir)
+	target="$workspace/temp-depth-override"
+	mkdir -p "$target/sub/deep"
+	state_file="$target/.dirtree-state"
+	run_quiet "$DIRTREE_BIN" -d 4 "$target"
+	encode_file_printable before_pb "$state_file"
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --temp-depth 1 "$target"; then
+		echo "capture helper failed for temp-depth override" >&2
+		return 1
+	fi
+	actual_tree_pb="$stdout_pb"
+	printf -v expected_tree_plain '\xee\x97\xbf %s/\n\xe2\x94\x94\xe2\x94\x80\xe2\x94\x80 \xee\x97\xbf sub/*\n' "$target"
+	encode_printable expected_tree_pb "$expected_tree_plain"
+	if ! compare_printable "temp-depth overrides persisted depth" "$actual_tree_pb" "$expected_tree_pb"; then
+		return 1
+	fi
+	encode_file_printable after_pb "$state_file"
+	compare_printable "temp-depth leaves state file unchanged" "$after_pb" "$before_pb"
 }
 
 test_sort_flags_persist_and_apply() {
@@ -3817,6 +3873,89 @@ test_annotate_inherits_from_parent() {
 	fi
 }
 
+test_orphaned_notes_subcommand_lists() {
+	local workspace target out=""
+	workspace=$(new_tmpdir)
+	target="$workspace/on-list"
+	mkdir -p "$target"
+	touch "$target/real.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate ghost.txt "missing note") >/dev/null 2>&1
+	(cd "$target" && "$DIRTREE_BIN" annotate real.txt "real note") >/dev/null 2>&1
+	out=$(cd "$target" && "$DIRTREE_BIN" orphaned-notes 2>/dev/null)
+	if [[ "$out" != *"ghost.txt"* || "$out" != *"missing note"* ]]; then
+		echo "expected ghost.txt + its note in orphaned-notes output; got: $out" >&2
+		return 1
+	fi
+	if [[ "$out" == *"real.txt"* ]]; then
+		echo "real.txt exists and must not be listed as orphaned; got: $out" >&2
+		return 1
+	fi
+}
+
+test_purge_orphaned_notes_subcommand() {
+	local workspace target out=""
+	workspace=$(new_tmpdir)
+	target="$workspace/on-purge"
+	mkdir -p "$target"
+	touch "$target/real.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate ghost.txt "missing note") >/dev/null 2>&1
+	(cd "$target" && "$DIRTREE_BIN" annotate real.txt "real note") >/dev/null 2>&1
+	out=$(cd "$target" && "$DIRTREE_BIN" purge-orphaned-notes 2>/dev/null)
+	if [[ "$out" != *"ghost.txt"* ]]; then
+		echo "expected purge to report ghost.txt; got: $out" >&2
+		return 1
+	fi
+	if rg -q 'ghost\.txt' "$target/.dirtree-state"; then
+		echo "ghost.txt should have been purged from the state file" >&2
+		cat "$target/.dirtree-state" >&2
+		return 1
+	fi
+	if ! rg -q 'real\.txt = real note' "$target/.dirtree-state"; then
+		echo "real.txt note should remain in the state file" >&2
+		cat "$target/.dirtree-state" >&2
+		return 1
+	fi
+}
+
+test_orphaned_note_warning() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0 stderr_plain
+	workspace=$(new_tmpdir)
+	target="$workspace/orphan-warn"
+	mkdir -p "$target"
+	touch "$target/keep.txt"
+	# Annotate a path that does not exist -> immediately orphaned
+	(cd "$target" && "$DIRTREE_BIN" annotate ghost.txt "note for a missing file") >/dev/null 2>&1
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc "$target"; then
+		echo "capture helper failed for orphan warning" >&2
+		return 1
+	fi
+	decode_printable stderr_plain "$stderr_pb"
+	if [[ "$stderr_plain" != *"orphaned-notes"* ]]; then
+		echo "expected orphan warning mentioning orphaned-notes; got:" >&2
+		printf '%s\n' "$stderr_plain" >&2
+		return 1
+	fi
+}
+
+test_orphaned_note_warning_suppressed() {
+	local workspace target stdout_pb="" stderr_pb="" rc=0 stderr_plain
+	workspace=$(new_tmpdir)
+	target="$workspace/orphan-warn-suppress"
+	mkdir -p "$target"
+	touch "$target/keep.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate ghost.txt "note for a missing file") >/dev/null 2>&1
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --no-orphan-warning "$target"; then
+		echo "capture helper failed for orphan warning suppression" >&2
+		return 1
+	fi
+	decode_printable stderr_plain "$stderr_pb"
+	if [[ "$stderr_plain" == *"orphaned-notes"* ]]; then
+		echo "orphan warning should be suppressed by --no-orphan-warning; got:" >&2
+		printf '%s\n' "$stderr_plain" >&2
+		return 1
+	fi
+}
+
 test_annotate_multiline_rejected() {
 	local path rc
 	path=$(fixture_simple_tree)
@@ -3953,6 +4092,10 @@ run_all_tests() {
 		test_persist_default_array_via_multiple_tokens
 	run_test "depth flag persists and applies" \
 		test_depth_flag_persists_and_applies
+	run_test "temp-depth applies without persisting" \
+		test_temp_depth_applies_without_persisting
+	run_test "temp-depth overrides persisted depth" \
+		test_temp_depth_overrides_persisted_depth
 	run_test "sort flags persist and apply" \
 		test_sort_flags_persist_and_apply
 	run_test "inherits parent .dirtree-state closing rules" \
@@ -4149,6 +4292,14 @@ run_all_tests() {
 		test_annotate_inherits_from_parent
 	run_test "annotate multiline description rejected" \
 		test_annotate_multiline_rejected
+	run_test "orphaned note warning after listing" \
+		test_orphaned_note_warning
+	run_test "orphaned note warning suppressed by flag" \
+		test_orphaned_note_warning_suppressed
+	run_test "orphaned-notes subcommand lists orphans" \
+		test_orphaned_notes_subcommand_lists
+	run_test "purge-orphaned-notes subcommand removes orphans" \
+		test_purge_orphaned_notes_subcommand
 	run_test "--version prints semver" \
 		test_version_flag_prints_semver
 	run_test "--version-check failure path writes cache" \

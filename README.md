@@ -70,6 +70,7 @@ Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prer
   - `--test` hook to run the bash test suite.
   - `--no-icons`, `--no-color`, and `--no-hyperlinks` disable individual decorations (and persist that choice) when you truly need plain text.
   - `dirtree annotate PATH "description"` (alias `note`) persists a one-line note about a file or directory; pass an empty string to clear it. Notes display inline next to the entry as a dim `# comment`. Notes are also inherited from parent `.dirtree-state` files, with the closer file overriding.
+  - `dirtree orphaned-notes [DIR]` lists notes in the current directory's `.dirtree-state` whose target paths no longer exist; `dirtree purge-orphaned-notes [DIR]` removes them (reporting each one). After any listing, dirtree also prints a one-line stderr warning when such orphaned notes exist — suppress it for a run with `--no-orphan-warning`.
 - **Safety niceties**
   - Number of hidden directories/files logged to stderr so you know what's filtered out.
   - Conflicting rules (e.g., same regex in open/close) surface as errors.
@@ -123,6 +124,7 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 ### Sorting and depth (persistent)
 
 - `-d/--depth N` changes how deep the tree is rendered (default depth is 4) and writes that depth into `.dirtree-state`, so future runs inherit the same cutoff unless you override it again.
+- `-td/--temp-depth N` overrides the render depth for the current run only and is **not** persisted to `.dirtree-state` — use it for a one-off deeper or shallower peek without changing the saved cutoff.
 - `--sort MODE` accepts `modified` (default, newest-first) or `alpha` (lexicographic). Pair it with `--asc` or `--desc` to flip the direction. Both the mode and direction are persisted per directory so you only have to set them once.
 
 ### Mode environment variables

@@ -40,6 +40,8 @@ pub const CliConfig = struct {
 	force_decorated: bool = false,
 	no_icons: bool = false,
 	no_color: bool = false,
+	// Suppress the post-listing orphaned-notes warning (this run only, not persisted)
+	no_orphan_warning: bool = false,
 	no_hyperlinks: bool = false,
 	show_hidden: bool = false,
 	rewrite_settings: bool = false,
@@ -48,6 +50,8 @@ pub const CliConfig = struct {
 
 	// Depth
 	depth: ?u32 = null,
+	// Temporary depth override (this run only, never persisted to state)
+	temp_depth: ?u32 = null,
 
 	// Sort
 	sort_mode: ?SortMode = null,
@@ -111,10 +115,17 @@ pub const AnnotateArgs = struct {
 	description: []const u8,
 };
 
+/// Target directory for the orphaned-notes / purge-orphaned-notes subcommands.
+pub const OrphanArgs = struct {
+	dir: []const u8,
+};
+
 /// Result of argument parsing - either a config or an early exit.
 pub const ParseResult = union(enum) {
 	config: CliConfig,
 	annotate: AnnotateArgs,
+	orphaned_notes: OrphanArgs,
+	purge_orphaned_notes: OrphanArgs,
 	help,
 	about,
 	version,
@@ -200,6 +211,25 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		}
 	}
 
+	// Subcommands: orphaned-notes / purge-orphaned-notes (and localized variants).
+	// Both take an optional directory argument (default: current directory).
+	if (args.len > 0) {
+		if (i18n.matchLongFlag(args[0])) |maybe_arg| {
+			switch (maybe_arg) {
+				.orphaned_notes, .purge_orphaned_notes => {
+					const dir: []const u8 = if (args.len >= 2) args[1] else ".";
+					const oa = OrphanArgs{ .dir = dir };
+					config.deinit(allocator);
+					return if (maybe_arg == .orphaned_notes)
+						ParseResult{ .orphaned_notes = oa }
+					else
+						ParseResult{ .purge_orphaned_notes = oa };
+				},
+				else => {},
+			}
+		}
+	}
+
 	var i: usize = 0;
 	var dir_pending = true;
 
@@ -224,6 +254,12 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						// annotate is a positional subcommand, not a flag.
 						// It is dispatched before this loop runs. If it appears
 						// here (e.g., as --annotate), treat as unknown option.
+						config.deinit(allocator);
+						return .{ .err = s.err_unknown_option };
+					},
+					.orphaned_notes, .purge_orphaned_notes => {
+						// Positional subcommands, dispatched before this loop; if they
+						// appear here as a flag, treat as an unknown option.
 						config.deinit(allocator);
 						return .{ .err = s.err_unknown_option };
 					},
@@ -280,6 +316,22 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						i += 1;
 						continue;
 					},
+					.temp_depth => {
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_temp_depth_requires_number };
+						}
+						const td_str = args[i];
+						const td = std.fmt.parseInt(u32, td_str, 10) catch {
+							config.deinit(allocator);
+							return .{ .err = s.err_temp_depth_requires_number };
+						};
+						// Temp depth applies to this run only; never sets state_modified.
+						config.temp_depth = td;
+						i += 1;
+						continue;
+					},
 					.simple => {
 						config.simple_mode = true;
 						i += 1;
@@ -298,6 +350,12 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.no_color => {
 						config.no_color = true;
 						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.no_orphan_warning => {
+						// Display-only suppression; never persisted to the state file.
+						config.no_orphan_warning = true;
 						i += 1;
 						continue;
 					},
@@ -528,6 +586,21 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		}
 
 		// Short flags with value args (fixed, not localized)
+		if (std.mem.eql(u8, arg, "-td")) {
+			i += 1;
+			if (i >= args.len) {
+				config.deinit(allocator);
+				return .{ .err = s.err_temp_depth_requires_number };
+			}
+			const td_str = args[i];
+			const td = std.fmt.parseInt(u32, td_str, 10) catch {
+				config.deinit(allocator);
+				return .{ .err = s.err_temp_depth_requires_number };
+			};
+			config.temp_depth = td;
+			i += 1;
+			continue;
+		}
 		if (std.mem.eql(u8, arg, "-d")) {
 			i += 1;
 			if (i >= args.len) {
@@ -791,6 +864,8 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_depth);
 	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_temp_depth);
+	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_simple);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_decorated);
@@ -798,6 +873,8 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll(s.help_opt_no_icons);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_no_color);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_no_orphan_warning);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_no_hyperlinks);
 	try writer.writeAll("\n");
@@ -838,6 +915,10 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll(s.help_opt_only);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_annotate);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_orphaned_notes);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_purge_orphaned_notes);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_version);
 	try writer.writeAll("\n");
@@ -974,6 +1055,20 @@ pub fn main(init: std.process.Init) !u8 {
 			};
 			return 0;
 		},
+		.orphaned_notes => |oa| {
+			return runOrphanedNotes(allocator, oa.dir, stdout, stderr, false) catch |err| {
+				try stderr.print("Error: {s}\n", .{@errorName(err)});
+				try stderr.flush();
+				return 1;
+			};
+		},
+		.purge_orphaned_notes => |oa| {
+			return runOrphanedNotes(allocator, oa.dir, stdout, stderr, true) catch |err| {
+				try stderr.print("Error: {s}\n", .{@errorName(err)});
+				try stderr.flush();
+				return 1;
+			};
+		},
 		.config => |config| {
 			const s = i18n.tr();
 			var cfg = config;
@@ -1098,7 +1193,7 @@ pub fn main(init: std.process.Init) !u8 {
 			};
 
 			// Determine depth
-			const max_depth = cfg.depth orelse effective.depth orelse 4;
+			const max_depth = cfg.temp_depth orelse cfg.depth orelse effective.depth orelse 4;
 
 			const render_config = tree_render.RenderConfig{
 				.use_color = use_color,
@@ -1166,6 +1261,25 @@ pub fn main(init: std.process.Init) !u8 {
 				try stderr.flush();
 				return 1;
 			};
+
+			// Warn about orphaned annotations: notes in THIS directory's state file
+			// that point at paths which no longer exist. Best-effort, current-dir scope.
+			if (!cfg.no_orphan_warning) {
+				var orphan_sf: state_mod.StateFile = .{ .allocator = allocator };
+				defer orphan_sf.deinit();
+				var orphans: std.ArrayListUnmanaged(usize) = .empty;
+				defer orphans.deinit(allocator);
+				scanOrphanedNotes(allocator, abs_dir, &orphan_sf, &orphans) catch {};
+				if (orphans.items.len > 0) {
+					const ws = i18n.tr();
+					if (!use_simple) try stderr.writeAll("\x1b[1;33m");
+					try stderr.writeAll(ws.warn_orphaned_prefix);
+					try stderr.print("{}", .{orphans.items.len});
+					try stderr.writeAll(ws.warn_orphaned_suffix);
+					if (!use_simple) try stderr.writeAll("\x1b[0m");
+					try stderr.writeAll("\n");
+				}
+			}
 
 			try stdout.flush();
 			try stderr.flush();
@@ -1594,6 +1708,114 @@ fn runVersionCheck(allocator: std.mem.Allocator, stdout: anytype, stderr: anytyp
 		.newer => try stdout.print("You are ahead of the latest release ({s}).\n", .{tag}),
 	}
 	return 0;
+}
+
+/// List (purge=false) or remove (purge=true) the current directory's orphaned
+/// annotations. Current-directory scope only.
+fn runOrphanedNotes(
+	allocator: std.mem.Allocator,
+	dir_arg: []const u8,
+	stdout: anytype,
+	stderr: anytype,
+	purge: bool,
+) !u8 {
+	const s = i18n.tr();
+	const abs_dir = resolveAbsDir(allocator, dir_arg) catch {
+		var err_buf: [512]u8 = undefined;
+		const msg = i18n.fmtRuntime(&err_buf, s.err_not_a_directory, &.{dir_arg});
+		try stderr.writeAll(msg);
+		try stderr.writeAll("\n");
+		try stderr.flush();
+		return 1;
+	};
+	defer allocator.free(abs_dir);
+
+	var sf: state_mod.StateFile = .{ .allocator = allocator };
+	defer sf.deinit();
+	var orphans: std.ArrayListUnmanaged(usize) = .empty;
+	defer orphans.deinit(allocator);
+	try scanOrphanedNotes(allocator, abs_dir, &sf, &orphans);
+
+	if (orphans.items.len == 0) {
+		try stdout.writeAll(if (purge) s.purge_none else s.orphaned_none);
+		try stdout.writeAll("\n");
+		try stdout.flush();
+		return 0;
+	}
+
+	try stdout.writeAll(if (purge) s.purge_header else s.orphaned_header);
+	try stdout.writeAll("\n");
+	for (orphans.items) |idx| {
+		const e = sf.annotate_entries.items[idx];
+		try stdout.print("  {s} = {s}\n", .{ e.path, e.description });
+	}
+
+	if (purge) {
+		// Remove orphaned entries. Reverse order keeps the remaining indices
+		// valid under swapRemove (writeStateFile re-sorts, so order is moot).
+		var j: usize = orphans.items.len;
+		while (j > 0) {
+			j -= 1;
+			_ = sf.annotate_entries.swapRemove(orphans.items[j]);
+		}
+		const state_path = try std.fs.path.join(allocator, &.{ abs_dir, ".dirtree-state" });
+		defer allocator.free(state_path);
+		const io = runtime.io();
+		const tmp_path = try std.fmt.allocPrint(allocator, "{s}.tmp", .{state_path});
+		defer allocator.free(tmp_path);
+		{
+			const file = try std.Io.Dir.cwd().createFile(io, tmp_path, .{});
+			defer file.close(io);
+			var buf: [8192]u8 = undefined;
+			var bw = file.writer(io, &buf);
+			try state_mod.writeStateFile(&sf, &bw.interface);
+			try bw.interface.flush();
+		}
+		try std.Io.Dir.cwd().rename(tmp_path, std.Io.Dir.cwd(), state_path, io);
+	}
+	try stdout.flush();
+	return 0;
+}
+
+/// An annotate entry whose target path no longer exists on disk.
+const OrphanedNote = struct {
+	path: []const u8,
+	description: []const u8,
+};
+
+/// Parse abs_dir/.dirtree-state and append to `orphans_out` the indices of
+/// annotate_entries that are orphaned: a real (non-tombstone) note whose target
+/// path no longer exists on disk. Current-directory scope only — does not walk
+/// the inheritance chain. On success `sf_out.*` owns the parsed StateFile and the
+/// caller must deinit it.
+fn scanOrphanedNotes(
+	allocator: std.mem.Allocator,
+	abs_dir: []const u8,
+	sf_out: *state_mod.StateFile,
+	orphans_out: *std.ArrayListUnmanaged(usize),
+) !void {
+	const state_path = try std.fs.path.join(allocator, &.{ abs_dir, ".dirtree-state" });
+	defer allocator.free(state_path);
+	const io = runtime.io();
+	var sf: state_mod.StateFile = blk: {
+		const content = std.Io.Dir.cwd().readFileAlloc(io, state_path, allocator, .limited(1024 * 1024)) catch |err| switch (err) {
+			error.FileNotFound => break :blk state_mod.StateFile{ .allocator = allocator },
+			else => return err,
+		};
+		defer allocator.free(content);
+		break :blk try state_mod.parseStateFile(allocator, content);
+	};
+	errdefer sf.deinit();
+
+	for (sf.annotate_entries.items, 0..) |entry, idx| {
+		if (entry.description.len == 0) continue; // tombstone, not a user-facing note
+		const full = try std.fs.path.join(allocator, &.{ abs_dir, entry.path });
+		defer allocator.free(full);
+		_ = std.Io.Dir.cwd().statFile(io, full, .{}) catch {
+			try orphans_out.append(allocator, idx);
+		};
+	}
+	sf_out.* = sf;
 }
 
 fn persistAnnotation(
