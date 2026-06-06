@@ -135,6 +135,8 @@ pub const aliases = LocaleAliases{
         .{ .name = "--oeffnen", .arg = .open },
         .{ .name = "--schliessen", .arg = .close },
         .{ .name = "--zeigen", .arg = .show },
+        .{ .name = "--zeig", .arg = .show },
+        .{ .name = "--nur", .arg = .only },
         .{ .name = "--verbergen", .arg = .hide },
         .{ .name = "--sortierung", .arg = .sort },
         .{ .name = "--aufsteigend", .arg = .asc },

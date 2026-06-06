@@ -4190,6 +4190,28 @@ test_hide_positive_regex_no_warn() {
 	fi
 }
 
+test_german_nur_alias_for_only() {
+	local workspace target a="" b=""
+	workspace=$(new_tmpdir); target="$workspace/de-nur"; mkdir -p "$target/keep/child" "$target/drop/other"
+	a=$("$DIRTREE_BIN" --only keep --simple --no-icons --no-color "$target" 2>/dev/null)
+	b=$("$DIRTREE_BIN" --nur keep --simple --no-icons --no-color "$target" 2>/dev/null)
+	if [[ -z "$a" || "$a" != "$b" ]]; then
+		echo "--nur should behave exactly like --only" >&2
+		printf 'only:\n%s\nnur:\n%s\n' "$a" "$b" >&2
+		return 1
+	fi
+}
+
+test_german_zeig_alias_for_show() {
+	local workspace target err="" rc=0
+	workspace=$(new_tmpdir); target="$workspace/de-zeig"; mkdir -p "$target/keep" "$target/drop"
+	err=$("$DIRTREE_BIN" --zeig '/keep/' "$target" 2>&1 1>/dev/null); rc=$?
+	if [[ $rc -ne 0 ]]; then
+		echo "--zeig should be recognized as an alias for --show; rc=$rc err=$err" >&2
+		return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4649,6 +4671,10 @@ run_all_tests() {
 		test_hide_double_negation_warns
 	run_test "--hide positive regex does not warn" \
 		test_hide_positive_regex_no_warn
+	run_test "German --nur aliases --only" \
+		test_german_nur_alias_for_only
+	run_test "German --zeig aliases --show" \
+		test_german_zeig_alias_for_show
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \
