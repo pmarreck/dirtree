@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Deterministic tests for scripts/flake_staleness.sh
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$SCRIPT_DIR/scripts/flake_staleness.sh"
+
+pass=0
+fail=0
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+# Build a flake.lock fixture whose nixpkgs pin is $1 days old.
+make_lock() {
+  local days_old="$1" out="$2" ts
+  ts=$(( $(date +%s) - days_old * 86400 ))
+  cat > "$out" <<JSON
+{
+  "nodes": {
+    "nixpkgs": {
+      "locked": {
+        "lastModified": $ts,
+        "rev": "deadbeef",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
+JSON
+}
+
+check() {
+  local desc="$1" expected="$2" actual="$3"
+  if [[ "$actual" == "$expected" ]]; then
+    pass=$((pass+1))
+    echo "ok - $desc"
+  else
+    fail=$((fail+1))
+    echo "NOT OK - $desc"
+    echo "    expected: $expected"
+    echo "    actual:   $actual"
+  fi
+}
+
+# 1) A 30-day-old pin, default threshold (7), must warn.
+make_lock 30 "$tmpdir/old.lock"
+out=$(check_flake_staleness "$tmpdir/old.lock" 2>&1)
+case "$out" in
+  *"WARNING: flake.lock's pinned nixpkgs is 30 days old"*) verdict=warned ;;
+  *) verdict="$out" ;;
+esac
+check "stale pin (30d) warns at default threshold" "warned" "$verdict"
+
+# 2) A 2-day-old pin, default threshold (7), must stay silent.
+make_lock 2 "$tmpdir/fresh.lock"
+out=$(check_flake_staleness "$tmpdir/fresh.lock" 2>&1)
+check "fresh pin (2d) is silent at default threshold" "" "$out"
+
+# 3) Explicit threshold 0 silences even a very old pin.
+make_lock 365 "$tmpdir/ancient.lock"
+out=$(DIRTREE_FLAKE_STALE_DAYS=0 check_flake_staleness "$tmpdir/ancient.lock" 2>&1)
+check "threshold 0 silences warning" "" "$out"
+
+# 4) Custom threshold respected: 30d pin under a 90d threshold is silent.
+out=$(DIRTREE_FLAKE_STALE_DAYS=90 check_flake_staleness "$tmpdir/old.lock" 2>&1)
+check "custom threshold (90) suppresses 30d pin" "" "$out"
+
+# 5) Missing lock file: silent, no crash, returns 0.
+out=$(check_flake_staleness "$tmpdir/does-not-exist.lock" 2>&1); rc=$?
+check "missing lock file is silent" "" "$out"
+check "missing lock file returns 0" "0" "$rc"
+
+# 6) The warning suggests the update command.
+out=$(check_flake_staleness "$tmpdir/old.lock" 2>&1)
+case "$out" in
+  *"nix flake update"*) verdict=present ;;
+  *) verdict=absent ;;
+esac
+check "warning suggests 'nix flake update'" "present" "$verdict"
+
+echo ""
+echo "build_staleness_test: $pass passed, $fail failed"
+[[ $fail -eq 0 ]]

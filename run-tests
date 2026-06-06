@@ -28,6 +28,20 @@ else
 fi
 
 echo ""
+echo "=== Build-tooling tests (flake staleness) ==="
+if [[ -x "$SCRIPT_DIR/test/build_staleness_test" ]]; then
+	if "$SCRIPT_DIR/test/build_staleness_test" 2>&1; then
+		echo "Build-tooling tests: PASS"
+	else
+		((errors++))
+		echo "Build-tooling tests: FAIL"
+	fi
+else
+	echo "Build-tooling test script not found at $SCRIPT_DIR/test/build_staleness_test"
+	((errors++))
+fi
+
+echo ""
 if [[ $errors -eq 0 ]]; then
 	echo "All tests passed."
 else

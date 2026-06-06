@@ -4,6 +4,8 @@ set -E
 
 trap 'echo "ERR at ${BASH_SOURCE[0]}:${LINENO}: $BASH_COMMAND" >&2' ERR
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 run() {
   "$@" || {
     echo "FAILED: $*" >&2
@@ -11,11 +13,17 @@ run() {
   }
 }
 
+# Advisory: nudge (never block) when the flake's pinned nixpkgs is stale.
+# shellcheck source=scripts/flake_staleness.sh
+source "$SCRIPT_DIR/scripts/flake_staleness.sh"
+
 optimize="ReleaseFast"
 if [[ "${1:-}" == "debug" ]]; then
   optimize="Debug"
   shift
 fi
+
+check_flake_staleness "$SCRIPT_DIR/flake.lock"
 
 if [[ "$optimize" != "ReleaseFast" ]]; then
   # Non-release builds use zig directly (local dev, no need for Nix reproducibility)
