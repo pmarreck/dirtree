@@ -4228,6 +4228,28 @@ test_negation_warn_uses_localized_switches() {
 	fi
 }
 
+test_localized_error_includes_english() {
+	local workspace target err=""
+	workspace=$(new_tmpdir); target="$workspace/bilingual"; mkdir -p "$target"
+	# A localized error must carry the English original in parens for Google-ability.
+	err=$("$DIRTREE_BIN" --lang de --depth x "$target" 2>&1 1>/dev/null)
+	if [[ "$err" != *"Fehler:"* ]]; then
+		echo "expected German error text; got: $err" >&2; return 1
+	fi
+	if [[ "$err" != *"(en: Error: --depth requires a numeric argument)"* ]]; then
+		echo "localized error should append the English original; got: $err" >&2; return 1
+	fi
+}
+
+test_english_error_not_doubled() {
+	local workspace target err=""
+	workspace=$(new_tmpdir); target="$workspace/bilingual-en"; mkdir -p "$target"
+	err=$("$DIRTREE_BIN" --depth x "$target" 2>&1 1>/dev/null)
+	if [[ "$err" == *"(en:"* ]]; then
+		echo "English locale must NOT append a redundant (en: ...); got: $err" >&2; return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4689,6 +4711,10 @@ run_all_tests() {
 		test_hide_positive_regex_no_warn
 	run_test "negation warning uses localized switches" \
 		test_negation_warn_uses_localized_switches
+	run_test "localized error includes English original" \
+		test_localized_error_includes_english
+	run_test "English error is not doubled" \
+		test_english_error_not_doubled
 	run_test "German --nur aliases --only" \
 		test_german_nur_alias_for_only
 	run_test "German --zeig aliases --show" \

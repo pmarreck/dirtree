@@ -140,6 +140,15 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 - `DIRTREE_AUTO_SIMPLE=1` automatically switches to simple mode whenever stdout isn't a TTY.
 - `PIPED_STDOUT=0|1` lets you override dirtree's TTY detection in non-interactive contexts (e.g., `PIPED_STDOUT=0` treats a pipe as if it were an interactive terminal, restoring hyperlinks and color for tests or automated runs).
 
+### Localization
+
+dirtree ships fully localized across **22 locales** (`ar az de el en es fa fr he hu it ja km ko pl pt_br ro ru tr uk vi zh_hans`). Pick one with `--lang CODE` (or it auto-detects from `LC_MESSAGES`/`LANG`). Flag names are localized too and all aliases work in any locale — e.g. German `--tiefe`/`--nur`/`--verbergen` alongside the canonical `--depth`/`--only`/`--hide`.
+
+Two guarantees worth calling out:
+
+- **Completeness is enforced at compile time.** Every localized string is a struct field with no default, so a locale that omits any string fails the build (`error: missing struct field`). Incomplete translations cannot ship.
+- **Error messages are bilingual.** In a non-English locale, every error appends the English original in parentheses — e.g. `Fehler: --depth erfordert ein numerisches Argument (en: Error: --depth requires a numeric argument)` — so you can still search or report it.
+
 ### Version and update checking
 
 `dirtree --version` prints the version number and, if the local cache says a newer release exists, a yellow `Update available: vX.Y.Z` line. No network call is made on this path — the cache is refreshed by `--version-check`.

@@ -401,8 +401,11 @@ pub fn fmtRuntime(buf: []u8, template: []const u8, args: []const []const u8) []c
     var i: usize = 0;
     while (i < template.len and pos < buf.len) {
         if (i + 3 <= template.len and template[i] == '{' and template[i + 1] == 's' and template[i + 2] == '}') {
-            if (arg_idx < args.len) {
-                const arg = args[arg_idx];
+            // Cycle through args: a template may repeat the same placeholders
+            // (e.g. a bilingual "<localized> (en: <english>)" error reuses the
+            // same substitution in both halves), so wrap past the end.
+            if (args.len > 0) {
+                const arg = args[arg_idx % args.len];
                 const copy_len = @min(arg.len, buf.len - pos);
                 @memcpy(buf[pos..][0..copy_len], arg[0..copy_len]);
                 pos += copy_len;
