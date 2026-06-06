@@ -3993,6 +3993,44 @@ test_show_notes_overrides_env() {
 	if [[ "$out" != *"hello note"* ]]; then echo "--show-notes should override env; got: $out" >&2; return 1; fi
 }
 
+test_osc8_link_covers_note() {
+	local workspace target out="" after=""
+	local osc8end=$'\x1b]8;;\x1b\\'
+	workspace=$(new_tmpdir); target="$workspace/osc8note"; mkdir -p "$target"; touch "$target/f.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate f.txt "linknote") >/dev/null 2>&1
+	# --decorated forces hyperlinks even when piped; --no-color keeps it clean
+	out=$("$DIRTREE_BIN" --decorated --no-color "$target" 2>/dev/null)
+	local line
+	line=$(printf '%s\n' "$out" | grep -a "# linknote")
+	if [[ -z "$line" ]]; then echo "note missing from decorated output" >&2; return 1; fi
+	after="${line#*# linknote}"
+	# The closing OSC8 must come AFTER the note => the link wraps the note.
+	if [[ "$after" != *"$osc8end"* ]]; then
+		echo "OSC8 link should extend over the note (closing OSC8 must follow the note)" >&2
+		return 1
+	fi
+}
+
+test_osc8_symlink_note_stays_outside_link() {
+	local workspace target out="" after=""
+	local osc8end=$'\x1b]8;;\x1b\\'
+	workspace=$(new_tmpdir); target="$workspace/osc8sym"; mkdir -p "$target"
+	touch "$target/real.txt"
+	ln -s real.txt "$target/link.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate link.txt "symnote") >/dev/null 2>&1
+	out=$("$DIRTREE_BIN" --decorated --no-color "$target" 2>/dev/null)
+	local line
+	line=$(printf '%s\n' "$out" | grep -a "# symnote")
+	if [[ -z "$line" ]]; then echo "symlink note missing" >&2; return 1; fi
+	if [[ "$line" != *"$osc8end"* ]]; then echo "expected an OSC8 link on the symlink line" >&2; return 1; fi
+	after="${line#*# symnote}"
+	# For symlinks the link closes before the target/note, so NO closing OSC8 after the note.
+	if [[ "$after" == *"$osc8end"* ]]; then
+		echo "symlink note should stay OUTSIDE the link (no closing OSC8 after the note)" >&2
+		return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4436,6 +4474,10 @@ run_all_tests() {
 		test_env_hide_notes
 	run_test "--show-notes overrides DIRTREE_HIDE_NOTES" \
 		test_show_notes_overrides_env
+	run_test "OSC8 link extends over the note" \
+		test_osc8_link_covers_note
+	run_test "OSC8 symlink note stays outside link" \
+		test_osc8_symlink_note_stays_outside_link
 	run_test "orphaned-notes subcommand lists orphans" \
 		test_orphaned_notes_subcommand_lists
 	run_test "purge-orphaned-notes subcommand removes orphans" \

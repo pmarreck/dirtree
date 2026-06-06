@@ -57,6 +57,7 @@ Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prer
   - Hidden directories/files are counted and summarized after each run (decorated mode uses dim italics; simple mode prints plain text).
 - **Decorated vs simple output**
   - Decorated mode renders Nerd Font icons, ANSI colors, and OSC8 hyperlinks whenever stdout is a TTY or you force it with `--decorated`. When dirtree detects a pipe, it automatically falls back to monochrome icons and no hyperlinks for log-friendly output unless you opt in via `--decorated` or `PIPED_STDOUT=0`.
+  - When an entry has a note, the OSC8 hyperlink spans the whole entry **including its note**, so hovering anywhere on the line highlights it end-to-end (and clicking opens the file/dir). In **WezTerm** links highlight on plain hover; in **Ghostty** hold **⌘** (Ctrl on Linux) to highlight/click. Symlinks keep their name and ` -> target` as separate links, so their note sits just outside the link.
   - Simple mode keeps the same tree connectors and monochrome icons but strips ANSI color/hyperlink sequences so LLMs or diff tools get a stable, plaintext-friendly listing (toggle glyphs with `--no-icons`).
   - Auto-simple mode can kick in for non-TTY outputs via `DIRTREE_AUTO_SIMPLE`.
   - Prefer decorating or simplifying via environment? Set `DIRTREE_SIMPLE=1` or `DIRTREE_DECORATED=1` to force either mode without changing scripts.

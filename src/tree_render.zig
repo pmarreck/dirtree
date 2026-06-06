@@ -205,10 +205,6 @@ fn renderRootHeader(
 		try writer.writeAll(display_name);
 		try writer.writeAll(ansi.reset);
 		try writer.writeAll("/");
-
-		if (config.use_hyperlinks) {
-			try ansi.writeOsc8End(writer);
-		}
 	} else {
 		// Simple mode: show full absolute path
 		if (config.use_icons) {
@@ -229,6 +225,10 @@ fn renderRootHeader(
 			try writer.writeAll(desc);
 			if (config.use_color) try writer.writeAll(ansi.reset);
 		}
+	}
+
+	if (config.use_hyperlinks) {
+		try ansi.writeOsc8End(writer);
 	}
 
 	try writer.writeAll("\n");
@@ -773,10 +773,6 @@ fn renderDirEntry(
 	}
 	try writer.writeAll(marker);
 
-	if (config.use_hyperlinks) {
-		try ansi.writeOsc8End(writer);
-	}
-
 	// Annotation, if any
 	if (effective.annotations.get(child_rel)) |desc| {
 		if (config.show_notes and desc.len > 0) {
@@ -785,6 +781,10 @@ fn renderDirEntry(
 			try writer.writeAll(desc);
 			if (config.use_color) try writer.writeAll(ansi.reset);
 		}
+	}
+
+	if (config.use_hyperlinks) {
+		try ansi.writeOsc8End(writer);
 	}
 
 	try writer.writeAll("\n");
@@ -854,7 +854,9 @@ fn renderFileEntry(
 		}
 	}
 
-	if (config.use_hyperlinks) {
+	if (config.use_hyperlinks and is_symlink) {
+		// Close the link after the name for symlinks so the ` -> target`
+		// keeps its own terminal-provided link and the note stays outside.
 		try ansi.writeOsc8End(writer);
 	}
 
@@ -878,6 +880,12 @@ fn renderFileEntry(
 			try writer.writeAll(desc);
 			if (config.use_color) try writer.writeAll(ansi.reset);
 		}
+	}
+
+	if (config.use_hyperlinks and !is_symlink) {
+		// Close after the note so name + note form one link (whole-entry
+		// hover/click). Symlinks were already closed above.
+		try ansi.writeOsc8End(writer);
 	}
 
 	try writer.writeAll("\n");
