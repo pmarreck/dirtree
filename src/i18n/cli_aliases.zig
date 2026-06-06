@@ -13,6 +13,7 @@ pub const CliArg = enum {
     no_orphan_warning,
     no_notes,
     show_notes,
+    notes,
     no_hyperlinks,
     default,
     open,

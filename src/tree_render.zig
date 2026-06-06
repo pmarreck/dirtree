@@ -7,6 +7,76 @@ const i18n = @import("i18n/mod.zig");
 const runtime = @import("runtime.zig");
 
 /// Configuration for the tree renderer.
+/// Tracks the current display column while forwarding bytes to an inner writer
+/// (or discarding when inner == null). Counts one cell per UTF-8 codepoint and
+/// skips ANSI CSI and OSC 8 escape sequences, so note gutters can be aligned
+/// without a separate width function. Duck-typed: the render path only calls
+/// writeAll.
+const ColumnTracker = struct {
+	inner: ?*std.Io.Writer = null,
+	col: usize = 0,
+	esc: Esc = .none,
+	const Esc = enum { none, esc, csi, osc, osc_esc };
+	pub fn writeAll(self: *ColumnTracker, bytes: []const u8) !void {
+		if (self.inner) |w| try w.writeAll(bytes);
+		for (bytes) |b| {
+			switch (self.esc) {
+				.none => {
+					if (b == 0x1b) {
+						self.esc = .esc;
+					} else if (b == '\n') {
+						self.col = 0;
+					} else if (b & 0xC0 != 0x80) {
+						// Count UTF-8 lead/single bytes (skip continuation bytes).
+						self.col += 1;
+					}
+				},
+				.esc => self.esc = if (b == '[') .csi else if (b == ']') .osc else .none,
+				.csi => { if (b >= 0x40 and b <= 0x7e) self.esc = .none; },
+				.osc => { if (b == 0x07) { self.esc = .none; } else if (b == 0x1b) { self.esc = .osc_esc; } },
+				.osc_esc => self.esc = .none,
+			}
+		}
+	}
+};
+
+/// Shared note-alignment state. In measuring mode it records the widest
+/// pre-note column; in render mode it pads each note out to `gutter`.
+const Aligner = struct {
+	measuring: bool = false,
+	gutter: usize = 0,
+	max_pre_note: usize = 0,
+};
+
+/// Write an entry's note. Aligned (padded to the gutter, min one space) when an
+/// Aligner is active and the writer tracks columns; otherwise inline (a single
+/// leading space). In measuring mode it only records the column and emits
+/// nothing.
+fn writeNote(writer: anytype, config: RenderConfig, desc: []const u8) !void {
+	if (!config.show_notes or desc.len == 0) return;
+	if (config.note_aligner) |aligner| {
+		if (@hasField(@typeInfo(@TypeOf(writer)).pointer.child, "col")) {
+			if (aligner.measuring) {
+				if (writer.col > aligner.max_pre_note) aligner.max_pre_note = writer.col;
+				return;
+			}
+			const pad: usize = if (writer.col < aligner.gutter) aligner.gutter - writer.col else 1;
+			var k: usize = 0;
+			while (k < pad) : (k += 1) try writer.writeAll(" ");
+			if (config.use_color) try writer.writeAll(ansi.dim);
+			try writer.writeAll("# ");
+			try writer.writeAll(desc);
+			if (config.use_color) try writer.writeAll(ansi.reset);
+			return;
+		}
+	}
+	// Inline fallback (ragged): single leading space.
+	if (config.use_color) try writer.writeAll(ansi.dim);
+	try writer.writeAll(" # ");
+	try writer.writeAll(desc);
+	if (config.use_color) try writer.writeAll(ansi.reset);
+}
+
 pub const RenderConfig = struct {
 	use_color: bool = true,
 	use_icons: bool = true,
@@ -14,6 +84,9 @@ pub const RenderConfig = struct {
 	simple_mode: bool = false,
 	report_hidden: bool = true,
 	show_notes: bool = true,
+	note_align: bool = true,
+	note_column: usize = 40,
+	note_aligner: ?*Aligner = null,
 	max_depth: u32 = 4,
 	show_hidden: bool = false,
 	sort_mode: dir_scan.SortMode = .modified,
@@ -123,8 +196,34 @@ pub fn renderTree(
 		return;
 	}
 
-	// Normal (non-tail) rendering path
-	try renderRootHeader(allocator, stdout, abs_dir, config, effective);
+	// Normal (non-tail) rendering path.
+	// Wrap stdout so we can track the display column for note alignment.
+	var col_tracker = ColumnTracker{ .inner = stdout };
+	var aligner = Aligner{};
+	var rcfg = config;
+	if (config.show_notes and config.note_align) {
+		// Measure pass: run the SAME render fns into a discarding tracker to
+		// find the widest pre-note column (no stats are emitted here).
+		aligner.measuring = true;
+		var mcfg = config;
+		mcfg.note_aligner = &aligner;
+		var mtracker = ColumnTracker{ .inner = null };
+		try renderRootHeader(allocator, &mtracker, abs_dir, mcfg, effective);
+		var mstats = TreeStats{};
+		mstats.total_lines = 1;
+		if (config.only_paths.len > 0) {
+			var mfocus = try buildFocusSet(allocator, config.only_paths);
+			defer mfocus.deinit();
+			try renderDirFocused(allocator, &mtracker, abs_dir, "", config.max_depth, false, "", effective, priority_dirs, priority_files, mcfg, &mstats, &mfocus);
+		} else {
+			try renderDir(allocator, &mtracker, abs_dir, "", config.max_depth, false, "", effective, priority_dirs, priority_files, mcfg, &mstats);
+		}
+		aligner.gutter = @min(aligner.max_pre_note + 1, config.note_column);
+		aligner.measuring = false;
+		rcfg.note_aligner = &aligner;
+	}
+
+	try renderRootHeader(allocator, &col_tracker, abs_dir, rcfg, effective);
 
 	var stats = TreeStats{};
 	stats.total_lines = 1; // root header line
@@ -134,13 +233,13 @@ pub fn renderTree(
 		var focus = try buildFocusSet(allocator, config.only_paths);
 		defer focus.deinit();
 		try renderDirFocused(
-			allocator, stdout, abs_dir, "", config.max_depth, false, "",
-			effective, priority_dirs, priority_files, config, &stats, &focus,
+			allocator, &col_tracker, abs_dir, "", config.max_depth, false, "",
+			effective, priority_dirs, priority_files, rcfg, &stats, &focus,
 		);
 	} else {
 		try renderDir(
-			allocator, stdout, abs_dir, "", config.max_depth, false, "",
-			effective, priority_dirs, priority_files, config, &stats,
+			allocator, &col_tracker, abs_dir, "", config.max_depth, false, "",
+			effective, priority_dirs, priority_files, rcfg, &stats,
 		);
 	}
 
@@ -219,12 +318,7 @@ fn renderRootHeader(
 
 	// Annotation for the root directory itself, if any
 	if (effective.annotations.get(".")) |desc| {
-		if (config.show_notes and desc.len > 0) {
-			if (config.use_color) try writer.writeAll(ansi.dim);
-			try writer.writeAll(" # ");
-			try writer.writeAll(desc);
-			if (config.use_color) try writer.writeAll(ansi.reset);
-		}
+		try writeNote(writer, config, desc);
 	}
 
 	if (config.use_hyperlinks) {
@@ -775,12 +869,7 @@ fn renderDirEntry(
 
 	// Annotation, if any
 	if (effective.annotations.get(child_rel)) |desc| {
-		if (config.show_notes and desc.len > 0) {
-			if (config.use_color) try writer.writeAll(ansi.dim);
-			try writer.writeAll(" # ");
-			try writer.writeAll(desc);
-			if (config.use_color) try writer.writeAll(ansi.reset);
-		}
+		try writeNote(writer, config, desc);
 	}
 
 	if (config.use_hyperlinks) {
@@ -874,12 +963,7 @@ fn renderFileEntry(
 
 	// Annotation, if any
 	if (effective.annotations.get(child_rel)) |desc| {
-		if (config.show_notes and desc.len > 0) {
-			if (config.use_color) try writer.writeAll(ansi.dim);
-			try writer.writeAll(" # ");
-			try writer.writeAll(desc);
-			if (config.use_color) try writer.writeAll(ansi.reset);
-		}
+		try writeNote(writer, config, desc);
 	}
 
 	if (config.use_hyperlinks and !is_symlink) {

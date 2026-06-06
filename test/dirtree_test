@@ -1094,6 +1094,7 @@ Options:
   --no-color        Disable ANSI colors and persist preference
   --no-orphan-warning Suppress the orphaned-notes warning
   --no-notes/--show-notes Hide or show inline notes (DIRTREE_HIDE_NOTES=1 to hide by default)
+  --notes MODE       Note layout: aligned (default) or inline
   --no-hyperlinks   Disable OSC8 hyperlinks and persist preference
   --default X        Persist default state: opened|closed
   -o, --open DIR...  Open one or more subdirs (repeat flag to add more)
@@ -4031,6 +4032,64 @@ test_osc8_symlink_note_stays_outside_link() {
 	fi
 }
 
+test_notes_align_to_gutter() {
+	local workspace target out=""
+	workspace=$(new_tmpdir); target="$workspace/notes-align"; mkdir -p "$target"
+	touch "$target/a.txt" "$target/longername.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate a.txt "note-A") >/dev/null 2>&1
+	(cd "$target" && "$DIRTREE_BIN" annotate longername.txt "note-B") >/dev/null 2>&1
+	"$DIRTREE_BIN" --simple --no-icons --no-color "$target" > "$target/out.txt" 2>/dev/null
+	if ! python3 -c '
+import sys
+cols=[len(l[:l.index("# note")]) for l in open(sys.argv[1],encoding="utf-8") if "# note" in l]
+sys.exit(0 if len(cols)>=2 and len(set(cols))==1 else 1)
+' "$target/out.txt"; then
+		echo "expected note # to align to a common column; got:" >&2
+		cat "$target/out.txt" >&2
+		return 1
+	fi
+}
+
+test_notes_inline_mode_not_aligned() {
+	local workspace target out=""
+	workspace=$(new_tmpdir); target="$workspace/notes-inline"; mkdir -p "$target"
+	touch "$target/a.txt" "$target/longername.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate a.txt "note-A") >/dev/null 2>&1
+	(cd "$target" && "$DIRTREE_BIN" annotate longername.txt "note-B") >/dev/null 2>&1
+	"$DIRTREE_BIN" --notes inline --simple --no-icons --no-color "$target" > "$target/out.txt" 2>/dev/null
+	if ! python3 -c '
+import sys
+cols=[len(l[:l.index("# note")]) for l in open(sys.argv[1],encoding="utf-8") if "# note" in l]
+# inline (ragged): the two note columns must differ
+sys.exit(0 if len(cols)>=2 and len(set(cols))>1 else 1)
+' "$target/out.txt"; then
+		echo "--notes inline should NOT align (columns should differ); got:" >&2
+		cat "$target/out.txt" >&2
+		return 1
+	fi
+}
+
+test_notes_min_margin_for_long_name() {
+	local workspace target long
+	workspace=$(new_tmpdir); target="$workspace/notes-margin"; mkdir -p "$target"
+	long=$(printf 'x%.0s' {1..45})
+	touch "$target/a.txt" "$target/$long"
+	(cd "$target" && "$DIRTREE_BIN" annotate a.txt "note-A") >/dev/null 2>&1
+	(cd "$target" && "$DIRTREE_BIN" annotate "$long" "note-B") >/dev/null 2>&1
+	"$DIRTREE_BIN" --simple --no-icons --no-color "$target" > "$target/out.txt" 2>/dev/null
+	# short note padded to the cap (40); long name exceeds the cap so its note
+	# gets a single-space margin and lands beyond 40.
+	if ! python3 -c '
+import sys
+cols=[len(l[:l.index("# note")]) for l in open(sys.argv[1],encoding="utf-8") if "# note" in l]
+sys.exit(0 if (40 in cols) and any(c>40 for c in cols) else 1)
+' "$target/out.txt"; then
+		echo "expected short note at col 40 and long-name note beyond 40; got:" >&2
+		cat "$target/out.txt" >&2
+		return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4468,6 +4527,12 @@ run_all_tests() {
 		test_orphaned_note_warning_suppressed
 	run_test "notes shown by default" \
 		test_notes_shown_by_default
+	run_test "notes align to a common gutter" \
+		test_notes_align_to_gutter
+	run_test "--notes inline is not aligned" \
+		test_notes_inline_mode_not_aligned
+	run_test "notes min-margin for long names" \
+		test_notes_min_margin_for_long_name
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \

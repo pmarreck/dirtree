@@ -44,6 +44,8 @@ pub const CliConfig = struct {
 	no_orphan_warning: bool = false,
 	// Tri-state note visibility: true=--show-notes, false=--no-notes, null=unset
 	cli_notes: ?bool = null,
+	// Note layout: inline (ragged) vs aligned gutter (default). Display-only.
+	notes_inline: bool = false,
 	no_hyperlinks: bool = false,
 	show_hidden: bool = false,
 	rewrite_settings: bool = false,
@@ -395,6 +397,24 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					},
 					.show_notes => {
 						config.cli_notes = true;
+						i += 1;
+						continue;
+					},
+					.notes => {
+						i += 1;
+						if (i >= args.len) {
+							config.deinit(allocator);
+							return .{ .err = s.err_notes_requires_mode };
+						}
+						const mode = args[i];
+						if (std.mem.eql(u8, mode, "inline")) {
+							config.notes_inline = true;
+						} else if (std.mem.eql(u8, mode, "aligned")) {
+							config.notes_inline = false;
+						} else {
+							config.deinit(allocator);
+							return .{ .err = s.err_notes_requires_mode };
+						}
 						i += 1;
 						continue;
 					},
@@ -933,6 +953,8 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_notes);
 	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_notes_mode);
+	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_no_hyperlinks);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_default);
@@ -1259,6 +1281,7 @@ pub fn main(init: std.process.Init) !u8 {
 				.simple_mode = use_simple,
 				.report_hidden = !cfg.show_hidden,
 				.show_notes = cfg.cli_notes orelse true,
+				.note_align = !cfg.notes_inline,
 				.max_depth = max_depth,
 				.show_hidden = cfg.show_hidden,
 				.sort_mode = sort_mode,
