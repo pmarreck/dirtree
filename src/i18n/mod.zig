@@ -130,6 +130,47 @@ pub fn tr() *const Strings {
 }
 
 /// Get the Strings for a specific locale.
+/// The CLI alias array for a locale (mirrors stringsFor).
+fn localeCliAliases(loc: Locale) []const CliAliasEntry {
+    return switch (loc) {
+        .ar => ar.aliases.cli,
+        .az => az.aliases.cli,
+        .de => de.aliases.cli,
+        .el => el.aliases.cli,
+        .en => en.aliases.cli,
+        .es => es.aliases.cli,
+        .fa => fa.aliases.cli,
+        .fr => fr.aliases.cli,
+        .he => he.aliases.cli,
+        .hu => hu.aliases.cli,
+        .it => it.aliases.cli,
+        .ja => ja.aliases.cli,
+        .km => km.aliases.cli,
+        .ko => ko.aliases.cli,
+        .pl => pl.aliases.cli,
+        .pt_br => pt_br.aliases.cli,
+        .ro => ro.aliases.cli,
+        .ru => ru.aliases.cli,
+        .tr => tr_locale.aliases.cli,
+        .uk => uk.aliases.cli,
+        .vi => vi.aliases.cli,
+        .zh_hans => zh_hans.aliases.cli,
+    };
+}
+
+/// The current locale's preferred (first-listed) alias for a flag, falling back
+/// to the canonical English name. Lets diagnostics reference switches in the
+/// user's language when a localized alias exists.
+pub fn localizedFlagName(arg: CliArg) [:0]const u8 {
+    for (localeCliAliases(current_locale)) |entry| {
+        if (entry.arg == arg) return entry.name;
+    }
+    for (en.aliases.cli) |entry| {
+        if (entry.arg == arg) return entry.name;
+    }
+    return "?";
+}
+
 fn stringsFor(loc: Locale) *const Strings {
     return switch (loc) {
         .ar => &ar.strings,

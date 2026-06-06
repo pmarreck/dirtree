@@ -4212,6 +4212,22 @@ test_german_zeig_alias_for_show() {
 	fi
 }
 
+test_negation_warn_uses_localized_switches() {
+	local workspace target err=""
+	workspace=$(new_tmpdir); target="$workspace/locwarn"; mkdir -p "$target/foo" "$target/bar"
+	err=$("$DIRTREE_BIN" --lang de --hide '!/foo/' "$target" 2>&1 1>/dev/null)
+	# echoed verb should be the German alias (--verbergen) and the advice should
+	# reference the German --only alias (--nur), not the English switch names.
+	if [[ "$err" != *"--verbergen"* || "$err" != *"--nur"* ]]; then
+		echo "German negation warning should use localized switch names; got: $err" >&2
+		return 1
+	fi
+	if [[ "$err" == *"--hide"* ]]; then
+		echo "German warning should not echo the English --hide; got: $err" >&2
+		return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4671,6 +4687,8 @@ run_all_tests() {
 		test_hide_double_negation_warns
 	run_test "--hide positive regex does not warn" \
 		test_hide_positive_regex_no_warn
+	run_test "negation warning uses localized switches" \
+		test_negation_warn_uses_localized_switches
 	run_test "German --nur aliases --only" \
 		test_german_nur_alias_for_only
 	run_test "German --zeig aliases --show" \

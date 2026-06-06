@@ -1204,9 +1204,10 @@ pub fn main(init: std.process.Init) !u8 {
 			// double-negates). Fires at add-time, when the rule is also persisted.
 			{
 				var neg_found = false;
-				const verbs = [_][]const u8{ "--hide", "--show" };
+				const verb_args = [_]i18n.CliArg{ .hide, .show };
 				const lists = [_][]const ArgEntry{ cfg.hide_regexes.items, cfg.show_regexes.items };
-				for (verbs, lists) |verb, list| {
+				for (verb_args, lists) |verb_arg, list| {
+					const verb = i18n.localizedFlagName(verb_arg);
 					for (list) |re| {
 						if (re.kind != .regex) continue;
 						if (!isNegationFootgun(re.value, re.negated)) continue;
@@ -1220,7 +1221,9 @@ pub fn main(init: std.process.Init) !u8 {
 					}
 				}
 				if (neg_found) {
-					try stderr.writeAll(s.warn_negation_advice);
+					var advice_buf: [1024]u8 = undefined;
+					const advice = i18n.fmtRuntime(&advice_buf, s.warn_negation_advice, &.{ i18n.localizedFlagName(.only), i18n.localizedFlagName(.show) });
+					try stderr.writeAll(advice);
 					if (!cfg.simple_mode) try stderr.writeAll("\x1b[0m");
 					try stderr.writeAll("\n");
 					try stderr.flush();

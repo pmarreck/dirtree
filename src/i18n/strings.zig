@@ -72,7 +72,7 @@ pub const Strings = struct {
     warn_orphaned_prefix: [:0]const u8 = "Note: ",
     warn_orphaned_suffix: [:0]const u8 = " annotation(s) point to paths that no longer exist. Run 'orphaned-notes' to view or 'purge-orphaned-notes' to remove.",
     warn_negation_intro: [:0]const u8 = "note: a negated regex here can invert what you mean — !/PAT/ matches the INVERSE, and a leading (?!...) lookahead is also a negation, so combining them double-negates:",
-    warn_negation_advice: [:0]const u8 = "To focus on one path, prefer --only PATH; for a positive filter use --show /PAT/ (show rules take priority over hide). These rules persist to .dirtree-state, which is plain text you can hand-edit when they get complex or overlapping.",
+    warn_negation_advice: [:0]const u8 = "To focus on one path, prefer {s} PATH; for a positive filter use {s} /PAT/ (show rules take priority over hide). These rules persist to .dirtree-state, which is plain text you can hand-edit when they get complex or overlapping.",
     warn_truncated_head_prefix: [:0]const u8 = "(Output truncated after ",
     warn_truncated_head_suffix: [:0]const u8 = " lines by --head)",
 
