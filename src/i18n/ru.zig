@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "строк",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " не скрыто (входит в текущий набор изменений git/jj)",
     // ── Сообщения об ошибках ────────────────────────────────────
     .err_depth_requires_number = "Ошибка: --depth требует числовой аргумент (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "Ошибка: --temp-depth требует числовой аргумент (en: Error: --temp-depth requires a numeric argument)",

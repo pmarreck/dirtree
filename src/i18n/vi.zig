@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "dòng",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " không bị ẩn vì nằm trong tập thay đổi git/jj hiện tại",
     // ── Th\xc3\xb4ng b\xc3\xa1o l\xe1\xbb\x97i ──────────────────────────────────────────
     .err_depth_requires_number = "L\xe1\xbb\x97i: --depth y\xc3\xaau c\xe1\xba\xa7u \xc4\x91\xe1\xbb\x91i s\xe1\xbb\x91 l\xc3\xa0 s\xe1\xbb\x91 (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "L\xe1\xbb\x97i: --temp-depth y\xc3\xaau c\xe1\xba\xa7u \xc4\x91\xe1\xbb\x91i s\xe1\xbb\x91 l\xc3\xa0 s\xe1\xbb\x91 (en: Error: --temp-depth requires a numeric argument)",

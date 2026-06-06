@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "पंक्तियाँ",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " वर्तमान git/jj परिवर्तन-समुच्चय में होने के कारण छिपाया नहीं गया",
     // ── सहायता पाठ (नए फ़्लैग) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      बड़े आउटपुट की चेतावनी सीमा निर्धारित करें (डिफ़ॉल्ट: 500)",
     .help_opt_override_warning = "  --override-warning बड़े आउटपुट की चेतावनी को दबाएँ",

@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "行",
     .stats_separator = "；",
 
+    .stats_scm_kept = " は git/jj の現在の変更セットに含まれるため非表示にされません",
     // ── エラーメッセージ ────────────────────────────────────────
     .err_depth_requires_number = "エラー: --depth には数値引数が必要です (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "エラー: --temp-depth には数値引数が必要です (en: Error: --temp-depth requires a numeric argument)",

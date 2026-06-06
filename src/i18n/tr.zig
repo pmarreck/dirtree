@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "satır",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " geçerli git/jj değişiklik kümesinde olduğu için gizlenmedi",
     // ── Hata mesajlar\xc4\xb1 ──────────────────────────────────────────────
     .err_depth_requires_number = "Hata: --depth say\xc4\xb1sal bir arg\xc3\xbcman gerektirir (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "Hata: --temp-depth say\xc4\xb1sal bir arg\xc3\xbcman gerektirir (en: Error: --temp-depth requires a numeric argument)",

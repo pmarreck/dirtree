@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "sor",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " nincs elrejtve, mert a jelenlegi git/jj változáskészletben van",
     // ── Hiba\xc3\xbczenetek ──────────────────────────────────────────────
     .err_depth_requires_number = "Hiba: --depth sz\xc3\xa1mszer\xc5\xb1 argumentumot ig\xc3\xa9nyel (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "Hiba: --temp-depth sz\xc3\xa1mszer\xc5\xb1 argumentumot ig\xc3\xa9nyel (en: Error: --temp-depth requires a numeric argument)",

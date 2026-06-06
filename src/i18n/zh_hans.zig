@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "行",
     .stats_separator = "；",
 
+    .stats_scm_kept = " 因在当前 git/jj 变更集中而未隐藏",
     // ── 错误信息 ───────────────────────────────────────────────
     .err_depth_requires_number = "错误: --depth 需要一个数字参数 (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "错误: --temp-depth 需要一个数字参数 (en: Error: --temp-depth requires a numeric argument)",

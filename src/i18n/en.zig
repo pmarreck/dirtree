@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "lines",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " not hidden due to inclusion in the current git/jj changeset",
     // ── Help text (new flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Set large output warning threshold (default: 500)",
     .help_opt_override_warning = "  --override-warning Suppress the large output warning",

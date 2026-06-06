@@ -48,6 +48,9 @@
         devShells.default = pkgs.mkShell {
           buildInputs = [
             zig
+            # SCM-priority tests exercise real git and jj working copies.
+            pkgs.git
+            pkgs.jujutsu
           ];
         };
 

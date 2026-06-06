@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "linii",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " nieukryte, bo w bieżącym zestawie zmian git/jj",
     // ── Komunikaty o błędach ────────────────────────────────────
     .err_depth_requires_number = "Błąd: --depth wymaga argumentu liczbowego (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "Błąd: --temp-depth wymaga argumentu liczbowego (en: Error: --temp-depth requires a numeric argument)",

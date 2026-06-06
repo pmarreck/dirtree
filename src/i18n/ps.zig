@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "کرښې",
     .stats_separator = "؛ ",
 
+    .stats_scm_kept = " د اوسني git/jj د بدلونونو په ټولګه کې شتون له امله پټ نشو",
     // ── د مرستې متن (نوي بیرغونه) ──────────────────────────────
     .help_opt_max_lines = "  --max-lines N      د لوی وتلون خبرتیا حد وټاکه (تلواله: 500)",
     .help_opt_override_warning = "  --override-warning د لوی وتلون خبرتیا بنده کړه",

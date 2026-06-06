@@ -15,6 +15,8 @@ pub const MatchType = enum {
 pub const PathEvalResult = struct {
 	is_hidden: bool,
 	is_closed: bool,
+	/// True when a hide rule matched but SCM priority forced the path visible.
+	scm_kept: bool = false,
 };
 
 /// A compiled regex test entry.
@@ -197,15 +199,19 @@ pub const EffectiveState = struct {
 			is_closed = false;
 		}
 
-		// Priority paths override: SCM changes force visibility
+		// Priority paths override: SCM changes force visibility.
+		// If a hide rule had matched, record that SCM kept it (for the summary).
+		var scm_kept = false;
 		if (priority_dirs) |pd| {
 			if (rel.len > 0 and pd.contains(rel)) {
+				if (is_hidden) scm_kept = true;
 				is_hidden = false;
 				is_closed = false;
 			}
 		}
 		if (priority_files) |pf| {
 			if (rel.len > 0 and pf.contains(rel)) {
+				if (is_hidden) scm_kept = true;
 				is_hidden = false;
 			}
 		}
@@ -213,6 +219,7 @@ pub const EffectiveState = struct {
 		return .{
 			.is_hidden = is_hidden,
 			.is_closed = is_closed,
+			.scm_kept = scm_kept,
 		};
 	}
 

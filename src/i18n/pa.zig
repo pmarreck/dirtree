@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "ਲਾਈਨਾਂ",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " ਮੌਜੂਦਾ git/jj ਬਦਲਾਅ-ਸੈੱਟ ਵਿੱਚ ਹੋਣ ਕਰਕੇ ਲੁਕਾਇਆ ਨਹੀਂ ਗਿਆ",
     // ── ਮਦਦ ਟੈਕਸਟ (ਨਵੇਂ ਫਲੈਗ) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      ਵੱਡੀ ਆਉਟਪੁੱਟ ਚੇਤਾਵਨੀ ਥ੍ਰੈਸ਼ਹੋਲਡ ਸੈੱਟ ਕਰੋ (ਮੂਲ: 500)",
     .help_opt_override_warning = "  --override-warning ਵੱਡੀ ਆਉਟਪੁੱਟ ਚੇਤਾਵਨੀ ਨੂੰ ਦਬਾਓ",

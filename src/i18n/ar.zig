@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "أسطر",
     .stats_separator = "؛ ",
 
+    .stats_scm_kept = " لم تُخفَ لوجودها في مجموعة تغييرات git/jj الحالية",
     // ── رسائل الخطأ ──────────────────────────────────────────
     .err_depth_requires_number = "خطأ: --depth يتطلب معاملاً رقمياً (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "خطأ: --temp-depth يتطلب معاملاً رقمياً (en: Error: --temp-depth requires a numeric argument)",

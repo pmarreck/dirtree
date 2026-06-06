@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "שורות",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " לא הוסתר(ו) כיוון שנמצא(ים) במקבץ השינויים הנוכחי של git/jj",
     // ── הודעות שגיאה ─────────────────────────────────────────
     .err_depth_requires_number = "שגיאה: --depth דורש ארגומנט מספרי (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "שגיאה: --temp-depth דורש ארגומנט מספרי (en: Error: --temp-depth requires a numeric argument)",

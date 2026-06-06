@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "줄",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " 현재 git/jj 변경 집합에 포함되어 숨기지 않음",
     // ── 오류 메시지 ────────────────────────────────────────────
     .err_depth_requires_number = "오류: --depth에는 숫자 인수가 필요합니다 (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "오류: --temp-depth에는 숫자 인수가 필요합니다 (en: Error: --temp-depth requires a numeric argument)",

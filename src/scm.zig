@@ -68,18 +68,19 @@ pub fn collectPriorityPaths(allocator: std.mem.Allocator, abs_dir: []const u8) !
 		}
 	}
 
-	// Try git first
-	const git_found = try collectGitPaths(allocator, abs_dir, &priority);
-	if (git_found) {
+	// jj overrides git: a colocated repo has both, but if this is a jj repo
+	// (.jj present) the jj working-copy changeset governs.
+	const jj_found = try collectJjPaths(allocator, abs_dir, &priority);
+	if (jj_found) {
 		if (priority.files.count() > 0 or priority.dirs.count() > 0) {
 			priority.enabled = true;
 		}
 		return priority;
 	}
 
-	// Try jj as fallback
-	const jj_found = try collectJjPaths(allocator, abs_dir, &priority);
-	if (jj_found) {
+	// Otherwise fall back to git.
+	const git_found = try collectGitPaths(allocator, abs_dir, &priority);
+	if (git_found) {
 		if (priority.files.count() > 0 or priority.dirs.count() > 0) {
 			priority.enabled = true;
 		}
@@ -96,7 +97,7 @@ fn collectGitPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: 
 	defer allocator.free(repo_root);
 
 	// Get changed files via git status --porcelain -z
-	const status_output = runCommand(allocator, &.{ "git", "-C", repo_root, "status", "--porcelain", "-z" }) catch return true;
+	const status_output = runCommand(allocator, &.{ "git", "-C", repo_root, "status", "--porcelain", "-z" }, null) catch return true;
 	defer allocator.free(status_output);
 
 	if (status_output.len == 0) return true;
@@ -145,7 +146,10 @@ fn collectJjPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: *
 	defer allocator.free(repo_root);
 
 	// Get changed files via jj diff --name-only
-	const output = runCommand(allocator, &.{ "jj", "-R", abs_dir, "diff", "--name-only" }) catch return true;
+	// Run with cwd = repo_root so jj emits repo-root-relative paths (jj paths
+	// are relative to the process cwd, unlike git -C). Without this, paths
+	// double-prefix when dirtree is invoked from outside the repo.
+	const output = runCommand(allocator, &.{ "jj", "-R", repo_root, "diff", "--name-only" }, repo_root) catch return true;
 	defer allocator.free(output);
 
 	var iter = std.mem.splitScalar(u8, output, '\n');
@@ -174,7 +178,7 @@ fn collectJjPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: *
 
 /// Get the git repository root for a directory.
 fn getGitRoot(allocator: std.mem.Allocator, abs_dir: []const u8) ![]const u8 {
-	const output = try runCommand(allocator, &.{ "git", "-C", abs_dir, "rev-parse", "--show-toplevel" });
+	const output = try runCommand(allocator, &.{ "git", "-C", abs_dir, "rev-parse", "--show-toplevel" }, null);
 	defer allocator.free(output);
 
 	// Trim trailing newline
@@ -186,7 +190,7 @@ fn getGitRoot(allocator: std.mem.Allocator, abs_dir: []const u8) ![]const u8 {
 
 /// Get the jj repository root for a directory.
 fn getJjRoot(allocator: std.mem.Allocator, abs_dir: []const u8) ![]const u8 {
-	const output = try runCommand(allocator, &.{ "jj", "-R", abs_dir, "root" });
+	const output = try runCommand(allocator, &.{ "jj", "-R", abs_dir, "root" }, null);
 	defer allocator.free(output);
 
 	const trimmed = std.mem.trimEnd(u8, output, "\n\r");
@@ -230,12 +234,13 @@ fn computeRelativePath(
 }
 
 /// Run a command and return its stdout output.
-fn runCommand(allocator: std.mem.Allocator, argv: []const []const u8) ![]const u8 {
+fn runCommand(allocator: std.mem.Allocator, argv: []const []const u8, cwd: ?[]const u8) ![]const u8 {
 	const io = runtime.io();
 	var child = try std.process.spawn(io, .{
 		.argv = argv,
 		.stdout = .pipe,
 		.stderr = .ignore,
+		.cwd = if (cwd) |c| .{ .path = c } else .inherit,
 	});
 
 	// Read all stdout from the pipe file

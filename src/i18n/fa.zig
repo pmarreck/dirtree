@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "خط",
     .stats_separator = "؛ ",
 
+    .stats_scm_kept = " به دلیل وجود در مجموعه تغییرات فعلی git/jj پنهان نشد",
     // ── پیام‌های خطا ─────────────────────────────────────────
     .err_depth_requires_number = "خطا: --depth به یک آرگومان عددی نیاز دارد (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "خطا: --temp-depth به یک آرگومان عددی نیاز دارد (en: Error: --temp-depth requires a numeric argument)",

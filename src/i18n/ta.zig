@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "வரிகள்",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " தற்போதைய git/jj மாற்றத் தொகுப்பில் இருப்பதால் மறைக்கப்படவில்லை",
     // ── Help text (new flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      பெரிய வெளியீட்டு எச்சரிக்கை வரம்பை அமை (இயல்பு: 500)",
     .help_opt_override_warning = "  --override-warning பெரிய வெளியீட்டு எச்சரிக்கையை அடக்கு",

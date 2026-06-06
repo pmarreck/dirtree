@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "บรรทัด",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " ไม่ถูกซ่อนเนื่องจากอยู่ในชุดการเปลี่ยนแปลง git/jj ปัจจุบัน",
     // ── ข้อความช่วยเหลือ (แฟล็กใหม่) ─────────────────────────────
     .help_opt_max_lines = "  --max-lines N      ตั้งค่าเกณฑ์คำเตือนเอาต์พุตขนาดใหญ่ (ค่าเริ่มต้น: 500)",
     .help_opt_override_warning = "  --override-warning ระงับคำเตือนเอาต์พุตขนาดใหญ่",

@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "سطریں",
     .stats_separator = "؛ ",
 
+    .stats_scm_kept = " موجودہ git/jj تبدیلی سیٹ میں شامل ہونے کی وجہ سے چھپایا نہیں گیا",
     // ── Help text (new flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      بڑی آؤٹ پٹ کی تنبیہ کی حد مقرر کریں (طے شدہ: 500)",
     .help_opt_override_warning = "  --override-warning بڑی آؤٹ پٹ کی تنبیہ کو دبائیں",

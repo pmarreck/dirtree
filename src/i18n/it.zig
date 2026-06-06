@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "righe",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " non nascosto/i perché presente/i nel changeset git/jj corrente",
     // ── Messaggi di errore ──────────────────────────────────────
     .err_depth_requires_number = "Errore: --depth richiede un argomento numerico (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "Errore: --temp-depth richiede un argomento numerico (en: Error: --temp-depth requires a numeric argument)",

@@ -122,6 +122,8 @@ pub const TreeStats = struct {
 	shown_files: u32 = 0,
 	total_lines: u32 = 0,
 	head_reached: bool = false,
+	scm_kept_dirs: u32 = 0,
+	scm_kept_files: u32 = 0,
 };
 
 /// Render a complete directory tree.
@@ -203,7 +205,7 @@ pub fn renderTree(
 
 		// Stats go to stderr regardless
 		if (config.report_hidden) {
-			try ansi.writeStatsMessage(stderr, stats.shown_dirs, stats.shown_files, stats.total_lines, stats.hidden_dirs, stats.hidden_files, config.simple_mode);
+			try ansi.writeStatsMessage(stderr, stats.shown_dirs, stats.shown_files, stats.total_lines, stats.hidden_dirs, stats.hidden_files, stats.scm_kept_dirs, stats.scm_kept_files, config.simple_mode);
 		}
 		return;
 	}
@@ -269,7 +271,7 @@ pub fn renderTree(
 
 	// Report stats to stderr (only in decorated mode)
 	if (config.report_hidden) {
-		try ansi.writeStatsMessage(stderr, stats.shown_dirs, stats.shown_files, stats.total_lines, stats.hidden_dirs, stats.hidden_files, config.simple_mode);
+		try ansi.writeStatsMessage(stderr, stats.shown_dirs, stats.shown_files, stats.total_lines, stats.hidden_dirs, stats.hidden_files, stats.scm_kept_dirs, stats.scm_kept_files, config.simple_mode);
 	}
 }
 
@@ -412,6 +414,13 @@ fn renderDir(
 			stats.shown_dirs += 1;
 		} else {
 			stats.shown_files += 1;
+		}
+		if (eval_result.scm_kept) {
+			if (entry.kind == .directory) {
+				stats.scm_kept_dirs += 1;
+			} else {
+				stats.scm_kept_files += 1;
+			}
 		}
 
 		try visible.append(allocator, .{
@@ -710,6 +719,13 @@ fn renderDirFocused(
 			stats.shown_dirs += 1;
 		} else {
 			stats.shown_files += 1;
+		}
+		if (eval_result.scm_kept) {
+			if (entry.kind == .directory) {
+				stats.scm_kept_dirs += 1;
+			} else {
+				stats.scm_kept_files += 1;
+			}
 		}
 
 		try visible.append(allocator, .{

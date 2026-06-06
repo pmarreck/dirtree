@@ -106,9 +106,10 @@ pub fn writeFileName(writer: anytype, name: []const u8, is_executable: bool, is_
 }
 
 /// Write the hidden count message to stderr.
-pub fn writeStatsMessage(writer: anytype, shown_dirs: u32, shown_files: u32, total_lines: u32, hidden_dirs: u32, hidden_files: u32, simple_mode: bool) !void {
+pub fn writeStatsMessage(writer: anytype, shown_dirs: u32, shown_files: u32, total_lines: u32, hidden_dirs: u32, hidden_files: u32, scm_kept_dirs: u32, scm_kept_files: u32, simple_mode: bool) !void {
 	const has_hidden = hidden_dirs > 0 or hidden_files > 0;
-	if (!has_hidden) return;
+	const has_scm = scm_kept_dirs > 0 or scm_kept_files > 0;
+	if (!has_hidden and !has_scm) return;
 	const has_shown = shown_dirs > 0 or shown_files > 0;
 
 	const s = i18n.tr();
@@ -168,6 +169,28 @@ pub fn writeStatsMessage(writer: anytype, shown_dirs: u32, shown_files: u32, tot
 		try writer.writeAll(s.stats_hidden);
 	}
 
+	if (has_scm) {
+		if (has_shown or has_hidden) try writer.writeAll(s.stats_separator);
+		var wrote_part = false;
+		if (scm_kept_dirs > 0) {
+			if (scm_kept_dirs == 1) {
+				try writer.print("1 {s}", .{s.hidden_dir_singular});
+			} else {
+				try writer.print("{} {s}", .{ scm_kept_dirs, s.hidden_dir_plural });
+			}
+			wrote_part = true;
+		}
+		if (scm_kept_files > 0) {
+			if (wrote_part) try writer.writeAll(s.hidden_and);
+			if (scm_kept_files == 1) {
+				try writer.print("1 {s}", .{s.hidden_file_singular});
+			} else {
+				try writer.print("{} {s}", .{ scm_kept_files, s.hidden_file_plural });
+			}
+		}
+		try writer.writeAll(s.stats_scm_kept);
+	}
+
 	if (!simple_mode) {
 		try writer.writeAll(reset);
 	}
@@ -202,7 +225,7 @@ test "buildFileUrl: path with spaces" {
 test "writeStatsMessage: hidden only" {
 	var buf: [256]u8 = undefined;
 	var fbs = std.Io.Writer.fixed(&buf);
-	try writeStatsMessage(&fbs, 0, 0, 0, 0, 1, true);
+	try writeStatsMessage(&fbs, 0, 0, 0, 0, 1, 0, 0, true);
 	const output = fbs.buffered();
 	try std.testing.expect(std.mem.indexOf(u8, output, "1 file hidden.") != null);
 }
@@ -210,7 +233,7 @@ test "writeStatsMessage: hidden only" {
 test "writeStatsMessage: shown and hidden" {
 	var buf: [512]u8 = undefined;
 	var fbs = std.Io.Writer.fixed(&buf);
-	try writeStatsMessage(&fbs, 3, 10, 42, 2, 3, true);
+	try writeStatsMessage(&fbs, 3, 10, 42, 2, 3, 0, 0, true);
 	const output = fbs.buffered();
 	try std.testing.expect(std.mem.indexOf(u8, output, "3 directories and 10 files shown (42 lines)") != null);
 	try std.testing.expect(std.mem.indexOf(u8, output, "2 directories and 3 files hidden.") != null);

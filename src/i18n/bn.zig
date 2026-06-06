@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "লাইন",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " বর্তমান git/jj পরিবর্তন-সেটে থাকায় লুকানো হয়নি",
     // ── Help text (new flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      বড় আউটপুট সতর্কতার থ্রেশহোল্ড নির্ধারণ করুন (ডিফল্ট: 500)",
     .help_opt_override_warning = "  --override-warning বড় আউটপুট সতর্কতা দমন করুন",

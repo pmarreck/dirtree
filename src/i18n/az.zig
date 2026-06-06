@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "sətir",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " cari git/jj dəyişiklik dəstində olduğu üçün gizlədilmədi",
     // ── X\xc9\x99ta mesajlar\xc4\xb1 ──────────────────────────────────────────
     .err_depth_requires_number = "X\xc9\x99ta: --depth r\xc9\x99q\xc9\x99mli arqument t\xc9\x99l\xc9\x99b edir (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "X\xc9\x99ta: --temp-depth r\xc9\x99q\xc9\x99mli arqument t\xc9\x99l\xc9\x99b edir (en: Error: --temp-depth requires a numeric argument)",

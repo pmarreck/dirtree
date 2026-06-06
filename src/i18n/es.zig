@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "líneas",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " no ocultado(s) por estar en el conjunto de cambios actual de git/jj",
     // ── Mensajes de error ──────────────────────────────────────
     .err_depth_requires_number = "Error: --depth requiere un argumento num\xc3\xa9rico (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "Error: --temp-depth requiere un argumento num\xc3\xa9rico (en: Error: --temp-depth requires a numeric argument)",

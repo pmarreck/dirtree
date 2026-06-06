@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "Zeilen",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " nicht verborgen, da im aktuellen git/jj-Änderungssatz enthalten",
     // ── Fehlermeldungen ────────────────────────────────────────
     .err_depth_requires_number = "Fehler: --depth erfordert ein numerisches Argument (en: Error: --depth requires a numeric argument)",
     .err_temp_depth_requires_number = "Fehler: --temp-depth erfordert ein numerisches Argument (en: Error: --temp-depth requires a numeric argument)",

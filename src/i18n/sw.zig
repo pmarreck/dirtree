@@ -65,6 +65,7 @@ pub const strings = Strings{
     .stats_line_plural = "mistari",
     .stats_separator = "; ",
 
+    .stats_scm_kept = " hayajafichwa kwa sababu yamo katika seti ya mabadiliko ya sasa ya git/jj",
     // ── Maandishi ya msaada (bendera mpya) ─────────────────────
     .help_opt_max_lines = "  --max-lines N      Weka kizingiti cha onyo la matokeo makubwa (chaguo-msingi: 500)",
     .help_opt_override_warning = "  --override-warning Zuia onyo la matokeo makubwa",

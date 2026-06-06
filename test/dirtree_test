@@ -4261,6 +4261,46 @@ test_new_locales_selectable() {
 	done
 }
 
+test_hide_scm_changed_file_kept_and_counted() {
+	local workspace target out="" err=""
+	command -v git >/dev/null 2>&1 || { echo "SKIP: git unavailable" >&2; return 0; }
+	workspace=$(new_tmpdir); target="$workspace/scmhide"; mkdir -p "$target"
+	(
+		cd "$target"
+		git init -q && git config user.email t@example.com && git config user.name tester
+		printf 'orig\n' > tracked.txt
+		git add tracked.txt && git commit -qm init
+		printf 'changed\n' >> tracked.txt
+	) >/dev/null 2>&1
+	out=$("$DIRTREE_BIN" --hide tracked.txt --simple --no-icons --no-color "$target" 2>"$target/err.txt")
+	err=$(cat "$target/err.txt")
+	if [[ "$out" != *"tracked.txt"* ]]; then
+		echo "an SCM-changed file should still show despite --hide; got: $out" >&2; return 1
+	fi
+	if [[ "$err" != *"changeset"* ]]; then
+		echo "summary should note files not hidden due to the changeset; got: $err" >&2; return 1
+	fi
+}
+
+test_hide_scm_jj_changeset_kept() {
+	local workspace target out="" err=""
+	command -v jj >/dev/null 2>&1 || { echo "SKIP: jj unavailable" >&2; return 0; }
+	workspace=$(new_tmpdir); target="$workspace/jjhide"; mkdir -p "$target"
+	(
+		cd "$target"
+		jj git init -q 2>/dev/null || jj git init
+		printf 'hello\n' > work.txt
+	) >/dev/null 2>&1
+	out=$("$DIRTREE_BIN" --hide work.txt --simple --no-icons --no-color "$target" 2>"$target/err.txt")
+	err=$(cat "$target/err.txt")
+	if [[ "$out" != *"work.txt"* ]]; then
+		echo "a jj working-copy change should still show despite --hide; got: $out" >&2; return 1
+	fi
+	if [[ "$err" != *"changeset"* ]]; then
+		echo "summary should note the jj changeset kept it; got: $err" >&2; return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4724,6 +4764,10 @@ run_all_tests() {
 		test_negation_warn_uses_localized_switches
 	run_test "new locales (bn hi pa ps sw ta th ur) selectable" \
 		test_new_locales_selectable
+	run_test "SCM-changed file kept despite --hide + counted" \
+		test_hide_scm_changed_file_kept_and_counted
+	run_test "jj changeset keeps file despite --hide" \
+		test_hide_scm_jj_changeset_kept
 	run_test "localized error includes English original" \
 		test_localized_error_includes_english
 	run_test "English error is not doubled" \

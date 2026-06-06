@@ -57,6 +57,7 @@ pub const Strings = struct {
     stats_line_singular: [:0]const u8,
     stats_line_plural: [:0]const u8,
     stats_separator: [:0]const u8,
+    stats_scm_kept: [:0]const u8,
 
     // ── Help text (new flags) ──────────────────────────────────
     help_opt_max_lines: [:0]const u8,
