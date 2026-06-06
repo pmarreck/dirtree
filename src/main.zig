@@ -159,7 +159,13 @@ fn applyLangArg(raw_args: []const [:0]const u8) void {
 			return; // --lang was present but invalid code; error handled in second pass
 		}
 	}
-	// No --lang found; detect from environment
+	// No explicit --lang. If the user typed a localized alias (e.g. --hilfe),
+	// infer the language from it so help/output match that language. Otherwise
+	// fall back to the environment.
+	if (i18n.detectLocaleFromAliases(args)) |loc| {
+		i18n.setLocale(loc);
+		return;
+	}
 	i18n.setLocale(i18n.detectLocaleFromEnv());
 }
 
@@ -959,36 +965,45 @@ const HelpRow = struct {
 	subcmd: bool = false, // leading token is a subcommand word (e.g. "annotate")
 };
 
-/// True if a token is part of the flag spec rather than the description:
-/// a '-'-prefixed flag, or an all-ASCII placeholder with no lowercase letter
-/// (N, PATH, DIR..., [DIR], MODE, X, CODE, DESC, and localized forms like
-/// VERZ.. / PFAD...). The description's first token always has a lowercase
-/// ASCII letter or a non-ASCII byte, so this cleanly finds the boundary.
-fn isFlagOrPlaceholder(tok: []const u8) bool {
-	if (tok.len == 0) return false;
-	if (tok[0] == '-') return true;
-	for (tok) |c| {
-		if (c >= 128) return false; // non-ASCII => description (CJK, Arabic, ...)
-		if (c >= 'a' and c <= 'z') return false; // lowercase => description word
+/// Count placeholder tokens in a canonical flagspec: space-separated tokens
+/// that are not '-'-prefixed flags (and not the leading subcommand word).
+/// e.g. "-p, --path PATH" -> 1, "annotate PATH DESC" (subcmd) -> 2, "--asc" -> 0.
+fn placeholderCount(flag: []const u8, subcmd: bool) usize {
+	var n: usize = 0;
+	var first = true;
+	var it = std.mem.tokenizeScalar(u8, flag, ' ');
+	while (it.next()) |tok| {
+		const is_subcmd_word = first and subcmd;
+		first = false;
+		if (is_subcmd_word) continue;
+		if (tok.len > 0 and tok[0] != '-') n += 1;
 	}
-	return true;
+	return n;
 }
 
-/// Extract the localized description from a full help line, skipping the
-/// indent, an optional leading subcommand word, the flag tokens, and any
-/// placeholder tokens.
-fn helpDesc(line: []const u8, subcmd: bool) []const u8 {
+/// Extract the localized description from a full help line. Skips the indent,
+/// an optional leading subcommand word, the '-'-prefixed flag tokens, and
+/// exactly `placeholderCount` placeholder slots. Consuming a fixed number of
+/// placeholder tokens (rather than greedily) means a description that itself
+/// opens with a placeholder reference (e.g. German "PATH rendern ...") keeps
+/// that word.
+fn helpDesc(line: []const u8, flag: []const u8, subcmd: bool) []const u8 {
+	const nph = placeholderCount(flag, subcmd);
 	var i: usize = 0;
 	while (i < line.len and line[i] == ' ') i += 1;
 	if (subcmd) {
 		while (i < line.len and line[i] != ' ') i += 1; // skip subcommand word
 		while (i < line.len and line[i] == ' ') i += 1;
 	}
-	while (i < line.len) {
-		var j = i;
-		while (j < line.len and line[j] != ' ') j += 1;
-		if (!isFlagOrPlaceholder(line[i..j])) break;
-		i = j;
+	// consume '-'-prefixed flag tokens
+	while (i < line.len and line[i] == '-') {
+		while (i < line.len and line[i] != ' ') i += 1;
+		while (i < line.len and line[i] == ' ') i += 1;
+	}
+	// consume exactly `nph` placeholder slots
+	var consumed: usize = 0;
+	while (consumed < nph and i < line.len) : (consumed += 1) {
+		while (i < line.len and line[i] != ' ') i += 1;
 		while (i < line.len and line[i] == ' ') i += 1;
 	}
 	return line[i..];
@@ -1126,7 +1141,7 @@ fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
 			try writer.writeAll(alias[idx]);
 			try writeColumnPad(writer, alias[idx].len, col_alias);
 		}
-		try writer.writeAll(helpDesc(row.text, row.subcmd));
+		try writer.writeAll(helpDesc(row.text, row.flag, row.subcmd));
 		try writer.writeAll("\n");
 		if (is_lang(row)) {
 			try writeSpaces(writer, 2 + col_flag + col_alias);

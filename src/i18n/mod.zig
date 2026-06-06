@@ -299,6 +299,24 @@ pub fn detectLocaleFromEnv() Locale {
     return .en;
 }
 
+/// Infer a locale from a localized CLI alias present in `args` (e.g. "--hilfe"
+/// implies German). Only non-English locales' aliases trigger inference — the
+/// canonical English flags live only in the English alias table, so a plain
+/// "--help"/"--depth" never changes the locale. Returns the first match in
+/// argument order; null if no localized alias is present.
+pub fn detectLocaleFromAliases(args: []const [:0]const u8) ?Locale {
+    for (args) |arg| {
+        inline for (all_locales) |loc| {
+            if (loc != .en) {
+                for (localeCliAliases(loc)) |entry| {
+                    if (std.mem.eql(u8, arg, entry.name)) return loc;
+                }
+            }
+        }
+    }
+    return null;
+}
+
 // ── CLI flag matching ─────────────────────────────────────────────
 
 /// Comptime-built map from all locale CLI aliases to CliArg.
