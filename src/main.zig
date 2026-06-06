@@ -1199,6 +1199,34 @@ pub fn main(init: std.process.Init) !u8 {
 				return 1;
 			}
 
+			// Warn about regex-negation foot-guns on --hide/--show (a negated
+			// !/…/ or a leading (?!…) lookahead inverts the match; combining them
+			// double-negates). Fires at add-time, when the rule is also persisted.
+			{
+				var neg_found = false;
+				const verbs = [_][]const u8{ "--hide", "--show" };
+				const lists = [_][]const ArgEntry{ cfg.hide_regexes.items, cfg.show_regexes.items };
+				for (verbs, lists) |verb, list| {
+					for (list) |re| {
+						if (re.kind != .regex) continue;
+						if (!isNegationFootgun(re.value, re.negated)) continue;
+						if (!neg_found) {
+							neg_found = true;
+							if (!cfg.simple_mode) try stderr.writeAll("\x1b[2;3m");
+							try stderr.writeAll(s.warn_negation_intro);
+							try stderr.writeAll("\n");
+						}
+						try stderr.print("  {s} {s}/{s}/\n", .{ verb, if (re.negated) "!" else "", re.value });
+					}
+				}
+				if (neg_found) {
+					try stderr.writeAll(s.warn_negation_advice);
+					if (!cfg.simple_mode) try stderr.writeAll("\x1b[0m");
+					try stderr.writeAll("\n");
+					try stderr.flush();
+				}
+			}
+
 			// --config: dump effective state and exit
 			if (cfg.show_config) {
 				// Also apply CLI sort/depth/defaults to effective for display
@@ -1467,6 +1495,14 @@ fn applyCliOverrides(allocator: std.mem.Allocator, cfg: *const CliConfig, effect
 	if (cfg.max_lines) |ml| {
 		effective.max_lines = ml;
 	}
+}
+
+/// Heuristic: does this --hide/--show regex use a negation that tends to invert
+/// intent? Either the !/.../ negate-prefix, or a leading (?!...) / ^(?!...)
+/// negative lookahead. Both at once double-negates (net effect flips back).
+fn isNegationFootgun(value: []const u8, negated: bool) bool {
+	if (negated) return true;
+	return std.mem.startsWith(u8, value, "(?!") or std.mem.startsWith(u8, value, "^(?!");
 }
 
 /// Compile and add a regex to the effective state.

@@ -67,6 +67,7 @@ Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prer
   - When a Git or Jujutsu repo is detected, paths reported as modified/untracked are forced visible and opened even if state rules would hide them. Set `DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED=1` to opt out.
 - **CLI conveniences**
   - `--open`, `--close`, `--show`, `--hide` accept multiple values and regexes using the `/pattern/` form.
+  - Regex negation composes in two ways that can surprise you: the `!/pattern/` prefix matches the *inverse*, and a leading `(?!...)` lookahead is itself a negation — stacking both (e.g. `--hide '!/^(?!keep).*/'`) double-negates and does the opposite of what it reads like. dirtree prints a one-line note when a `--hide`/`--show` rule uses either form. For "focus on one path," prefer `--only PATH` (one-shot, nothing persisted) or a positive `--show /pattern/`; remember show rules win over hide. When rules get tangled, `.dirtree-state` is plain text you can hand-edit.
   - `--default` and `--sort` options to tune depth and ordering.
   - `--test` hook to run the bash test suite.
   - `--no-icons`, `--no-color`, and `--no-hyperlinks` disable individual decorations (and persist that choice) when you truly need plain text.

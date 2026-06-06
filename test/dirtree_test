@@ -1101,7 +1101,7 @@ Options:
   -o, --open DIR...  Open one or more subdirs (repeat flag to add more)
   -c, --close DIR... Close one or more subdirs (repeat flag to add more)
   --show PATH...     Force show relative paths; wrap regexes as /pattern/ or !/pattern/
-  --hide PATH...     Hide relative paths; wrap regexes as /pattern/ or !/pattern/ (repeatable)
+  --hide PATH...     Hide relative paths; wrap regexes as /pattern/ or !/pattern/ (repeatable) (keep only some paths? use --only)
   --sort MODE        Sorting mode: modified|alpha (default: modified)
   --asc              Sort ascending
   --desc             Sort descending (default)
@@ -4150,6 +4150,46 @@ test_no_leader_dots_by_default() {
 	fi
 }
 
+test_hide_negated_prefix_warns() {
+	local workspace target err=""
+	workspace=$(new_tmpdir); target="$workspace/neg1"; mkdir -p "$target/foo" "$target/bar"
+	err=$("$DIRTREE_BIN" --hide '!/foo/' "$target" 2>&1 1>/dev/null)
+	if [[ "$err" != *"--only"* ]]; then
+		echo "expected negation foot-gun warning for --hide !/foo/; got: $err" >&2
+		return 1
+	fi
+}
+
+test_hide_lookahead_warns() {
+	local workspace target err=""
+	workspace=$(new_tmpdir); target="$workspace/neg2"; mkdir -p "$target/foo" "$target/bar"
+	err=$("$DIRTREE_BIN" --hide '/^(?!foo).*/' "$target" 2>&1 1>/dev/null)
+	if [[ "$err" != *"--only"* ]]; then
+		echo "expected negation foot-gun warning for --hide /^(?!foo).*/; got: $err" >&2
+		return 1
+	fi
+}
+
+test_hide_double_negation_warns() {
+	local workspace target err=""
+	workspace=$(new_tmpdir); target="$workspace/neg3"; mkdir -p "$target/foo" "$target/bar"
+	err=$("$DIRTREE_BIN" --hide '!/^(?!foo).*/' "$target" 2>&1 1>/dev/null)
+	if [[ "$err" != *"--only"* ]]; then
+		echo "expected negation foot-gun warning for double-negation; got: $err" >&2
+		return 1
+	fi
+}
+
+test_hide_positive_regex_no_warn() {
+	local workspace target err=""
+	workspace=$(new_tmpdir); target="$workspace/pos1"; mkdir -p "$target/foo" "$target/bar"
+	err=$("$DIRTREE_BIN" --hide '/foo/' "$target" 2>&1 1>/dev/null)
+	if [[ "$err" == *"--only"* ]]; then
+		echo "positive --hide /foo/ should NOT trigger the negation warning; got: $err" >&2
+		return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4601,6 +4641,14 @@ run_all_tests() {
 		test_notes_leader_dots_opt_in
 	run_test "no leader dots by default" \
 		test_no_leader_dots_by_default
+	run_test "--hide negated prefix warns" \
+		test_hide_negated_prefix_warns
+	run_test "--hide lookahead warns" \
+		test_hide_lookahead_warns
+	run_test "--hide double-negation warns" \
+		test_hide_double_negation_warns
+	run_test "--hide positive regex does not warn" \
+		test_hide_positive_regex_no_warn
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \
