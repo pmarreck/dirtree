@@ -13,6 +13,7 @@ pub const RenderConfig = struct {
 	use_hyperlinks: bool = true,
 	simple_mode: bool = false,
 	report_hidden: bool = true,
+	show_notes: bool = true,
 	max_depth: u32 = 4,
 	show_hidden: bool = false,
 	sort_mode: dir_scan.SortMode = .modified,
@@ -222,7 +223,7 @@ fn renderRootHeader(
 
 	// Annotation for the root directory itself, if any
 	if (effective.annotations.get(".")) |desc| {
-		if (desc.len > 0) {
+		if (config.show_notes and desc.len > 0) {
 			if (config.use_color) try writer.writeAll(ansi.dim);
 			try writer.writeAll(" # ");
 			try writer.writeAll(desc);
@@ -778,7 +779,7 @@ fn renderDirEntry(
 
 	// Annotation, if any
 	if (effective.annotations.get(child_rel)) |desc| {
-		if (desc.len > 0) {
+		if (config.show_notes and desc.len > 0) {
 			if (config.use_color) try writer.writeAll(ansi.dim);
 			try writer.writeAll(" # ");
 			try writer.writeAll(desc);
@@ -871,7 +872,7 @@ fn renderFileEntry(
 
 	// Annotation, if any
 	if (effective.annotations.get(child_rel)) |desc| {
-		if (desc.len > 0) {
+		if (config.show_notes and desc.len > 0) {
 			if (config.use_color) try writer.writeAll(ansi.dim);
 			try writer.writeAll(" # ");
 			try writer.writeAll(desc);

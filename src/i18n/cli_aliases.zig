@@ -11,6 +11,8 @@ pub const CliArg = enum {
     no_icons,
     no_color,
     no_orphan_warning,
+    no_notes,
+    show_notes,
     no_hyperlinks,
     default,
     open,
@@ -49,6 +51,7 @@ pub const EnvVar = enum {
     dirtree_decorated,
     dirtree_auto_simple,
     piped_stdout,
+    dirtree_hide_notes,
     dirtree_scm_changes_stay_hidden_or_closed,
 };
 

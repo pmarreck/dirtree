@@ -42,6 +42,8 @@ pub const CliConfig = struct {
 	no_color: bool = false,
 	// Suppress the post-listing orphaned-notes warning (this run only, not persisted)
 	no_orphan_warning: bool = false,
+	// Tri-state note visibility: true=--show-notes, false=--no-notes, null=unset
+	cli_notes: ?bool = null,
 	no_hyperlinks: bool = false,
 	show_hidden: bool = false,
 	rewrite_settings: bool = false,
@@ -383,6 +385,16 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.no_orphan_warning => {
 						// Display-only suppression; never persisted to the state file.
 						config.no_orphan_warning = true;
+						i += 1;
+						continue;
+					},
+					.no_notes => {
+						config.cli_notes = false;
+						i += 1;
+						continue;
+					},
+					.show_notes => {
+						config.cli_notes = true;
 						i += 1;
 						continue;
 					},
@@ -876,6 +888,9 @@ fn applyEnvVars(config: *CliConfig) void {
 			config.simple_mode = true;
 		}
 	}
+	if (i18n.getEnvLocalized(.dirtree_hide_notes)) |val| {
+		if (isTruthyEnv(val)) config.cli_notes = false;
+	}
 }
 
 fn isTruthyEnv(val: []const u8) bool {
@@ -915,6 +930,8 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll(s.help_opt_no_color);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_no_orphan_warning);
+	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_notes);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_no_hyperlinks);
 	try writer.writeAll("\n");
@@ -1241,6 +1258,7 @@ pub fn main(init: std.process.Init) !u8 {
 				.use_hyperlinks = use_hyperlinks,
 				.simple_mode = use_simple,
 				.report_hidden = !cfg.show_hidden,
+				.show_notes = cfg.cli_notes orelse true,
 				.max_depth = max_depth,
 				.show_hidden = cfg.show_hidden,
 				.sort_mode = sort_mode,

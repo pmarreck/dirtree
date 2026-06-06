@@ -1093,6 +1093,7 @@ Options:
   --no-icons         Disable icons (simple mode + decorated header)
   --no-color        Disable ANSI colors and persist preference
   --no-orphan-warning Suppress the orphaned-notes warning
+  --no-notes/--show-notes Hide or show inline notes (DIRTREE_HIDE_NOTES=1 to hide by default)
   --no-hyperlinks   Disable OSC8 hyperlinks and persist preference
   --default X        Persist default state: opened|closed
   -o, --open DIR...  Open one or more subdirs (repeat flag to add more)
@@ -3959,6 +3960,39 @@ test_annotate_inherits_from_parent() {
 	fi
 }
 
+test_notes_shown_by_default() {
+	local workspace target out=""
+	workspace=$(new_tmpdir); target="$workspace/notes-default"; mkdir -p "$target"; touch "$target/f.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate f.txt "hello note") >/dev/null 2>&1
+	out=$(cd "$target" && "$DIRTREE_BIN" --simple --no-icons 2>/dev/null)
+	if [[ "$out" != *"hello note"* ]]; then echo "note should show by default; got: $out" >&2; return 1; fi
+}
+
+test_no_notes_flag_hides_notes() {
+	local workspace target out=""
+	workspace=$(new_tmpdir); target="$workspace/notes-off"; mkdir -p "$target"; touch "$target/f.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate f.txt "hello note") >/dev/null 2>&1
+	out=$(cd "$target" && "$DIRTREE_BIN" --no-notes --simple --no-icons 2>/dev/null)
+	if [[ "$out" == *"hello note"* ]]; then echo "--no-notes should hide the note; got: $out" >&2; return 1; fi
+	if [[ "$out" != *"f.txt"* ]]; then echo "entry itself should still show; got: $out" >&2; return 1; fi
+}
+
+test_env_hide_notes() {
+	local workspace target out=""
+	workspace=$(new_tmpdir); target="$workspace/notes-env"; mkdir -p "$target"; touch "$target/f.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate f.txt "hello note") >/dev/null 2>&1
+	out=$(cd "$target" && DIRTREE_HIDE_NOTES=1 "$DIRTREE_BIN" --simple --no-icons 2>/dev/null)
+	if [[ "$out" == *"hello note"* ]]; then echo "DIRTREE_HIDE_NOTES=1 should hide the note; got: $out" >&2; return 1; fi
+}
+
+test_show_notes_overrides_env() {
+	local workspace target out=""
+	workspace=$(new_tmpdir); target="$workspace/notes-override"; mkdir -p "$target"; touch "$target/f.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate f.txt "hello note") >/dev/null 2>&1
+	out=$(cd "$target" && DIRTREE_HIDE_NOTES=1 "$DIRTREE_BIN" --show-notes --simple --no-icons 2>/dev/null)
+	if [[ "$out" != *"hello note"* ]]; then echo "--show-notes should override env; got: $out" >&2; return 1; fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4394,6 +4428,14 @@ run_all_tests() {
 		test_orphaned_note_warning
 	run_test "orphaned note warning suppressed by flag" \
 		test_orphaned_note_warning_suppressed
+	run_test "notes shown by default" \
+		test_notes_shown_by_default
+	run_test "--no-notes hides notes" \
+		test_no_notes_flag_hides_notes
+	run_test "DIRTREE_HIDE_NOTES hides notes" \
+		test_env_hide_notes
+	run_test "--show-notes overrides DIRTREE_HIDE_NOTES" \
+		test_show_notes_overrides_env
 	run_test "orphaned-notes subcommand lists orphans" \
 		test_orphaned_notes_subcommand_lists
 	run_test "purge-orphaned-notes subcommand removes orphans" \
