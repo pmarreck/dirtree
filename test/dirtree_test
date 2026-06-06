@@ -1110,6 +1110,7 @@ Options:
   --config           Show computed effective configuration
   --test             Run associated tests
   --lang CODE        Set display language (e.g. en, de, fr, ja)
+                     Available language codes: ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur
   --max-lines N      Set large output warning threshold (default: 500)
   --override-warning Suppress the large output warning
   --head N           Stop output after N lines
@@ -1130,6 +1131,10 @@ Examples:
   dirtree                       # Show tree of current directory
   dirtree -d 3                  # Set depth to 3 levels
   dirtree --sort alpha --asc    # Sorted alphabetically ascending
+  dirtree --close vendor        # Collapse a directory (persisted)
+  dirtree --hide '/\.log$/'     # Hide files matching a regex
+  dirtree --only src            # Focus on one subtree, hide siblings
+  dirtree --tiefe 2             # Localized switch names also work
 EOF
 )
 	expected_plain+=$'\n'
@@ -4261,6 +4266,89 @@ test_new_locales_selectable() {
 	done
 }
 
+
+test_lang_code_case_insensitive() {
+	# Item 3: --lang should accept uppercased codes (downcased before parsing).
+	local target; target=$(new_tmpdir); mkdir -p "$target"
+	local lower upper rc_u=0
+	lower=$("$DIRTREE_BIN" --lang de --about 2>/dev/null)
+	upper=$("$DIRTREE_BIN" --lang DE --about 2>/dev/null); rc_u=$?
+	if [[ $rc_u -ne 0 ]]; then
+		echo "--lang DE (uppercase) should not error; rc=$rc_u" >&2; return 1
+	fi
+	if [[ "$upper" != "$lower" || -z "$lower" ]]; then
+		echo "--lang DE should render identically to --lang de" >&2; return 1
+	fi
+	# Mixed-case 5/7-char codes too.
+	local a b
+	a=$("$DIRTREE_BIN" --lang pt_br --about 2>/dev/null)
+	b=$("$DIRTREE_BIN" --lang PT_BR --about 2>/dev/null)
+	if [[ "$a" != "$b" || -z "$a" ]]; then
+		echo "--lang PT_BR should match --lang pt_br" >&2; return 1
+	fi
+}
+
+test_lang_invalid_errors_even_with_help() {
+	# Item 4: an invalid --lang code must error, even when --help is also given,
+	# regardless of argument order.
+	local err1 rc1=0 err2 rc2=0
+	err1=$("$DIRTREE_BIN" --lang zz --help 2>&1 1>/dev/null); rc1=$?
+	if [[ $rc1 -eq 0 ]]; then
+		echo "--lang zz --help should error, not show help; rc=$rc1" >&2; return 1
+	fi
+	if [[ "$err1" != *"zz"* ]]; then
+		echo "error should mention the bad code 'zz'; got: $err1" >&2; return 1
+	fi
+	# Order independence: --help before --lang must still error.
+	err2=$("$DIRTREE_BIN" --help --lang zz 2>&1 1>/dev/null); rc2=$?
+	if [[ $rc2 -eq 0 ]]; then
+		echo "--help --lang zz should error too (order independent); rc=$rc2" >&2; return 1
+	fi
+}
+
+test_help_lists_available_language_codes() {
+	# Item 5: --help lists all available language codes under the --lang entry.
+	local out
+	out=$("$DIRTREE_BIN" --help 2>/dev/null)
+	if [[ "$out" != *"Available language codes:"* ]]; then
+		echo "English --help should include 'Available language codes:'" >&2; return 1
+	fi
+	# Spot-check a couple of codes appear.
+	if [[ "$out" != *"zh_hans"* || "$out" != *"pt_br"* ]]; then
+		echo "available codes line should list zh_hans and pt_br" >&2; return 1
+	fi
+	# The label is localized: German help uses German wording, not the English label.
+	local de_out
+	de_out=$("$DIRTREE_BIN" --lang de --help 2>/dev/null)
+	if [[ "$de_out" == *"Available language codes:"* ]]; then
+		echo "German --help should use a localized 'available codes' label, not English" >&2; return 1
+	fi
+	if [[ "$de_out" != *"zh_hans"* ]]; then
+		echo "German help should still list the codes" >&2; return 1
+	fi
+}
+
+test_help_shows_localized_alias_column() {
+	# Item 1: non-English --help shows localized aliases in a column.
+	local de_out en_out
+	de_out=$("$DIRTREE_BIN" --lang de --help 2>/dev/null)
+	en_out=$("$DIRTREE_BIN" --help 2>/dev/null)
+	# German depth alias (--tiefe) and hide alias (--verbergen) should appear.
+	if [[ "$de_out" != *"--tiefe"* || "$de_out" != *"--verbergen"* ]]; then
+		echo "German --help should show localized aliases (--tiefe, --verbergen)" >&2; return 1
+	fi
+	# The canonical English flags must still be present (English-name column kept).
+	if [[ "$de_out" != *"--depth"* || "$de_out" != *"--hide"* ]]; then
+		echo "German --help should still show the English flag names" >&2; return 1
+	fi
+	# English help has no alias column. Use --verbergen as the sentinel: unlike
+	# --tiefe (which the examples intentionally showcase), it appears only in the
+	# non-English alias column, so it must be absent from English help.
+	if [[ "$en_out" == *"--verbergen"* ]]; then
+		echo "English --help should not contain the localized alias column" >&2; return 1
+	fi
+}
+
 test_hide_scm_changed_file_kept_and_counted() {
 	local workspace target out="" err=""
 	command -v git >/dev/null 2>&1 || { echo "SKIP: git unavailable" >&2; return 0; }
@@ -4764,6 +4852,14 @@ run_all_tests() {
 		test_negation_warn_uses_localized_switches
 	run_test "new locales (bn hi pa ps sw ta th ur) selectable" \
 		test_new_locales_selectable
+	run_test "--lang accepts uppercase codes" \
+		test_lang_code_case_insensitive
+	run_test "invalid --lang errors even with --help" \
+		test_lang_invalid_errors_even_with_help
+	run_test "--help lists available language codes" \
+		test_help_lists_available_language_codes
+	run_test "non-English --help shows localized alias column" \
+		test_help_shows_localized_alias_column
 	run_test "SCM-changed file kept despite --hide + counted" \
 		test_hide_scm_changed_file_kept_and_counted
 	run_test "jj changeset keeps file despite --hide" \

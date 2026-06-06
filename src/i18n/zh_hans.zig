@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           显示计算后的有效配置",
         .help_opt_test = "  --test             运行相关测试",
     .help_opt_lang = "  --lang CODE        设置显示语言 (例如 en, de, fr, ja)",
+    .help_lang_available_label = "可用的语言代码：",
     .help_regex_note = "在 --open/--close/--show/--hide 中使用 /pattern/ 或 !/pattern/ 添加正则表达式规则；其他参数视为字面量。",
     .help_relative_note = "传递给 --show/--hide 的路径必须是相对路径 (不能以 '/' 开头)。",
     .help_behavior_header = "行为:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # 显示当前目录的树",
     .help_example_2 = "  dirtree -d 3                  # 设置深度为3层",
     .help_example_3 = "  dirtree --sort alpha --asc    # 按字母升序排列",
+    .help_example_close_comment = "折叠一个目录（已保存）",
+    .help_example_hide_comment = "隐藏匹配正则表达式的文件",
+    .help_example_only_comment = "聚焦一个子树，隐藏同级",
+    .help_example_localized_comment = "本地化的开关名称也可使用",
 
     // ── 关于文本 ───────────────────────────────────────────────
     .about_text = "有状态目录树 (图标/颜色/链接); --simple 用于LLM; 持久化 .dirtree-state (default/open/close/show/hide); 正则表达式通过 /pattern/ 或 !/pattern/; 字面量必须是相对路径; 环境变量: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}。",

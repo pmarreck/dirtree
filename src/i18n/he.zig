@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           הצגת תצורה אפקטיבית מחושבת",
         .help_opt_test = "  --test             הרצת בדיקות משויכות",
     .help_opt_lang = "  --lang CODE        הגדרת שפת תצוגה (למשל en, de, fr, ja)",
+    .help_lang_available_label = "קודי שפה זמינים:",
     .help_regex_note = "השתמש ב-‎/תבנית/ או !/תבנית/ עם --open/--close/--show/--hide לכללי ביטויים רגולריים; ארגומנטים אחרים מטופלים כמילוליים.",
     .help_relative_note = "נתיבים ש-‎--show/--hide מקבלים חייבים להיות יחסיים (ללא '/' מוביל).",
     .help_behavior_header = "התנהגות:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # הצגת עץ הספרייה הנוכחית",
     .help_example_2 = "  dirtree -d 3                  # הגדרת עומק ל-3 רמות",
     .help_example_3 = "  dirtree --sort alpha --asc    # מיון אלפביתי עולה",
+    .help_example_close_comment = "כיווץ ספרייה (נשמר)",
+    .help_example_hide_comment = "הסתרת קבצים התואמים לביטוי רגולרי",
+    .help_example_only_comment = "התמקדות בתת-עץ אחד, הסתרת אחאים",
+    .help_example_localized_comment = "גם שמות מתגים מתורגמים עובדים",
 
     // ── טקסט אודות ───────────────────────────────────────────
     .about_text = "עץ ספריות בעל מצב (סמלים/צבעים/קישורים); --simple למודלי שפה גדולים; שומר .dirtree-state (default/open/close/show/hide); ביטויים רגולריים דרך /תבנית/ או !/תבנית/; מילוליים חייבים להיות יחסיים; משתני סביבה: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           計算された有効な設定を表示",
         .help_opt_test = "  --test             関連テストを実行",
     .help_opt_lang = "  --lang CODE        表示言語を設定 (例: en, de, fr, ja)",
+    .help_lang_available_label = "利用可能な言語コード:",
     .help_regex_note = "--open/--close/--show/--hide で /pattern/ または !/pattern/ を使うと正規表現ルールを追加できます。それ以外の引数はリテラルとして扱われます。",
     .help_relative_note = "--show/--hide に渡すパスは相対パスでなければなりません (先頭に '/' 不可)。",
     .help_behavior_header = "動作:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # カレントディレクトリのツリーを表示",
     .help_example_2 = "  dirtree -d 3                  # 深度を3階層に設定",
     .help_example_3 = "  dirtree --sort alpha --asc    # アルファベット順で昇順ソート",
+    .help_example_close_comment = "ディレクトリを折りたたむ（保存される）",
+    .help_example_hide_comment = "正規表現に一致するファイルを隠す",
+    .help_example_only_comment = "1つのサブツリーに集中し、兄弟を隠す",
+    .help_example_localized_comment = "ローカライズされたスイッチ名も使用できます",
 
     // ── 概要テキスト ────────────────────────────────────────────
     .about_text = "状態管理ディレクトリツリー (アイコン/カラー/リンク); --simple でLLM向け出力; .dirtree-state に永続化 (default/open/close/show/hide); 正規表現は /pattern/ または !/pattern/; リテラルは相対パス必須; 環境変数: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}。",

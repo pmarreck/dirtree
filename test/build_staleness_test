@@ -60,11 +60,11 @@ check "fresh pin (2d) is silent at default threshold" "" "$out"
 
 # 3) Explicit threshold 0 silences even a very old pin.
 make_lock 365 "$tmpdir/ancient.lock"
-out=$(DIRTREE_FLAKE_STALE_DAYS=0 check_flake_staleness "$tmpdir/ancient.lock" 2>&1)
+out=$(FLAKE_LOCK_STALE_DAYS=0 check_flake_staleness "$tmpdir/ancient.lock" 2>&1)
 check "threshold 0 silences warning" "" "$out"
 
 # 4) Custom threshold respected: 30d pin under a 90d threshold is silent.
-out=$(DIRTREE_FLAKE_STALE_DAYS=90 check_flake_staleness "$tmpdir/old.lock" 2>&1)
+out=$(FLAKE_LOCK_STALE_DAYS=90 check_flake_staleness "$tmpdir/old.lock" 2>&1)
 check "custom threshold (90) suppresses 30d pin" "" "$out"
 
 # 5) Missing lock file: silent, no crash, returns 0.

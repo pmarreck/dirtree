@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Show computed effective configuration",
     .help_opt_test = "  --test             Run associated tests",
     .help_opt_lang = "  --lang CODE        Set display language (e.g. en, de, fr, ja)",
+    .help_lang_available_label = "Available language codes:",
     .help_regex_note = "Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.",
     .help_relative_note = "Paths supplied to --show/--hide must be relative (no leading '/').",
     .help_behavior_header = "Behavior:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Show tree of current directory",
     .help_example_2 = "  dirtree -d 3                  # Set depth to 3 levels",
     .help_example_3 = "  dirtree --sort alpha --asc    # Sorted alphabetically ascending",
+    .help_example_close_comment = "Collapse a directory (persisted)",
+    .help_example_hide_comment = "Hide files matching a regex",
+    .help_example_only_comment = "Focus on one subtree, hide siblings",
+    .help_example_localized_comment = "Localized switch names also work",
 
     // ── About text ─────────────────────────────────────────────
     .about_text = "Stateful directory tree (icons/colors/links); --simple for LLMs; persists .dirtree-state (default/open/close/show/hide); regex via /pattern/ or !/pattern/; literals must be relative; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

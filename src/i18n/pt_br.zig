@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Mostrar a configura\xc3\xa7\xc3\xa3o efetiva calculada",
         .help_opt_test = "  --test             Executar os testes associados",
     .help_opt_lang = "  --lang C\xc3\x93DIGO     Definir idioma de exibi\xc3\xa7\xc3\xa3o (ex. en, de, fr, ja)",
+    .help_lang_available_label = "Códigos de idioma disponíveis:",
     .help_regex_note = "Use /padr\xc3\xa3o/ ou !/padr\xc3\xa3o/ com --open/--close/--show/--hide para regras regex; outros argumentos s\xc3\xa3o tratados como literais.",
     .help_relative_note = "Caminhos fornecidos a --show/--hide devem ser relativos (sem '/' inicial).",
     .help_behavior_header = "Comportamento:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Mostrar \xc3\xa1rvore do diret\xc3\xb3rio atual",
     .help_example_2 = "  dirtree -d 3                  # Profundidade limitada a 3 n\xc3\xadveis",
     .help_example_3 = "  dirtree --sort alpha --asc    # Ordenado alfabeticamente de forma crescente",
+    .help_example_close_comment = "Recolher um diretório (persistente)",
+    .help_example_hide_comment = "Ocultar arquivos que correspondem a uma regex",
+    .help_example_only_comment = "Focar em uma subárvore, ocultar irmãos",
+    .help_example_localized_comment = "Nomes de opções localizados também funcionam",
 
     // ── Texto sobre ──────────────────────────────────────────────
     .about_text = "\xc3\x81rvore de diret\xc3\xb3rios com estado (\xc3\xadcones/cores/links); --simple para LLMs; persiste .dirtree-state (default/open/close/show/hide); regex via /padr\xc3\xa3o/ ou !/padr\xc3\xa3o/; literais devem ser relativos; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

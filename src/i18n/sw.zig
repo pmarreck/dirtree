@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Onyesha usanidi halisi uliokokotolewa",
     .help_opt_test = "  --test             Endesha majaribio yanayohusiana",
     .help_opt_lang = "  --lang CODE        Weka lugha ya kuonyesha (k.m. en, de, fr, ja)",
+    .help_lang_available_label = "Misimbo ya lugha inayopatikana:",
     .help_regex_note = "Tumia /pattern/ au !/pattern/ pamoja na --open/--close/--show/--hide kuongeza kanuni za regex; hoja nyingine huchukuliwa kama herufi halisi.",
     .help_relative_note = "Njia zinazotolewa kwa --show/--hide lazima ziwe za jamaa (bila '/' ya kuanzia).",
     .help_behavior_header = "Tabia:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Onyesha mti wa saraka ya sasa",
     .help_example_2 = "  dirtree -d 3                  # Weka kina kuwa viwango 3",
     .help_example_3 = "  dirtree --sort alpha --asc    # Imepangwa kialfabeti kupanda",
+    .help_example_close_comment = "Kunja saraka (huhifadhiwa)",
+    .help_example_hide_comment = "Ficha faili zinazolingana na regex",
+    .help_example_only_comment = "Lenga mti-mdogo mmoja, ficha ndugu",
+    .help_example_localized_comment = "Majina ya swichi yaliyotafsiriwa pia hufanya kazi",
 
     // ── Maandishi ya kuhusu ────────────────────────────────────
     .about_text = "Mti wa saraka wenye hali (ikoni/rangi/viungo); --simple kwa LLM; huhifadhi .dirtree-state (default/open/close/show/hide); regex kupitia /pattern/ au !/pattern/; herufi halisi lazima ziwe za jamaa; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

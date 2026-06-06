@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Hesablanm\xc4\xb1\xc5\x9f effektiv konfiqurasiyany g\xc3\xb6st\xc9\x99r",
         .help_opt_test = "  --test             \xc6\x8flaq\xc9\x99li testl\xc9\x99ri i\xc5\x9f\xc9\x99 sal",
     .help_opt_lang = "  --lang KOD         G\xc3\xb6st\xc9\x99ri\xc5\x9f dilini t\xc9\x99yin et (m\xc9\x99s. en, de, fr, ja)",
+    .help_lang_available_label = "Mövcud dil kodları:",
     .help_regex_note = "--open/--close/--show/--hide il\xc9\x99 /\xc5\x9fablon/ v\xc9\x99 ya !/\xc5\x9fablon/ istifad\xc9\x99 edin; dig\xc9\x99r arqumentl\xc9\x99r literal kimi i\xc5\x9fl\xc9\x99nilir.",
     .help_relative_note = "--show/--hide \xc3\xbc\xc3\xa7\xc3\xbcn veril\xc9\x99n yollar nisbi olmal\xc4\xb1d\xc4\xb1r (\xc9\x99vv\xc9\x99lind\xc9\x99 '/' olmadan).",
     .help_behavior_header = "Davran\xc4\xb1\xc5\x9f:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Cari qovlu\xc4\x9fun a\xc4\x9fac\xc4\xb1n\xc4\xb1 g\xc3\xb6st\xc9\x99r",
     .help_example_2 = "  dirtree -d 3                  # D\xc9\x99rinliyi 3 s\xc9\x99viyy\xc9\x99y\xc9\x99 t\xc9\x99yin et",
     .help_example_3 = "  dirtree --sort alpha --asc    # \xc6\x8flifba s\xc4\xb1ras\xc4\xb1 il\xc9\x99 artan s\xc4\xb1ralama",
+    .help_example_close_comment = "Kataloqu yığ (saxlanılır)",
+    .help_example_hide_comment = "Regex ilə uyğun faylları gizlət",
+    .help_example_only_comment = "Bir alt ağaca fokuslan, qardaşları gizlət",
+    .help_example_localized_comment = "Lokallaşdırılmış açar adları da işləyir",
 
     // ── Haqqında mətni ──────────────────────────────────────────
     .about_text = "V\xc9\x99ziyy\xc9\x99tli qovluq a\xc4\x9fac\xc4\xb1 (ikonlar/r\xc9\x99ngl\xc9\x99r/linkl\xc9\x99r); --simple LLM-l\xc9\x99r \xc3\xbc\xc3\xa7\xc3\xbcn; .dirtree-state saxlay\xc4\xb1r (default/open/close/show/hide); regex /\xc5\x9fablon/ v\xc9\x99 ya !/\xc5\x9fablon/ vasit\xc9\x99sil\xc9\x99; literallar nisbi olmal\xc4\xb1d\xc4\xb1r; m\xc3\xbchit: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

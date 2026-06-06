@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Poka\xc5\xbc obliczon\xc4\x85 efektywn\xc4\x85 konfiguracj\xc4\x99",
         .help_opt_test = "  --test             Uruchom powiązane testy",
     .help_opt_lang = "  --lang KOD         Ustaw język wyświetlania (np. en, de, fr, ja)",
+    .help_lang_available_label = "Dostępne kody języków:",
     .help_regex_note = "Użyj /wzorzec/ lub !/wzorzec/ z --open/--close/--show/--hide aby dodać reguły wyrażeń regularnych; pozostałe argumenty są traktowane jako literały.",
     .help_relative_note = "Ścieżki podane do --show/--hide muszą być względne (bez początkowego '/').",
     .help_behavior_header = "Zachowanie:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Pokaż drzewo bieżącego katalogu",
     .help_example_2 = "  dirtree -d 3                  # Ustaw głębokość na 3 poziomy",
     .help_example_3 = "  dirtree --sort alpha --asc    # Sortowanie alfabetyczne rosnąco",
+    .help_example_close_comment = "Zwiń katalog (zapisywane)",
+    .help_example_hide_comment = "Ukryj pliki pasujące do wyrażenia regularnego",
+    .help_example_only_comment = "Skup się na jednym poddrzewie, ukryj rodzeństwo",
+    .help_example_localized_comment = "Zlokalizowane nazwy opcji też działają",
 
     // ── Tekst «O programie» ────────────────────────────────────
     .about_text = "Stanowe drzewo katalogów (ikony/kolory/linki); --simple dla LLM; zapisuje .dirtree-state (default/open/close/show/hide); wyrażenia regularne przez /wzorzec/ lub !/wzorzec/; literały muszą być względne; zmienne środowiskowe: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

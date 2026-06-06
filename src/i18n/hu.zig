@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Sz\xc3\xa1m\xc3\xadtott \xc3\xa9rv\xc3\xa9nyes konfigur\xc3\xa1ci\xc3\xb3 megjelen\xc3\xadt\xc3\xa9se",
         .help_opt_test = "  --test             Kapcsol\xc3\xb3d\xc3\xb3 tesztek futtat\xc3\xa1sa",
     .help_opt_lang = "  --lang K\xc3\x93D         Megjelen\xc3\xadt\xc3\xa9si nyelv be\xc3\xa1ll\xc3\xadt\xc3\xa1sa (pl. en, de, fr, ja)",
+    .help_lang_available_label = "Elérhető nyelvi kódok:",
     .help_regex_note = "Haszn\xc3\xa1lja a /minta/ vagy !/minta/ form\xc3\xa1t --open/--close/--show/--hide-dal regex szab\xc3\xa1lyokhoz; egy\xc3\xa9b argumentumok liter\xc3\xa1lk\xc3\xa9nt \xc3\xa9rtelmez\xc5\x91dnek.",
     .help_relative_note = "A --show/--hide \xc3\xbatvonalaknak relat\xc3\xadvnak kell lenni\xc3\xbck (nincs bevezet\xc5\x91 '/').",
     .help_behavior_header = "Viselked\xc3\xa9s:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Az aktu\xc3\xa1lis k\xc3\xb6nyvt\xc3\xa1r f\xc3\xa1j\xc3\xa1nak megjelen\xc3\xadt\xc3\xa9se",
     .help_example_2 = "  dirtree -d 3                  # M\xc3\xa9lys\xc3\xa9g be\xc3\xa1ll\xc3\xadt\xc3\xa1sa 3 szintre",
     .help_example_3 = "  dirtree --sort alpha --asc    # \xc3\x81b\xc3\xa9c\xc3\xa9 sorrend n\xc3\xb6vekv\xc5\x91en",
+    .help_example_close_comment = "Könyvtár összecsukása (megőrzött)",
+    .help_example_hide_comment = "Regexre illeszkedő fájlok elrejtése",
+    .help_example_only_comment = "Egy részfára fókuszálás, testvérek elrejtése",
+    .help_example_localized_comment = "A lokalizált kapcsolónevek is működnek",
 
     // ── N\xc3\xa9vjegy sz\xc3\xb6veg ─────────────────────────────────────────────
     .about_text = "\xc3\x81llapottart\xc3\xb3 k\xc3\xb6nyvt\xc3\xa1rfa (ikonok/sz\xc3\xadnek/linkek); --simple LLM-ekhez; .dirtree-state-be ment (default/open/close/show/hide); regex /minta/ vagy !/minta/ \xc3\xbaton; liter\xc3\xa1loknak relat\xc3\xadvnak kell lenni\xc3\xbck; k\xc3\xb6rnyezet: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Mostra la configurazione effettiva calcolata",
         .help_opt_test = "  --test             Esegui i test associati",
     .help_opt_lang = "  --lang CODICE      Imposta la lingua di visualizzazione (es. en, de, fr, ja)",
+    .help_lang_available_label = "Codici lingua disponibili:",
     .help_regex_note = "Usa /pattern/ o !/pattern/ con --open/--close/--show/--hide per regole regex; gli altri argomenti sono trattati come letterali.",
     .help_relative_note = "I percorsi forniti a --show/--hide devono essere relativi (senza '/' iniziale).",
     .help_behavior_header = "Comportamento:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Mostra l'albero della directory corrente",
     .help_example_2 = "  dirtree -d 3                  # Profondit\xc3\xa0 limitata a 3 livelli",
     .help_example_3 = "  dirtree --sort alpha --asc    # Ordinato alfabeticamente in modo crescente",
+    .help_example_close_comment = "Comprimi una directory (persistente)",
+    .help_example_hide_comment = "Nascondi i file che corrispondono a una regex",
+    .help_example_only_comment = "Concentrati su un sottoalbero, nascondi i fratelli",
+    .help_example_localized_comment = "Anche i nomi delle opzioni localizzati funzionano",
 
     // ── Testo informazioni ──────────────────────────────────────
     .about_text = "Albero di directory con stato (icone/colori/collegamenti); --simple per i LLM; persiste .dirtree-state (default/open/close/show/hide); regex tramite /pattern/ o !/pattern/; i letterali devono essere relativi; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

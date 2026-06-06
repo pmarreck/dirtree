@@ -32,6 +32,8 @@ pub const Strings = struct {
     help_opt_config: [:0]const u8,
     help_opt_test: [:0]const u8,
     help_opt_lang: [:0]const u8,
+    /// Label preceding the list of available language codes in --help (item 5).
+    help_lang_available_label: [:0]const u8,
     help_regex_note: [:0]const u8,
     help_relative_note: [:0]const u8,
     help_behavior_header: [:0]const u8,
@@ -40,6 +42,11 @@ pub const Strings = struct {
     help_example_1: [:0]const u8,
     help_example_2: [:0]const u8,
     help_example_3: [:0]const u8,
+    /// Item 2: extra example comment lines (commands are built in printHelp).
+    help_example_close_comment: [:0]const u8,
+    help_example_hide_comment: [:0]const u8,
+    help_example_only_comment: [:0]const u8,
+    help_example_localized_comment: [:0]const u8,
 
     // ── About text ─────────────────────────────────────────────
     about_text: [:0]const u8,

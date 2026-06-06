@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Afficher la configuration effective calcul\xc3\xa9e",
         .help_opt_test = "  --test             Lancer les tests associ\xc3\xa9s",
     .help_opt_lang = "  --lang CODE        D\xc3\xa9finir la langue d'affichage (ex. en, de, fr, ja)",
+    .help_lang_available_label = "Codes de langue disponibles :",
     .help_regex_note = "Utilisez /motif/ ou !/motif/ avec --open/--close/--show/--hide pour des r\xc3\xa8gles regex ; les autres arguments sont des litt\xc3\xa9raux.",
     .help_relative_note = "Les chemins fournis \xc3\xa0 --show/--hide doivent \xc3\xaatre relatifs (pas de '/' initial).",
     .help_behavior_header = "Comportement :",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Afficher l'arborescence du r\xc3\xa9pertoire courant",
     .help_example_2 = "  dirtree -d 3                  # Profondeur limit\xc3\xa9e \xc3\xa0 3 niveaux",
     .help_example_3 = "  dirtree --sort alpha --asc    # Tri alphab\xc3\xa9tique croissant",
+    .help_example_close_comment = "Replier un répertoire (persistant)",
+    .help_example_hide_comment = "Masquer les fichiers correspondant à une regex",
+    .help_example_only_comment = "Se concentrer sur un sous-arbre, masquer les frères",
+    .help_example_localized_comment = "Les noms d'options localisés fonctionnent aussi",
 
     // ── Texte \xc3\xa0 propos ──────────────────────────────────────────
     .about_text = "Arborescence de r\xc3\xa9pertoires \xc3\xa0 \xc3\xa9tat (ic\xc3\xb4nes/couleurs/liens) ; --simple pour les LLMs ; persiste .dirtree-state (default/open/close/show/hide) ; regex via /motif/ ou !/motif/ ; les litt\xc3\xa9raux doivent \xc3\xaatre relatifs ; env : DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

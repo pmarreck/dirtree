@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           عرض التكوين الفعال المحسوب",
         .help_opt_test = "  --test             تشغيل الاختبارات المرتبطة",
     .help_opt_lang = "  --lang CODE        تعيين لغة العرض (مثلاً en، de، fr، ja)",
+    .help_lang_available_label = "رموز اللغات المتاحة:",
     .help_regex_note = "استخدم /نمط/ أو !/نمط/ مع --open/--close/--show/--hide لقواعد التعبيرات النمطية؛ المعاملات الأخرى تُعامل كنصوص حرفية.",
     .help_relative_note = "المسارات المقدّمة لـ --show/--hide يجب أن تكون نسبية (بدون '/' في البداية).",
     .help_behavior_header = "السلوك:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # عرض شجرة المجلد الحالي",
     .help_example_2 = "  dirtree -d 3                  # تعيين العمق إلى 3 مستويات",
     .help_example_3 = "  dirtree --sort alpha --asc    # ترتيب أبجدي تصاعدي",
+    .help_example_close_comment = "طيّ دليل (محفوظ)",
+    .help_example_hide_comment = "إخفاء الملفات المطابقة لتعبير نمطي",
+    .help_example_only_comment = "التركيز على شجرة فرعية وإخفاء الأشقاء",
+    .help_example_localized_comment = "أسماء الخيارات المترجمة تعمل أيضًا",
 
     // ── نص حول البرنامج ──────────────────────────────────────
     .about_text = "شجرة مجلدات ذات حالة (رموز/ألوان/روابط)؛ --simple لنماذج اللغة الكبيرة؛ يحفظ .dirtree-state (default/open/close/show/hide)؛ تعبيرات نمطية عبر /نمط/ أو !/نمط/؛ النصوص الحرفية يجب أن تكون نسبية؛ متغيرات البيئة: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

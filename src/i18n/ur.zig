@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           حساب کی گئی مؤثر کنفیگریشن دکھائیں",
     .help_opt_test = "  --test             متعلقہ ٹیسٹ چلائیں",
     .help_opt_lang = "  --lang CODE        ڈسپلے کی زبان مقرر کریں (مثلاً en, de, fr, ja)",
+    .help_lang_available_label = "دستیاب زبان کوڈز:",
     .help_regex_note = "ریجیکس قواعد شامل کرنے کے لیے --open/--close/--show/--hide کے ساتھ /pattern/ یا !/pattern/ استعمال کریں؛ دیگر دلائل کو لفظی سمجھا جاتا ہے۔",
     .help_relative_note = "--show/--hide کو دیے گئے راستے متعلقہ ہونے چاہئیں (ابتدا میں '/' نہ ہو)۔",
     .help_behavior_header = "رویہ:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # موجودہ ڈائریکٹری کا ٹری دکھائیں",
     .help_example_2 = "  dirtree -d 3                  # گہرائی 3 سطحوں پر مقرر کریں",
     .help_example_3 = "  dirtree --sort alpha --asc    # حروف تہجی کے لحاظ سے صعودی ترتیب",
+    .help_example_close_comment = "ایک ڈائریکٹری سمیٹیں (محفوظ)",
+    .help_example_hide_comment = "ریگیکس سے مماثل فائلیں چھپائیں",
+    .help_example_only_comment = "ایک ذیلی شجر پر توجہ دیں، ہم پلہ چھپائیں",
+    .help_example_localized_comment = "مقامی سوئچ نام بھی کام کرتے ہیں",
 
     // ── About text ─────────────────────────────────────────────
     .about_text = "حالت رکھنے والا ڈائریکٹری ٹری (آئیکنز/رنگ/لنکس)؛ LLMs کے لیے --simple؛ .dirtree-state محفوظ کرتا ہے (default/open/close/show/hide)؛ ریجیکس /pattern/ یا !/pattern/ کے ذریعے؛ لفظی راستے متعلقہ ہونے چاہئیں؛ env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}۔",

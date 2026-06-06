@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           계산된 유효 구성 표시",
         .help_opt_test = "  --test             관련 테스트 실행",
     .help_opt_lang = "  --lang CODE        표시 언어 설정 (예: en, de, fr, ja)",
+    .help_lang_available_label = "사용 가능한 언어 코드:",
     .help_regex_note = "--open/--close/--show/--hide와 함께 /pattern/ 또는 !/pattern/을 사용하여 정규식 규칙을 추가할 수 있습니다. 그 외의 인수는 리터럴로 처리됩니다.",
     .help_relative_note = "--show/--hide에 전달하는 경로는 상대 경로여야 합니다 (선행 '/' 불가).",
     .help_behavior_header = "동작:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # 현재 디렉토리의 트리 표시",
     .help_example_2 = "  dirtree -d 3                  # 깊이를 3단계로 설정",
     .help_example_3 = "  dirtree --sort alpha --asc    # 알파벳 오름차순 정렬",
+    .help_example_close_comment = "디렉터리 접기 (저장됨)",
+    .help_example_hide_comment = "정규식과 일치하는 파일 숨기기",
+    .help_example_only_comment = "하나의 하위 트리에 집중하고 형제 숨기기",
+    .help_example_localized_comment = "현지화된 옵션 이름도 작동합니다",
 
     // ── 소개 텍스트 ────────────────────────────────────────────
     .about_text = "상태 기반 디렉토리 트리 (아이콘/색상/링크); --simple로 LLM 친화적 출력; .dirtree-state에 영구 저장 (default/open/close/show/hide); 정규식은 /pattern/ 또는 !/pattern/; 리터럴은 상대 경로 필수; 환경변수: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           แสดงการกำหนดค่าที่มีผลซึ่งคำนวณแล้ว",
     .help_opt_test = "  --test             รันการทดสอบที่เกี่ยวข้อง",
     .help_opt_lang = "  --lang CODE        ตั้งค่าภาษาที่แสดง (เช่น en, de, fr, ja)",
+    .help_lang_available_label = "รหัสภาษาที่ใช้ได้:",
     .help_regex_note = "ใช้ /pattern/ หรือ !/pattern/ ร่วมกับ --open/--close/--show/--hide เพื่อเพิ่มกฎ regex; อาร์กิวเมนต์อื่นจะถูกถือเป็นข้อความตามตัวอักษร",
     .help_relative_note = "พาธที่ให้กับ --show/--hide ต้องเป็นพาธสัมพัทธ์ (ห้ามนำหน้าด้วย '/')",
     .help_behavior_header = "พฤติกรรม:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # แสดงต้นไม้ของไดเรกทอรีปัจจุบัน",
     .help_example_2 = "  dirtree -d 3                  # ตั้งความลึกเป็น 3 ระดับ",
     .help_example_3 = "  dirtree --sort alpha --asc    # เรียงตามตัวอักษรจากน้อยไปมาก",
+    .help_example_close_comment = "ยุบไดเรกทอรี (บันทึกไว้)",
+    .help_example_hide_comment = "ซ่อนไฟล์ที่ตรงกับ regex",
+    .help_example_only_comment = "โฟกัสที่ซับทรีเดียว ซ่อนพี่น้อง",
+    .help_example_localized_comment = "ชื่อสวิตช์ที่แปลแล้วก็ใช้งานได้เช่นกัน",
 
     // ── ข้อความเกี่ยวกับ ────────────────────────────────────────
     .about_text = "ต้นไม้ไดเรกทอรีแบบมีสถานะ (ไอคอน/สี/ลิงก์); --simple สำหรับ LLM; บันทึก .dirtree-state (default/open/close/show/hide); regex ผ่าน /pattern/ หรือ !/pattern/; ข้อความตามตัวอักษรต้องเป็นพาธสัมพัทธ์; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

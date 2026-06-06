@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           نمایش پیکربندی مؤثر محاسبه‌شده",
         .help_opt_test = "  --test             اجرای آزمون‌های مرتبط",
     .help_opt_lang = "  --lang CODE        تنظیم زبان نمایش (مثلاً en، de، fr، ja)",
+    .help_lang_available_label = "کدهای زبان موجود:",
     .help_regex_note = "از /الگو/ یا !/الگو/ با --open/--close/--show/--hide برای قواعد عبارات باقاعده استفاده کنید؛ سایر آرگومان‌ها به عنوان متن حرفی تلقی می‌شوند.",
     .help_relative_note = "مسیرهای ارائه‌شده به --show/--hide باید نسبی باشند (بدون '/' ابتدایی).",
     .help_behavior_header = "رفتار:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # نمایش درخت پوشه فعلی",
     .help_example_2 = "  dirtree -d 3                  # تنظیم عمق به 3 سطح",
     .help_example_3 = "  dirtree --sort alpha --asc    # مرتب‌سازی الفبایی صعودی",
+    .help_example_close_comment = "جمع‌کردن یک پوشه (ذخیره می‌شود)",
+    .help_example_hide_comment = "پنهان‌کردن فایل‌های منطبق با یک عبارت باقاعده",
+    .help_example_only_comment = "تمرکز روی یک زیردرخت، پنهان‌کردن هم‌ترازها",
+    .help_example_localized_comment = "نام‌های گزینهٔ بومی‌سازی‌شده نیز کار می‌کنند",
 
     // ── متن درباره ───────────────────────────────────────────
     .about_text = "درخت پوشه دارای وضعیت (نمادها/رنگ‌ها/پیوندها)؛ --simple برای مدل‌های زبانی بزرگ؛ ذخیره .dirtree-state (default/open/close/show/hide)؛ عبارات باقاعده از طریق /الگو/ یا !/الگو/؛ متن‌های حرفی باید نسبی باشند؛ متغیرهای محیطی: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

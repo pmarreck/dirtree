@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           গণনাকৃত কার্যকর কনফিগারেশন দেখান",
     .help_opt_test = "  --test             সংশ্লিষ্ট টেস্ট চালান",
     .help_opt_lang = "  --lang CODE        প্রদর্শন ভাষা নির্ধারণ করুন (যেমন en, de, fr, ja)",
+    .help_lang_available_label = "উপলব্ধ ভাষা কোড:",
     .help_regex_note = "রেজেক্স নিয়ম যোগ করতে --open/--close/--show/--hide-এর সাথে /pattern/ বা !/pattern/ ব্যবহার করুন; অন্যান্য আর্গুমেন্ট আক্ষরিক হিসেবে গণ্য হয়।",
     .help_relative_note = "--show/--hide-এ সরবরাহকৃত পাথ অবশ্যই আপেক্ষিক হতে হবে (অগ্রবর্তী '/' ছাড়া)।",
     .help_behavior_header = "আচরণ:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # বর্তমান ডিরেক্টরির ট্রি দেখান",
     .help_example_2 = "  dirtree -d 3                  # গভীরতা 3 স্তরে নির্ধারণ করুন",
     .help_example_3 = "  dirtree --sort alpha --asc    # বর্ণানুক্রমে ঊর্ধ্বক্রমে সাজানো",
+    .help_example_close_comment = "একটি ডিরেক্টরি সংকুচিত করুন (সংরক্ষিত)",
+    .help_example_hide_comment = "রেগেক্স মেলে এমন ফাইল লুকান",
+    .help_example_only_comment = "একটি সাবট্রিতে ফোকাস করুন, সহোদর লুকান",
+    .help_example_localized_comment = "স্থানীয়কৃত সুইচ নামও কাজ করে",
 
     // ── About text ─────────────────────────────────────────────
     .about_text = "অবস্থা-সংরক্ষণকারী ডিরেক্টরি ট্রি (আইকন/রঙ/লিংক); LLM-এর জন্য --simple; .dirtree-state সংরক্ষণ করে (default/open/close/show/hide); /pattern/ বা !/pattern/ দিয়ে রেজেক্স; আক্ষরিক অবশ্যই আপেক্ষিক হতে হবে; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}।",

@@ -182,6 +182,27 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 	// Skip program name
 	const args = if (raw_args.len > 0) raw_args[1..] else raw_args;
 
+	// Validate --lang up front so an invalid code is a hard error even when
+	// --help (or any other short-circuiting flag) is also present. The main
+	// option loop below would otherwise return .help before ever reaching the
+	// --lang token, silently showing untranslated English help.
+	{
+		var li: usize = 0;
+		while (li < args.len) : (li += 1) {
+			if (std.mem.eql(u8, args[li], "--lang") or i18n.isFlag(args[li], .lang)) {
+				const bad: []const u8 = if (li + 1 < args.len) args[li + 1] else "";
+				if (li + 1 >= args.len or i18n.parseLocaleCode(bad) == null) {
+					config.deinit(allocator);
+					var err_buf: [256]u8 = undefined;
+					const msg = i18n.fmtRuntime(&err_buf, s.err_unknown_lang, &.{ bad, i18n.available_codes });
+					@memcpy(lang_err_buf[0..msg.len], msg);
+					return .{ .err = lang_err_buf[0..msg.len] };
+				}
+				break;
+			}
+		}
+	}
+
 	// Subcommand: annotate / note (and localized variants).
 	// Must appear as the first positional argument. Flags before it
 	// (other than --lang) are not supported in v1.
@@ -930,6 +951,195 @@ fn isTruthyEnv(val: []const u8) bool {
 		std.mem.eql(u8, val, "ON");
 }
 
+/// One help option/subcommand row for the rendered Options table.
+const HelpRow = struct {
+	flag: []const u8, // canonical English flag column (language-independent)
+	text: []const u8, // localized full help line (description source)
+	args: []const i18n.CliArg, // CliArg(s) whose localized aliases to show
+	subcmd: bool = false, // leading token is a subcommand word (e.g. "annotate")
+};
+
+/// True if a token is part of the flag spec rather than the description:
+/// a '-'-prefixed flag, or an all-ASCII placeholder with no lowercase letter
+/// (N, PATH, DIR..., [DIR], MODE, X, CODE, DESC, and localized forms like
+/// VERZ.. / PFAD...). The description's first token always has a lowercase
+/// ASCII letter or a non-ASCII byte, so this cleanly finds the boundary.
+fn isFlagOrPlaceholder(tok: []const u8) bool {
+	if (tok.len == 0) return false;
+	if (tok[0] == '-') return true;
+	for (tok) |c| {
+		if (c >= 128) return false; // non-ASCII => description (CJK, Arabic, ...)
+		if (c >= 'a' and c <= 'z') return false; // lowercase => description word
+	}
+	return true;
+}
+
+/// Extract the localized description from a full help line, skipping the
+/// indent, an optional leading subcommand word, the flag tokens, and any
+/// placeholder tokens.
+fn helpDesc(line: []const u8, subcmd: bool) []const u8 {
+	var i: usize = 0;
+	while (i < line.len and line[i] == ' ') i += 1;
+	if (subcmd) {
+		while (i < line.len and line[i] != ' ') i += 1; // skip subcommand word
+		while (i < line.len and line[i] == ' ') i += 1;
+	}
+	while (i < line.len) {
+		var j = i;
+		while (j < line.len and line[j] != ' ') j += 1;
+		if (!isFlagOrPlaceholder(line[i..j])) break;
+		i = j;
+		while (i < line.len and line[i] == ' ') i += 1;
+	}
+	return line[i..];
+}
+
+/// Join the localized CLI aliases for the given args into `buf`, comma-separated.
+/// Returns an empty slice for the English locale (its aliases are the canonical
+/// names, already shown in the flag column).
+fn joinLocalizedAliases(args: []const i18n.CliArg, buf: []u8) []const u8 {
+	if (i18n.getLocale() == .en) return "";
+	var n: usize = 0;
+	for (i18n.localeCliAliases(i18n.getLocale())) |entry| {
+		for (args) |a| {
+			if (entry.arg != a) continue;
+			if (n + 2 + entry.name.len > buf.len) break;
+			if (n > 0) {
+				buf[n] = ',';
+				buf[n + 1] = ' ';
+				n += 2;
+			}
+			@memcpy(buf[n .. n + entry.name.len], entry.name);
+			n += entry.name.len;
+		}
+	}
+	return buf[0..n];
+}
+
+fn writeSpaces(writer: anytype, n: usize) !void {
+	var k: usize = 0;
+	while (k < n) : (k += 1) try writer.writeAll(" ");
+}
+
+/// Pad after writing a column value of width `used` to fill a field of `field`
+/// columns, always leaving at least one separating space on overflow.
+fn writeColumnPad(writer: anytype, used: usize, field: usize) !void {
+	try writeSpaces(writer, if (field > used) field - used else 1);
+}
+
+/// Write one example line: "  <cmd>" padded so the comment '#' aligns near col 32.
+fn writeExample(writer: anytype, cmd: []const u8, comment: []const u8) !void {
+	try writer.writeAll("  ");
+	try writer.writeAll(cmd);
+	try writeColumnPad(writer, cmd.len, 30);
+	try writer.writeAll("# ");
+	try writer.writeAll(comment);
+	try writer.writeAll("\n");
+}
+
+/// Write the Options section. English keeps its hand-tuned two-column layout;
+/// other locales gain a middle column of localized aliases between the English
+/// flag name and the localized description. All locales list the available
+/// language codes beneath the --lang entry.
+fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
+	const rows = [_]HelpRow{
+		.{ .flag = "-h, --help", .text = s.help_opt_help, .args = &[_]i18n.CliArg{.help} },
+		.{ .flag = "-a, --about", .text = s.help_opt_about, .args = &[_]i18n.CliArg{.about} },
+		.{ .flag = "-d, --depth N", .text = s.help_opt_depth, .args = &[_]i18n.CliArg{.depth} },
+		.{ .flag = "-td, --temp-depth N", .text = s.help_opt_temp_depth, .args = &[_]i18n.CliArg{.temp_depth} },
+		.{ .flag = "-p, --path PATH", .text = s.help_opt_path, .args = &[_]i18n.CliArg{.path} },
+		.{ .flag = "--simple", .text = s.help_opt_simple, .args = &[_]i18n.CliArg{.simple} },
+		.{ .flag = "--decorated", .text = s.help_opt_decorated, .args = &[_]i18n.CliArg{.decorated} },
+		.{ .flag = "--no-icons", .text = s.help_opt_no_icons, .args = &[_]i18n.CliArg{.no_icons} },
+		.{ .flag = "--no-color", .text = s.help_opt_no_color, .args = &[_]i18n.CliArg{.no_color} },
+		.{ .flag = "--no-orphan-warning", .text = s.help_opt_no_orphan_warning, .args = &[_]i18n.CliArg{.no_orphan_warning} },
+		.{ .flag = "--no-notes/--show-notes", .text = s.help_opt_notes, .args = &[_]i18n.CliArg{ .no_notes, .show_notes } },
+		.{ .flag = "--notes MODE", .text = s.help_opt_notes_mode, .args = &[_]i18n.CliArg{.notes} },
+		.{ .flag = "--notes-leader", .text = s.help_opt_notes_leader, .args = &[_]i18n.CliArg{.note_leader} },
+		.{ .flag = "--no-hyperlinks", .text = s.help_opt_no_hyperlinks, .args = &[_]i18n.CliArg{.no_hyperlinks} },
+		.{ .flag = "--default X", .text = s.help_opt_default, .args = &[_]i18n.CliArg{.default} },
+		.{ .flag = "-o, --open DIR...", .text = s.help_opt_open, .args = &[_]i18n.CliArg{.open} },
+		.{ .flag = "-c, --close DIR...", .text = s.help_opt_close, .args = &[_]i18n.CliArg{.close} },
+		.{ .flag = "--show PATH...", .text = s.help_opt_show, .args = &[_]i18n.CliArg{.show} },
+		.{ .flag = "--hide PATH...", .text = s.help_opt_hide, .args = &[_]i18n.CliArg{.hide} },
+		.{ .flag = "--sort MODE", .text = s.help_opt_sort, .args = &[_]i18n.CliArg{.sort} },
+		.{ .flag = "--asc", .text = s.help_opt_asc, .args = &[_]i18n.CliArg{.asc} },
+		.{ .flag = "--desc", .text = s.help_opt_desc, .args = &[_]i18n.CliArg{.desc} },
+		.{ .flag = "--show-hidden", .text = s.help_opt_show_hidden, .args = &[_]i18n.CliArg{.show_hidden} },
+		.{ .flag = "--rewrite-settings", .text = s.help_opt_rewrite_settings, .args = &[_]i18n.CliArg{.rewrite_settings} },
+		.{ .flag = "--config", .text = s.help_opt_config, .args = &[_]i18n.CliArg{.config} },
+		.{ .flag = "--test", .text = s.help_opt_test, .args = &[_]i18n.CliArg{.@"test"} },
+		.{ .flag = "--lang CODE", .text = s.help_opt_lang, .args = &[_]i18n.CliArg{.lang} },
+		.{ .flag = "--max-lines N", .text = s.help_opt_max_lines, .args = &[_]i18n.CliArg{.max_lines} },
+		.{ .flag = "--override-warning", .text = s.help_opt_override_warning, .args = &[_]i18n.CliArg{.override_warning} },
+		.{ .flag = "--head N", .text = s.help_opt_head, .args = &[_]i18n.CliArg{.head} },
+		.{ .flag = "--tail N", .text = s.help_opt_tail, .args = &[_]i18n.CliArg{.tail} },
+		.{ .flag = "--only PATH", .text = s.help_opt_only, .args = &[_]i18n.CliArg{.only} },
+		.{ .flag = "annotate PATH DESC", .text = s.help_opt_annotate, .args = &[_]i18n.CliArg{.annotate}, .subcmd = true },
+		.{ .flag = "orphaned-notes [DIR]", .text = s.help_opt_orphaned_notes, .args = &[_]i18n.CliArg{.orphaned_notes}, .subcmd = true },
+		.{ .flag = "purge-orphaned-notes [DIR]", .text = s.help_opt_purge_orphaned_notes, .args = &[_]i18n.CliArg{.purge_orphaned_notes}, .subcmd = true },
+		.{ .flag = "--version", .text = s.help_opt_version, .args = &[_]i18n.CliArg{.version} },
+		.{ .flag = "--version-check", .text = s.help_opt_version_check, .args = &[_]i18n.CliArg{.version_check} },
+	};
+
+	const is_lang = struct {
+		fn f(row: HelpRow) bool {
+			return row.args.len == 1 and row.args[0] == .lang;
+		}
+	}.f;
+
+	if (i18n.getLocale() == .en) {
+		// Preserve the hand-tuned English layout verbatim.
+		for (rows) |row| {
+			try writer.writeAll(row.text);
+			try writer.writeAll("\n");
+			if (is_lang(row)) {
+				try writeSpaces(writer, 21); // align under the description column
+				try writer.writeAll(s.help_lang_available_label);
+				try writer.writeAll(" ");
+				try writer.writeAll(i18n.available_codes);
+				try writer.writeAll("\n");
+			}
+		}
+		try writer.writeAll("\n");
+		return;
+	}
+
+	// Non-English: render three columns (English flag | localized aliases | desc).
+	var alias_store: [rows.len][192]u8 = undefined;
+	var alias: [rows.len][]const u8 = undefined;
+	var w_flag: usize = 0;
+	var w_alias: usize = 0;
+	for (rows, 0..) |row, idx| {
+		alias[idx] = joinLocalizedAliases(row.args, &alias_store[idx]);
+		if (row.flag.len > w_flag) w_flag = row.flag.len;
+		if (alias[idx].len > w_alias) w_alias = alias[idx].len;
+	}
+	const col_flag = w_flag + 2;
+	const col_alias: usize = if (w_alias > 0) w_alias + 2 else 0;
+
+	for (rows, 0..) |row, idx| {
+		try writer.writeAll("  ");
+		try writer.writeAll(row.flag);
+		try writeColumnPad(writer, row.flag.len, col_flag);
+		if (col_alias > 0) {
+			try writer.writeAll(alias[idx]);
+			try writeColumnPad(writer, alias[idx].len, col_alias);
+		}
+		try writer.writeAll(helpDesc(row.text, row.subcmd));
+		try writer.writeAll("\n");
+		if (is_lang(row)) {
+			try writeSpaces(writer, 2 + col_flag + col_alias);
+			try writer.writeAll(s.help_lang_available_label);
+			try writer.writeAll(" ");
+			try writer.writeAll(i18n.available_codes);
+			try writer.writeAll("\n");
+		}
+	}
+	try writer.writeAll("\n");
+}
+
+
 pub fn printHelp(writer: anytype) !void {
 	const s = i18n.tr();
 	try writer.writeAll(s.help_title);
@@ -938,80 +1148,7 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll("\n\n");
 	try writer.writeAll(s.help_options_header);
 	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_help);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_about);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_depth);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_temp_depth);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_path);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_simple);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_decorated);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_no_icons);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_no_color);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_no_orphan_warning);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_notes);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_notes_mode);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_notes_leader);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_no_hyperlinks);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_default);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_open);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_close);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_show);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_hide);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_sort);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_asc);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_desc);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_show_hidden);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_rewrite_settings);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_config);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_test);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_lang);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_max_lines);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_override_warning);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_head);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_tail);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_only);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_annotate);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_orphaned_notes);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_purge_orphaned_notes);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_version);
-	try writer.writeAll("\n");
-	try writer.writeAll(s.help_opt_version_check);
-	try writer.writeAll("\n\n");
+	try writeOptions(writer, s);
 	try writer.writeAll(s.help_regex_note);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_relative_note);
@@ -1028,6 +1165,17 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_example_3);
 	try writer.writeAll("\n");
+	// Item 2: additional examples (commands fixed; comments localized).
+	try writeExample(writer, "dirtree --close vendor", s.help_example_close_comment);
+	try writeExample(writer, "dirtree --hide '/\\.log$/'", s.help_example_hide_comment);
+	try writeExample(writer, "dirtree --only src", s.help_example_only_comment);
+	{
+		const dep = i18n.localizedFlagName(.depth);
+		const showcase = if (std.mem.eql(u8, dep, "--depth")) "--tiefe" else dep;
+		var cmd_buf: [96]u8 = undefined;
+		const cmd = std.fmt.bufPrint(&cmd_buf, "dirtree {s} 2", .{showcase}) catch "dirtree --tiefe 2";
+		try writeExample(writer, cmd, s.help_example_localized_comment);
+	}
 }
 
 pub fn main(init: std.process.Init) !u8 {

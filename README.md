@@ -123,7 +123,7 @@ nix build
 ./result/bin/dirtree
 ```
 
-`./build` prints a one-line warning (never blocks) if the `nixpkgs` pinned in `flake.lock` is more than 7 days old, with a suggested `nix flake update`. Tune the threshold with `DIRTREE_FLAKE_STALE_DAYS=N`, or set it to `0` to silence the check.
+`./build` prints a one-line warning (never blocks) if the `nixpkgs` pinned in `flake.lock` is more than 7 days old, with a suggested `nix flake update`. Tune the threshold with `FLAKE_LOCK_STALE_DAYS=N`, or set it to `0` to silence the check.
 
 State lives in `.dirtree-state` at the root of whatever directory you run `dirtree` inside. Commit or share those files if you want collaborators (or your future self) to inherit the same view. `dirtree` never creates or edits a state file unless you explicitly ask it to persist changes (e.g., via `--default`, `--open`, `--hide`, etc.), so you can safely inspect trees without committing to a config.
 
@@ -144,7 +144,7 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 
 ### Localization
 
-dirtree ships fully localized across **30 locales** (`ar az bn de el en es fa fr he hi hu it ja km ko pa pl ps pt_br ro ru sw ta th tr uk ur vi zh_hans` — including Bengali, Hindi, Punjabi, Pashto, Swahili, Tamil, Thai, and Urdu). Pick one with `--lang CODE` (or it auto-detects from `LC_MESSAGES`/`LANG`). Flag names are localized too and all aliases work in any locale — e.g. German `--tiefe`/`--nur`/`--verbergen` alongside the canonical `--depth`/`--only`/`--hide`.
+dirtree ships fully localized across **30 locales** (`ar az bn de el en es fa fr he hi hu it ja km ko pa pl ps pt_br ro ru sw ta th tr uk ur vi zh_hans` — including Bengali, Hindi, Punjabi, Pashto, Swahili, Tamil, Thai, and Urdu). Pick one with `--lang CODE` (case-insensitive — `DE`, `de`, and `PT_BR` all work; an unknown code is a hard error, even alongside `--help`). It also auto-detects from `LC_MESSAGES`/`LANG`. Flag names are localized too and all aliases work in any locale — e.g. German `--tiefe`/`--nur`/`--verbergen` alongside the canonical `--depth`/`--only`/`--hide`. In a non-English locale, `--help` renders a middle column showing each option's localized aliases, and lists every available language code under the `--lang` entry.
 
 Two guarantees worth calling out:
 

@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Показать вычисленную эффективную конфигурацию",
         .help_opt_test = "  --test             Запустить связанные тесты",
     .help_opt_lang = "  --lang КОД         Установить язык отображения (напр. en, de, fr, ja)",
+    .help_lang_available_label = "Доступные коды языков:",
     .help_regex_note = "Используйте /шаблон/ или !/шаблон/ с --open/--close/--show/--hide для правил регулярных выражений; остальные аргументы обрабатываются как литералы.",
     .help_relative_note = "Пути для --show/--hide должны быть относительными (без ведущего '/').",
     .help_behavior_header = "Поведение:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Показать дерево текущего каталога",
     .help_example_2 = "  dirtree -d 3                  # Установить глубину 3 уровня",
     .help_example_3 = "  dirtree --sort alpha --asc    # Сортировка по алфавиту по возрастанию",
+    .help_example_close_comment = "Свернуть каталог (сохраняется)",
+    .help_example_hide_comment = "Скрыть файлы по регулярному выражению",
+    .help_example_only_comment = "Сфокусироваться на поддереве, скрыть соседей",
+    .help_example_localized_comment = "Локализованные имена опций тоже работают",
 
     // ── Текст «О программе» ────────────────────────────────────
     .about_text = "Дерево каталогов с состоянием (иконки/цвета/ссылки); --simple для LLM; сохраняет .dirtree-state (default/open/close/show/hide); регулярные выражения через /шаблон/ или !/шаблон/; литералы должны быть относительными; переменные окружения: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

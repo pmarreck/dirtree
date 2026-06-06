@@ -163,7 +163,7 @@ pub fn tr() *const Strings {
 
 /// Get the Strings for a specific locale.
 /// The CLI alias array for a locale (mirrors stringsFor).
-fn localeCliAliases(loc: Locale) []const CliAliasEntry {
+pub fn localeCliAliases(loc: Locale) []const CliAliasEntry {
     return switch (loc) {
         .ar => ar.aliases.cli,
         .az => az.aliases.cli,
@@ -258,7 +258,8 @@ pub fn parseLocaleCode(code_str: []const u8) ?Locale {
     inline for (all_locales) |loc| {
         const loc_code = comptime loc.code();
         if (loc_code.len == 2) {
-            if (std.mem.eql(u8, prefix, loc_code)) return loc;
+            // Case-insensitive so an uppercased --lang code (e.g. "DE") works.
+            if (std.ascii.eqlIgnoreCase(prefix, loc_code)) return loc;
         }
     }
 

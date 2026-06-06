@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           गणना की गई प्रभावी कॉन्फ़िगरेशन दिखाएँ",
     .help_opt_test = "  --test             संबद्ध परीक्षण चलाएँ",
     .help_opt_lang = "  --lang CODE        प्रदर्शन भाषा निर्धारित करें (जैसे en, de, fr, ja)",
+    .help_lang_available_label = "उपलब्ध भाषा कोड:",
     .help_regex_note = "regex नियम जोड़ने हेतु --open/--close/--show/--hide के साथ /pattern/ या !/pattern/ का उपयोग करें; अन्य तर्कों को अक्षरशः माना जाता है।",
     .help_relative_note = "--show/--hide को दिए गए पथ सापेक्ष होने चाहिए (कोई अग्रणी '/' नहीं)।",
     .help_behavior_header = "व्यवहार:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # वर्तमान निर्देशिका का वृक्ष दिखाएँ",
     .help_example_2 = "  dirtree -d 3                  # गहराई 3 स्तरों पर निर्धारित करें",
     .help_example_3 = "  dirtree --sort alpha --asc    # वर्णानुक्रम में आरोही क्रमबद्ध",
+    .help_example_close_comment = "एक डायरेक्टरी संक्षिप्त करें (सहेजा गया)",
+    .help_example_hide_comment = "रेगेक्स से मेल खाने वाली फ़ाइलें छिपाएँ",
+    .help_example_only_comment = "एक सबट्री पर ध्यान दें, सहोदर छिपाएँ",
+    .help_example_localized_comment = "स्थानीयकृत स्विच नाम भी काम करते हैं",
 
     // ── परिचय पाठ ─────────────────────────────────────────────
     .about_text = "स्थिति-संरक्षी निर्देशिका वृक्ष (आइकन/रंग/लिंक); LLM हेतु --simple; .dirtree-state सहेजता है (default/open/close/show/hide); /pattern/ या !/pattern/ के माध्यम से regex; अक्षरशः मान सापेक्ष होने चाहिए; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}।",

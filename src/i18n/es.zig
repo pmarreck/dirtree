@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Mostrar la configuraci\xc3\xb3n efectiva calculada",
         .help_opt_test = "  --test             Ejecutar las pruebas asociadas",
     .help_opt_lang = "  --lang C\xc3\x93DIGO     Establecer idioma de visualizaci\xc3\xb3n (ej. en, de, fr, ja)",
+    .help_lang_available_label = "Códigos de idioma disponibles:",
     .help_regex_note = "Use /patr\xc3\xb3n/ o !/patr\xc3\xb3n/ con --open/--close/--show/--hide para reglas regex; otros argumentos se tratan como literales.",
     .help_relative_note = "Las rutas para --show/--hide deben ser relativas (sin '/' inicial).",
     .help_behavior_header = "Comportamiento:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Mostrar \xc3\xa1rbol del directorio actual",
     .help_example_2 = "  dirtree -d 3                  # Profundidad limitada a 3 niveles",
     .help_example_3 = "  dirtree --sort alpha --asc    # Ordenado alfab\xc3\xa9ticamente ascendente",
+    .help_example_close_comment = "Colapsar un directorio (persistente)",
+    .help_example_hide_comment = "Ocultar archivos que coincidan con una regex",
+    .help_example_only_comment = "Enfocar un subárbol, ocultar hermanos",
+    .help_example_localized_comment = "Los nombres de opciones localizados también funcionan",
 
     // ── Texto acerca de ──────────────────────────────────────────
     .about_text = "\xc3\x81rbol de directorios con estado (iconos/colores/enlaces); --simple para LLMs; persiste .dirtree-state (default/open/close/show/hide); regex v\xc3\xada /patr\xc3\xb3n/ o !/patr\xc3\xb3n/; los literales deben ser relativos; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

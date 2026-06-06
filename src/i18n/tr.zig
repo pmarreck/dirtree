@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Hesaplanan etkin yap\xc4\xb1land\xc4\xb1rmay\xc4\xb1 g\xc3\xb6ster",
         .help_opt_test = "  --test             \xc4\xb0li\xc5\x9fkili testleri \xc3\xa7al\xc4\xb1\xc5\x9ft\xc4\xb1r",
     .help_opt_lang = "  --lang KOD         G\xc3\xb6r\xc3\xbcnt\xc3\xbcleme dilini ayarla (\xc3\xb6r. en, de, fr, ja)",
+    .help_lang_available_label = "Kullanılabilir dil kodları:",
     .help_regex_note = "--open/--close/--show/--hide ile /kal\xc4\xb1p/ veya !/kal\xc4\xb1p/ kullanarak regex kurallar\xc4\xb1 ekleyin; di\xc4\x9fer arg\xc3\xbcmanlar de\xc4\x9fi\xc5\x9fmez de\xc4\x9fer olarak i\xc5\x9flenir.",
     .help_relative_note = "--show/--hide i\xc3\xa7in verilen yollar g\xc3\xb6reli olmal\xc4\xb1d\xc4\xb1r (ba\xc5\x9f\xc4\xb1nda '/' olmadan).",
     .help_behavior_header = "Davran\xc4\xb1\xc5\x9f:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Mevcut dizinin a\xc4\x9fac\xc4\xb1n\xc4\xb1 g\xc3\xb6ster",
     .help_example_2 = "  dirtree -d 3                  # Derinli\xc4\x9fi 3 seviyeye ayarla",
     .help_example_3 = "  dirtree --sort alpha --asc    # Alfabetik y\xc3\xbckselen s\xc4\xb1ralama",
+    .help_example_close_comment = "Bir dizini daralt (kalıcı)",
+    .help_example_hide_comment = "Regex ile eşleşen dosyaları gizle",
+    .help_example_only_comment = "Bir alt ağaca odaklan, kardeşleri gizle",
+    .help_example_localized_comment = "Yerelleştirilmiş anahtar adları da çalışır",
 
     // ── Hakk\xc4\xb1nda metni ─────────────────────────────────────────────
     .about_text = "Durumlu dizin a\xc4\x9fac\xc4\xb1 (simgeler/renkler/ba\xc4\x9flant\xc4\xb1lar); --simple LLM'ler i\xc3\xa7in; .dirtree-state dosyas\xc4\xb1na kaydeder (default/open/close/show/hide); regex /kal\xc4\xb1p/ veya !/kal\xc4\xb1p/ ile; de\xc4\x9fi\xc5\x9fmez de\xc4\x9ferler g\xc3\xb6reli olmal\xc4\xb1; ortam: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

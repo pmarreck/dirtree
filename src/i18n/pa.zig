@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           ਗਣਨਾ ਕੀਤੀ ਪ੍ਰਭਾਵੀ ਸੰਰਚਨਾ ਵਿਖਾਓ",
     .help_opt_test = "  --test             ਸੰਬੰਧਿਤ ਟੈਸਟ ਚਲਾਓ",
     .help_opt_lang = "  --lang CODE        ਡਿਸਪਲੇ ਭਾਸ਼ਾ ਸੈੱਟ ਕਰੋ (ਜਿਵੇਂ en, de, fr, ja)",
+    .help_lang_available_label = "ਉਪਲਬਧ ਭਾਸ਼ਾ ਕੋਡ:",
     .help_regex_note = "regex ਨਿਯਮ ਜੋੜਨ ਲਈ --open/--close/--show/--hide ਨਾਲ /pattern/ ਜਾਂ !/pattern/ ਵਰਤੋ; ਹੋਰ ਆਰਗੂਮੈਂਟਾਂ ਨੂੰ ਸ਼ਾਬਦਿਕ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ।",
     .help_relative_note = "--show/--hide ਨੂੰ ਦਿੱਤੇ ਮਾਰਗ ਸੰਬੰਧਿਤ ਹੋਣੇ ਚਾਹੀਦੇ ਹਨ (ਅਗਲੀ '/' ਤੋਂ ਬਿਨਾਂ)।",
     .help_behavior_header = "ਵਿਹਾਰ:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # ਮੌਜੂਦਾ ਡਾਇਰੈਕਟਰੀ ਦਾ ਰੁੱਖ ਵਿਖਾਓ",
     .help_example_2 = "  dirtree -d 3                  # ਡੂੰਘਾਈ 3 ਪੱਧਰਾਂ 'ਤੇ ਸੈੱਟ ਕਰੋ",
     .help_example_3 = "  dirtree --sort alpha --asc    # ਵਰਣਮਾਲਾ ਅਨੁਸਾਰ ਚੜ੍ਹਦੇ ਕ੍ਰਮ ਵਿੱਚ ਛਾਂਟਿਆ",
+    .help_example_close_comment = "ਇੱਕ ਡਾਇਰੈਕਟਰੀ ਸਮੇਟੋ (ਸੰਭਾਲਿਆ)",
+    .help_example_hide_comment = "ਰੈਗੈਕਸ ਨਾਲ ਮੇਲ ਖਾਂਦੀਆਂ ਫਾਈਲਾਂ ਲੁਕਾਓ",
+    .help_example_only_comment = "ਇੱਕ ਸਬ-ਟ੍ਰੀ 'ਤੇ ਧਿਆਨ ਦਿਓ, ਭੈਣ-ਭਰਾ ਲੁਕਾਓ",
+    .help_example_localized_comment = "ਸਥਾਨਕ ਸਵਿੱਚ ਨਾਮ ਵੀ ਕੰਮ ਕਰਦੇ ਹਨ",
 
     // ── ਬਾਰੇ ਟੈਕਸਟ ─────────────────────────────────────────────
     .about_text = "ਸਥਿਤੀ-ਯੁਕਤ ਡਾਇਰੈਕਟਰੀ ਰੁੱਖ (ਆਈਕਨ/ਰੰਗ/ਲਿੰਕ); LLMs ਲਈ --simple; .dirtree-state ਸੰਭਾਲਦਾ ਹੈ (default/open/close/show/hide); /pattern/ ਜਾਂ !/pattern/ ਰਾਹੀਂ regex; ਸ਼ਾਬਦਿਕ ਸੰਬੰਧਿਤ ਹੋਣੇ ਚਾਹੀਦੇ ਹਨ; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}।",

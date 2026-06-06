@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Berechnete effektive Konfiguration anzeigen",
     .help_opt_test = "  --test             Zugehörige Tests ausführen",
     .help_opt_lang = "  --lang CODE        Anzeigesprache festlegen (z.B. en, de, fr, ja)",
+    .help_lang_available_label = "Verfügbare Sprachcodes:",
     .help_regex_note = "/muster/ oder !/muster/ mit --open/--close/--show/--hide für Regex-Regeln; andere Argumente sind Literale.",
     .help_relative_note = "Pfade für --show/--hide müssen relativ sein (kein führendes '/').",
     .help_behavior_header = "Verhalten:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Baum des aktuellen Verzeichnisses",
     .help_example_2 = "  dirtree -d 3                  # Tiefe auf 3 Ebenen setzen",
     .help_example_3 = "  dirtree --sort alpha --asc    # Alphabetisch aufsteigend sortiert",
+    .help_example_close_comment = "Ein Verzeichnis einklappen (gespeichert)",
+    .help_example_hide_comment = "Dateien per Regex verbergen",
+    .help_example_only_comment = "Auf einen Teilbaum fokussieren, Geschwister verbergen",
+    .help_example_localized_comment = "Lokalisierte Schalternamen funktionieren auch",
 
     // ── Über-Text ──────────────────────────────────────────────
     .about_text = "Zustandsbehafteter Verzeichnisbaum (Symbole/Farben/Links); --simple für LLMs; speichert .dirtree-state (default/open/close/show/hide); Regex über /muster/ oder !/muster/; Literale müssen relativ sein; Env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

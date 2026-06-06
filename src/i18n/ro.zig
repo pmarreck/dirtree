@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           Afi\xc8\x99eaz\xc4\x83 configura\xc8\x9bia efectiv\xc4\x83 calculat\xc4\x83",
         .help_opt_test = "  --test             Ruleaz\xc4\x83 testele asociate",
     .help_opt_lang = "  --lang COD         Seteaz\xc4\x83 limba de afi\xc8\x99are (ex. en, de, fr, ja)",
+    .help_lang_available_label = "Coduri de limbă disponibile:",
     .help_regex_note = "Folosi\xc8\x9bi /pattern/ sau !/pattern/ cu --open/--close/--show/--hide pentru reguli regex; celelalte argumente sunt tratate ca literale.",
     .help_relative_note = "C\xc4\x83ile furnizate la --show/--hide trebuie s\xc4\x83 fie relative (f\xc4\x83r\xc4\x83 '/' ini\xc8\x9bial).",
     .help_behavior_header = "Comportament:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # Afi\xc8\x99eaz\xc4\x83 arborele directorului curent",
     .help_example_2 = "  dirtree -d 3                  # Ad\xc3\xa2ncime limitat\xc4\x83 la 3 niveluri",
     .help_example_3 = "  dirtree --sort alpha --asc    # Sortat alfabetic cresc\xc4\x83tor",
+    .help_example_close_comment = "Restrânge un director (persistent)",
+    .help_example_hide_comment = "Ascunde fișierele care se potrivesc cu o regex",
+    .help_example_only_comment = "Concentrează-te pe un subarbore, ascunde frații",
+    .help_example_localized_comment = "Numele de opțiuni localizate funcționează și ele",
 
     // ── Text despre ──────────────────────────────────────────────
     .about_text = "Arbore de directoare cu stare (pictograme/culori/leg\xc4\x83turi); --simple pentru LLM-uri; persist\xc4\x83 .dirtree-state (default/open/close/show/hide); regex prin /pattern/ sau !/pattern/; literalele trebuie s\xc4\x83 fie relative; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

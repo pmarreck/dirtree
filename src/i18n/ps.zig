@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           حساب شوي اغیزمن تنظیمات وښایه",
     .help_opt_test = "  --test             اړوند ازموینې وچلوه",
     .help_opt_lang = "  --lang CODE        د ښودنې ژبه وټاکه (لکه en، de، fr، ja)",
+    .help_lang_available_label = "د موجودو ژبو کوډونه:",
     .help_regex_note = "د regex قواعدو ورزیاتولو لپاره د --open/--close/--show/--hide سره /pattern/ یا !/pattern/ وکاروه؛ نور دلیلونه د لفظي ګڼل کیږي.",
     .help_relative_note = "هغه لارې چې --show/--hide ته ورکول کیږي باید نسبي وي (مخکښ '/' نه لري).",
     .help_behavior_header = "چلند:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # د اوسني لارښود ونه وښایه",
     .help_example_2 = "  dirtree -d 3                  # ژوروالی په 3 کچو وټاکه",
     .help_example_3 = "  dirtree --sort alpha --asc    # د الفبا له مخې صعودي ترتیب",
+    .help_example_close_comment = "یوه پوښه ټوله کړئ (خوندي)",
+    .help_example_hide_comment = "د ریجیکس سره سمون لرونکي فایلونه پټ کړئ",
+    .help_example_only_comment = "په یوه فرعي ونه تمرکز وکړئ، خویندې او وروڼه پټ کړئ",
+    .help_example_localized_comment = "ځایي شوي سویچ نومونه هم کار کوي",
 
     // ── د پروژې په اړه متن ──────────────────────────────────────
     .about_text = "حالت لرونکې د لارښود ونه (آیکونونه/رنګونه/لینکونه)؛ د LLMs لپاره --simple؛ .dirtree-state ساتي (default/open/close/show/hide)؛ regex د /pattern/ یا !/pattern/ له لارې؛ لفظي باید نسبي وي؛ env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",

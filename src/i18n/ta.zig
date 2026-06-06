@@ -39,6 +39,7 @@ pub const strings = Strings{
     .help_opt_config = "  --config           கணக்கிடப்பட்ட நடைமுறை அமைவாக்கத்தைக் காட்டு",
     .help_opt_test = "  --test             தொடர்புடைய சோதனைகளை இயக்கு",
     .help_opt_lang = "  --lang CODE        காட்சி மொழியை அமை (எ.கா. en, de, fr, ja)",
+    .help_lang_available_label = "கிடைக்கும் மொழி குறியீடுகள்:",
     .help_regex_note = "regex விதிகளைச் சேர்க்க --open/--close/--show/--hide உடன் /pattern/ அல்லது !/pattern/ பயன்படுத்துங்கள்; மற்ற செயலுருபுகள் எழுத்துக்கு எழுத்தாகக் கருதப்படும்.",
     .help_relative_note = "--show/--hide-க்கு வழங்கப்படும் பாதைகள் தொடர்புடையதாக இருக்க வேண்டும் (முன்னால் '/' இல்லாமல்).",
     .help_behavior_header = "நடத்தை:",
@@ -47,6 +48,10 @@ pub const strings = Strings{
     .help_example_1 = "  dirtree                       # தற்போதைய அடைவின் மரத்தைக் காட்டு",
     .help_example_2 = "  dirtree -d 3                  # ஆழத்தை 3 நிலைகளாக அமை",
     .help_example_3 = "  dirtree --sort alpha --asc    # அகரவரிசையில் ஏறுவரிசையாக வரிசைப்படுத்தப்பட்டது",
+    .help_example_close_comment = "ஒரு கோப்பகத்தைச் சுருக்கு (சேமிக்கப்படும்)",
+    .help_example_hide_comment = "ரெகெக்ஸுடன் பொருந்தும் கோப்புகளை மறை",
+    .help_example_only_comment = "ஒரு துணை மரத்தில் கவனம் செலுத்து, உடன்பிறப்புகளை மறை",
+    .help_example_localized_comment = "உள்ளூராக்கப்பட்ட விருப்பப் பெயர்களும் வேலை செய்யும்",
 
     // ── About text ─────────────────────────────────────────────
     .about_text = "நிலைத்த அடைவு மரம் (சின்னங்கள்/நிறங்கள்/தொடுப்புகள்); LLMகளுக்கு --simple; .dirtree-state-ஐ நிலைப்படுத்துகிறது (default/open/close/show/hide); regex /pattern/ அல்லது !/pattern/ வழியாக; எழுத்துக்கு எழுத்துகள் தொடர்புடையதாக இருக்க வேண்டும்; env: DIRTREE_{SIMPLE,DECORATED,AUTO_SIMPLE}.",
