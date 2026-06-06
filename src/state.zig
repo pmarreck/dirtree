@@ -78,6 +78,7 @@ pub const StateFile = struct {
 	color_preference: ?bool = null,
 	hyperlink_preference: ?bool = null,
 	max_lines: ?u32 = null,
+	note_column: ?u32 = null,
 
 	// Collections
 	open_entries: std.ArrayListUnmanaged(StateEntry) = .empty,
@@ -371,6 +372,13 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 					const duped = try state.dupeStr(raw_line);
 					try state.passthrough_lines.append(allocator, duped);
 				}
+			} else if (std.mem.eql(u8, key, "note_column")) {
+				if (std.fmt.parseInt(u32, value, 10)) |n| {
+					state.note_column = n;
+				} else |_| {
+					const duped = try state.dupeStr(raw_line);
+					try state.passthrough_lines.append(allocator, duped);
+				}
 			} else if (std.mem.eql(u8, key, "sort")) {
 				if (std.mem.eql(u8, value, "alpha")) {
 					state.sort_mode = .alpha;
@@ -499,6 +507,7 @@ pub fn writeStateFile(state: *const StateFile, writer: anytype) !void {
 	if (state.color_preference != null) scalar_count += 1;
 	if (state.hyperlink_preference != null) scalar_count += 1;
 	if (state.max_lines != null) scalar_count += 1;
+	if (state.note_column != null) scalar_count += 1;
 
 	if (scalar_count > 0) {
 		if (wrote_block) try writer.print("\n", .{});
@@ -519,6 +528,9 @@ pub fn writeStateFile(state: *const StateFile, writer: anytype) !void {
 		}
 		if (state.max_lines) |ml| {
 			try writer.print("max_lines={}\n", .{ml});
+		}
+		if (state.note_column) |n| {
+			try writer.print("note_column={}\n", .{n});
 		}
 		wrote_block = true;
 	}
@@ -802,6 +814,14 @@ fn parseLegacyLine(state: *StateFile, line: []const u8, raw_line: []const u8) !v
 			const value = strip(kv.value);
 			if (std.fmt.parseInt(u32, value, 10)) |d| {
 				state.depth = d;
+			} else |_| {
+				const duped = try state.dupeStr(raw_line);
+				try state.passthrough_lines.append(state.allocator, duped);
+			}
+		} else if (std.mem.eql(u8, kv.key, "note_column")) {
+			const value = strip(kv.value);
+			if (std.fmt.parseInt(u32, value, 10)) |n| {
+				state.note_column = n;
 			} else |_| {
 				const duped = try state.dupeStr(raw_line);
 				try state.passthrough_lines.append(state.allocator, duped);

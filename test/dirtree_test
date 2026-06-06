@@ -4090,6 +4090,39 @@ sys.exit(0 if (40 in cols) and any(c>40 for c in cols) else 1)
 	fi
 }
 
+test_note_column_cap_from_state() {
+	local workspace target long
+	workspace=$(new_tmpdir); target="$workspace/notecol"; mkdir -p "$target"
+	long=$(printf 'x%.0s' {1..21})
+	touch "$target/a.txt" "$target/$long"
+	# Hand-write a state file with a note_column cap of 20 + annotations.
+	printf 'ver=1.2\nnote_column=20\nannotate=[\n\ta.txt = note-A\n\t%s = note-B\n]\n' "$long" > "$target/.dirtree-state"
+	"$DIRTREE_BIN" --simple --no-icons --no-color "$target" > "$target/out.txt" 2>/dev/null
+	# With cap 20, the short file's note aligns to column 20 (not the default 40).
+	if ! python3 -c '
+import sys
+cols=[len(l[:l.index("# note-A")]) for l in open(sys.argv[1],encoding="utf-8") if "# note-A" in l]
+sys.exit(0 if cols==[20] else 1)
+' "$target/out.txt"; then
+		echo "expected note_column=20 cap to place short note at column 20; got:" >&2
+		cat "$target/out.txt" >&2
+		return 1
+	fi
+}
+
+test_note_column_preserved_on_rewrite() {
+	local workspace target
+	workspace=$(new_tmpdir); target="$workspace/notecol-keep"; mkdir -p "$target/sub"
+	printf 'ver=1.2\nnote_column=25\n' > "$target/.dirtree-state"
+	# A state-mutating run rewrites the file; note_column must survive.
+	run_quiet "$DIRTREE_BIN" -d 3 "$target"
+	if ! rg -q '^note_column=25$' "$target/.dirtree-state"; then
+		echo "note_column=25 should be preserved after rewrite" >&2
+		cat "$target/.dirtree-state" >&2
+		return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4533,6 +4566,10 @@ run_all_tests() {
 		test_notes_inline_mode_not_aligned
 	run_test "notes min-margin for long names" \
 		test_notes_min_margin_for_long_name
+	run_test "note_column cap read from state" \
+		test_note_column_cap_from_state
+	run_test "note_column preserved on rewrite" \
+		test_note_column_preserved_on_rewrite
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \

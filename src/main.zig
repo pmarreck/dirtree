@@ -1282,6 +1282,7 @@ pub fn main(init: std.process.Init) !u8 {
 				.report_hidden = !cfg.show_hidden,
 				.show_notes = cfg.cli_notes orelse true,
 				.note_align = !cfg.notes_inline,
+				.note_column = effective.note_column orelse 40,
 				.max_depth = max_depth,
 				.show_hidden = cfg.show_hidden,
 				.sort_mode = sort_mode,

@@ -63,6 +63,7 @@ pub const EffectiveState = struct {
 	color_preference: ?bool = null,
 	hyperlink_preference: ?bool = null,
 	max_lines: ?u32 = null,
+	note_column: ?u32 = null,
 	/// First regex pattern that failed to compile (borrowed from `strings`),
 	/// or null if all patterns compiled. Lets callers fail loudly instead of
 	/// silently dropping invalid patterns.
@@ -274,6 +275,7 @@ const InheritedState = struct {
 	hyperlink_preference_set: bool = false,
 	max_lines: ?u32 = null,
 	max_lines_set: bool = false,
+	note_column: ?u32 = null,
 
 	// Literal maps
 	open_literals: std.StringHashMapUnmanaged(void) = .empty,
@@ -360,6 +362,7 @@ const InheritedState = struct {
 			self.max_lines = sf.max_lines;
 			self.max_lines_set = true;
 		}
+		if (sf.note_column != null) self.note_column = sf.note_column;
 
 		// Literals: open removes from close and vice versa
 		for (sf.open_entries.items) |entry| {
@@ -766,6 +769,7 @@ fn rebuildEffectiveState(
 		effective.color_preference = sf.color_preference orelse inherited.color_preference;
 		effective.hyperlink_preference = sf.hyperlink_preference orelse inherited.hyperlink_preference;
 		effective.max_lines = sf.max_lines orelse inherited.max_lines;
+		effective.note_column = sf.note_column orelse inherited.note_column;
 		effective.needs_migration = sf.needs_migration;
 	} else {
 		effective.default_state = inherited.default_state;
@@ -775,6 +779,7 @@ fn rebuildEffectiveState(
 		effective.color_preference = inherited.color_preference;
 		effective.hyperlink_preference = inherited.hyperlink_preference;
 		effective.max_lines = inherited.max_lines;
+		effective.note_column = inherited.note_column;
 	}
 
 	// Start with inherited literals
