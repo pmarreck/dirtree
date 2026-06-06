@@ -142,7 +142,7 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 
 ### Localization
 
-dirtree ships fully localized across **22 locales** (`ar az de el en es fa fr he hu it ja km ko pl pt_br ro ru tr uk vi zh_hans`). Pick one with `--lang CODE` (or it auto-detects from `LC_MESSAGES`/`LANG`). Flag names are localized too and all aliases work in any locale — e.g. German `--tiefe`/`--nur`/`--verbergen` alongside the canonical `--depth`/`--only`/`--hide`.
+dirtree ships fully localized across **30 locales** (`ar az bn de el en es fa fr he hi hu it ja km ko pa pl ps pt_br ro ru sw ta th tr uk ur vi zh_hans` — including Bengali, Hindi, Punjabi, Pashto, Swahili, Tamil, Thai, and Urdu). Pick one with `--lang CODE` (or it auto-detects from `LC_MESSAGES`/`LANG`). Flag names are localized too and all aliases work in any locale — e.g. German `--tiefe`/`--nur`/`--verbergen` alongside the canonical `--depth`/`--only`/`--hide`.
 
 Two guarantees worth calling out:
 

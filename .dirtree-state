@@ -9,5 +9,7 @@ close=[
 ]
 
 hide=[
+	.claude
 	.dirtree-state
+	.git
 ]

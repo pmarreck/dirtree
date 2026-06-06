@@ -4250,6 +4250,17 @@ test_english_error_not_doubled() {
 	fi
 }
 
+test_new_locales_selectable() {
+	local target; target=$(new_tmpdir); mkdir -p "$target/sub"
+	local c
+	for c in bn hi pa ps sw ta th ur; do
+		if ! "$DIRTREE_BIN" --lang "$c" --simple --no-icons "$target" >/dev/null 2>&1; then
+			echo "locale $c should be selectable via --lang" >&2
+			return 1
+		fi
+	done
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4711,6 +4722,8 @@ run_all_tests() {
 		test_hide_positive_regex_no_warn
 	run_test "negation warning uses localized switches" \
 		test_negation_warn_uses_localized_switches
+	run_test "new locales (bn hi pa ps sw ta th ur) selectable" \
+		test_new_locales_selectable
 	run_test "localized error includes English original" \
 		test_localized_error_includes_english
 	run_test "English error is not doubled" \

@@ -29,6 +29,14 @@ const tr_locale = @import("tr.zig");
 const uk = @import("uk.zig");
 const vi = @import("vi.zig");
 const zh_hans = @import("zh_hans.zig");
+const bn = @import("bn.zig");
+const hi = @import("hi.zig");
+const pa = @import("pa.zig");
+const ps = @import("ps.zig");
+const sw = @import("sw.zig");
+const ta = @import("ta.zig");
+const th = @import("th.zig");
+const ur = @import("ur.zig");
 
 // ── Locale enum ───────────────────────────────────────────────────
 pub const Locale = enum {
@@ -54,6 +62,14 @@ pub const Locale = enum {
     uk,
     vi,
     zh_hans,
+    bn,
+    hi,
+    pa,
+    ps,
+    sw,
+    ta,
+    th,
+    ur,
 
     pub fn code(self: Locale) [:0]const u8 {
         return switch (self) {
@@ -79,6 +95,14 @@ pub const Locale = enum {
             .uk => "uk",
             .vi => "vi",
             .zh_hans => "zh_hans",
+            .bn => "bn",
+            .hi => "hi",
+            .pa => "pa",
+            .ps => "ps",
+            .sw => "sw",
+            .ta => "ta",
+            .th => "th",
+            .ur => "ur",
         };
     }
 };
@@ -106,12 +130,20 @@ const all_locales = [_]Locale{
     .uk,
     .vi,
     .zh_hans,
+    .bn,
+    .hi,
+    .pa,
+    .ps,
+    .sw,
+    .ta,
+    .th,
+    .ur,
 };
 
 /// Comma-separated list of all locale codes (for error messages).
 /// NOTE: Update this when adding locales (Zig comptime can't build
 /// runtime-referencing slices from var buffers for global consts).
-pub const available_codes: [:0]const u8 = "ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans";
+pub const available_codes: [:0]const u8 = "ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur";
 
 // ── Global state ──────────────────────────────────────────────────
 var current_locale: Locale = .en;
@@ -155,6 +187,14 @@ fn localeCliAliases(loc: Locale) []const CliAliasEntry {
         .uk => uk.aliases.cli,
         .vi => vi.aliases.cli,
         .zh_hans => zh_hans.aliases.cli,
+        .bn => bn.aliases.cli,
+        .hi => hi.aliases.cli,
+        .pa => pa.aliases.cli,
+        .ps => ps.aliases.cli,
+        .sw => sw.aliases.cli,
+        .ta => ta.aliases.cli,
+        .th => th.aliases.cli,
+        .ur => ur.aliases.cli,
     };
 }
 
@@ -195,6 +235,14 @@ fn stringsFor(loc: Locale) *const Strings {
         .uk => &uk.strings,
         .vi => &vi.strings,
         .zh_hans => &zh_hans.strings,
+        .bn => &bn.strings,
+        .hi => &hi.strings,
+        .pa => &pa.strings,
+        .ps => &ps.strings,
+        .sw => &sw.strings,
+        .ta => &ta.strings,
+        .th => &th.strings,
+        .ur => &ur.strings,
     };
 }
 
@@ -279,6 +327,14 @@ const cli_alias_map = blk: {
         uk.aliases.cli,
         vi.aliases.cli,
         zh_hans.aliases.cli,
+        bn.aliases.cli,
+        hi.aliases.cli,
+        pa.aliases.cli,
+        ps.aliases.cli,
+        sw.aliases.cli,
+        ta.aliases.cli,
+        th.aliases.cli,
+        ur.aliases.cli,
     };
 
     // Count total entries
@@ -350,6 +406,14 @@ fn envAliasesFor(comptime env_var: EnvVar) []const [:0]const u8 {
         uk.aliases.env,
         vi.aliases.env,
         zh_hans.aliases.env,
+        bn.aliases.env,
+        hi.aliases.env,
+        pa.aliases.env,
+        ps.aliases.env,
+        sw.aliases.env,
+        ta.aliases.env,
+        th.aliases.env,
+        ur.aliases.env,
     };
 
     // Count matching entries
@@ -522,6 +586,14 @@ test {
     _ = @import("uk.zig");
     _ = @import("vi.zig");
     _ = @import("zh_hans.zig");
+    _ = @import("bn.zig");
+    _ = @import("hi.zig");
+    _ = @import("pa.zig");
+    _ = @import("ps.zig");
+    _ = @import("sw.zig");
+    _ = @import("ta.zig");
+    _ = @import("th.zig");
+    _ = @import("ur.zig");
 }
 
 test "every locale resolves and has all Strings fields populated" {
