@@ -46,6 +46,8 @@ pub const CliConfig = struct {
 	cli_notes: ?bool = null,
 	// Note layout: inline (ragged) vs aligned gutter (default). Display-only.
 	notes_inline: bool = false,
+	// Leader dots from name to note in aligned mode (opt-in, display-only).
+	note_leader: bool = false,
 	no_hyperlinks: bool = false,
 	show_hidden: bool = false,
 	rewrite_settings: bool = false,
@@ -415,6 +417,11 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 							config.deinit(allocator);
 							return .{ .err = s.err_notes_requires_mode };
 						}
+						i += 1;
+						continue;
+					},
+					.note_leader => {
+						config.note_leader = true;
 						i += 1;
 						continue;
 					},
@@ -955,6 +962,8 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_notes_mode);
 	try writer.writeAll("\n");
+	try writer.writeAll(s.help_opt_notes_leader);
+	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_no_hyperlinks);
 	try writer.writeAll("\n");
 	try writer.writeAll(s.help_opt_default);
@@ -1282,6 +1291,7 @@ pub fn main(init: std.process.Init) !u8 {
 				.report_hidden = !cfg.show_hidden,
 				.show_notes = cfg.cli_notes orelse true,
 				.note_align = !cfg.notes_inline,
+				.note_leader = cfg.note_leader,
 				.note_column = effective.note_column orelse 40,
 				.max_depth = max_depth,
 				.show_hidden = cfg.show_hidden,

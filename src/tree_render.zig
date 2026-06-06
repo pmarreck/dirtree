@@ -61,8 +61,19 @@ fn writeNote(writer: anytype, config: RenderConfig, desc: []const u8) !void {
 				return;
 			}
 			const pad: usize = if (writer.col < aligner.gutter) aligner.gutter - writer.col else 1;
-			var k: usize = 0;
-			while (k < pad) : (k += 1) try writer.writeAll(" ");
+			if (config.note_leader and pad >= 3) {
+				// Dim middle-dot leaders connect the name to its note. They sit
+				// inside the OSC 8 span, so the hover-underline traces the line.
+				try writer.writeAll(" ");
+				if (config.use_color) try writer.writeAll(ansi.dim);
+				var k: usize = 0;
+				while (k < pad - 2) : (k += 1) try writer.writeAll("\u{00b7}");
+				if (config.use_color) try writer.writeAll(ansi.reset);
+				try writer.writeAll(" ");
+			} else {
+				var k: usize = 0;
+				while (k < pad) : (k += 1) try writer.writeAll(" ");
+			}
 			if (config.use_color) try writer.writeAll(ansi.dim);
 			try writer.writeAll("# ");
 			try writer.writeAll(desc);
@@ -87,6 +98,7 @@ pub const RenderConfig = struct {
 	note_align: bool = true,
 	note_column: usize = 40,
 	note_aligner: ?*Aligner = null,
+	note_leader: bool = false,
 	max_depth: u32 = 4,
 	show_hidden: bool = false,
 	sort_mode: dir_scan.SortMode = .modified,

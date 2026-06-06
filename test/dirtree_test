@@ -1095,6 +1095,7 @@ Options:
   --no-orphan-warning Suppress the orphaned-notes warning
   --no-notes/--show-notes Hide or show inline notes (DIRTREE_HIDE_NOTES=1 to hide by default)
   --notes MODE       Note layout: aligned (default) or inline
+  --notes-leader     Draw dim leader dots from names to aligned notes
   --no-hyperlinks   Disable OSC8 hyperlinks and persist preference
   --default X        Persist default state: opened|closed
   -o, --open DIR...  Open one or more subdirs (repeat flag to add more)
@@ -4123,6 +4124,32 @@ test_note_column_preserved_on_rewrite() {
 	fi
 }
 
+test_notes_leader_dots_opt_in() {
+	local workspace target out=""
+	workspace=$(new_tmpdir); target="$workspace/leader"; mkdir -p "$target"
+	touch "$target/a.txt" "$target/longername.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate a.txt "note-A") >/dev/null 2>&1
+	(cd "$target" && "$DIRTREE_BIN" annotate longername.txt "note-B") >/dev/null 2>&1
+	out=$("$DIRTREE_BIN" --notes-leader --simple --no-icons --no-color "$target" 2>/dev/null)
+	if [[ "$out" != *"Â·"* ]]; then
+		# middle-dot leaders should appear between the short name and its note
+		printf '%s' "$out" | rg -q $'\xc2\xb7' || { echo "expected middle-dot leaders with --notes-leader; got: $out" >&2; return 1; }
+	fi
+}
+
+test_no_leader_dots_by_default() {
+	local workspace target out=""
+	workspace=$(new_tmpdir); target="$workspace/noleader"; mkdir -p "$target"
+	touch "$target/a.txt" "$target/longername.txt"
+	(cd "$target" && "$DIRTREE_BIN" annotate a.txt "note-A") >/dev/null 2>&1
+	(cd "$target" && "$DIRTREE_BIN" annotate longername.txt "note-B") >/dev/null 2>&1
+	out=$("$DIRTREE_BIN" --simple --no-icons --no-color "$target" 2>/dev/null)
+	if printf '%s' "$out" | rg -q $'\xc2\xb7'; then
+		echo "leader dots should be opt-in (none by default); got: $out" >&2
+		return 1
+	fi
+}
+
 test_orphaned_notes_subcommand_lists() {
 	local workspace target out=""
 	workspace=$(new_tmpdir)
@@ -4570,6 +4597,10 @@ run_all_tests() {
 		test_note_column_cap_from_state
 	run_test "note_column preserved on rewrite" \
 		test_note_column_preserved_on_rewrite
+	run_test "--notes-leader adds leader dots" \
+		test_notes_leader_dots_opt_in
+	run_test "no leader dots by default" \
+		test_no_leader_dots_by_default
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \

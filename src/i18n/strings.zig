@@ -17,6 +17,7 @@ pub const Strings = struct {
     help_opt_no_orphan_warning: [:0]const u8,
     help_opt_notes: [:0]const u8,
     help_opt_notes_mode: [:0]const u8,
+    help_opt_notes_leader: [:0]const u8,
     help_opt_no_hyperlinks: [:0]const u8,
     help_opt_default: [:0]const u8,
     help_opt_open: [:0]const u8,

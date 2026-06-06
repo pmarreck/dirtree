@@ -14,6 +14,7 @@ pub const CliArg = enum {
     no_notes,
     show_notes,
     notes,
+    note_leader,
     no_hyperlinks,
     default,
     open,

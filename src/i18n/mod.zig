@@ -213,7 +213,7 @@ pub fn detectLocaleFromEnv() Locale {
 
 /// Comptime-built map from all locale CLI aliases to CliArg.
 const cli_alias_map = blk: {
-    @setEvalBranchQuota(500000);
+    @setEvalBranchQuota(2000000);
     // Collect all entries from all locales
     const locale_aliases = [_][]const CliAliasEntry{
         ar.aliases.cli,
