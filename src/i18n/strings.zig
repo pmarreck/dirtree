@@ -8,7 +8,8 @@ pub const Strings = struct {
     help_opt_help: [:0]const u8,
     help_opt_about: [:0]const u8,
     help_opt_depth: [:0]const u8,
-    help_opt_temp_depth: [:0]const u8,
+    /// -t/--temp: apply this run only, don't persist (item: temporary mode).
+    help_opt_temp: [:0]const u8,
     help_opt_path: [:0]const u8,
     help_opt_simple: [:0]const u8,
     help_opt_decorated: [:0]const u8,
@@ -90,7 +91,6 @@ pub const Strings = struct {
     err_tail_requires_number: [:0]const u8,
     err_only_requires_path: [:0]const u8,
     err_depth_requires_number: [:0]const u8,
-    err_temp_depth_requires_number: [:0]const u8,
     err_path_requires_arg: [:0]const u8,
     err_notes_requires_mode: [:0]const u8,
     err_sort_requires_mode: [:0]const u8,

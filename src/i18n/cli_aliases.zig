@@ -4,7 +4,6 @@ pub const CliArg = enum {
     help,
     about,
     depth,
-    temp_depth,
     path,
     simple,
     decorated,
@@ -18,6 +17,7 @@ pub const CliArg = enum {
     note_leader,
     no_hyperlinks,
     hyperlinks,
+    temporary,
     default,
     open,
     close,
@@ -57,6 +57,7 @@ pub const EnvVar = enum {
     piped_stdout,
     dirtree_hide_notes,
     dirtree_scm_changes_stay_hidden_or_closed,
+    dirtree_temp,
 };
 
 /// Per-locale environment variable alias: (string, EnvVar) pair.

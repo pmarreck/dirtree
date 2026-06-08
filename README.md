@@ -132,7 +132,7 @@ The repo includes `dirtree-state.suggested-default-home-dir`, a sample config yo
 ### Sorting and depth (persistent)
 
 - `-d/--depth N` changes how deep the tree is rendered (default depth is 4) and writes that depth into `.dirtree-state`, so future runs inherit the same cutoff unless you override it again.
-- `-td/--temp-depth N` overrides the render depth for the current run only and is **not** persisted to `.dirtree-state` — use it for a one-off deeper or shallower peek without changing the saved cutoff.
+- `-t/--temp/--temporary` (or `DIRTREE_TEMP=1`) applies **any** settings for the current run only, without persisting them to `.dirtree-state`. Combine with anything: `dirtree --depth 1 --temp` for a one-off shallow peek, `dirtree --no-color -t` for a one-off plain render — nothing is saved. (This replaces the old `--temp-depth`: just use `--depth N --temp`.) Single-letter no-arg short flags also cluster, e.g. `-ta` = `-t -a`.
 - `--sort MODE` accepts `modified` (default, newest-first) or `alpha` (lexicographic). Pair it with `--asc` or `--desc` to flip the direction. Both the mode and direction are persisted per directory so you only have to set them once.
 
 ### Mode environment variables

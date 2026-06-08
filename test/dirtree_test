@@ -1086,7 +1086,7 @@ Options:
   -h, --help         Show this help message
   -a, --about        Show detailed description
   -d, --depth N      Set maximum depth (default: 4)
-  -td, --temp-depth N Set max depth for this run only (not saved)
+  -t, --temp         Apply changes for this run only (not saved)
   -p, --path PATH    Render PATH even if it looks like a flag or subcommand
   --simple           Output a simple, LLM-friendly stateful tree
   --decorated        Force decorated output (even when piped)
@@ -1301,52 +1301,6 @@ test_depth_flag_persists_and_applies() {
 	printf -v expected_tree_plain ' %s/\n└──  sub/*\n' "$target"
 	encode_printable expected_tree_pb "$expected_tree_plain"
 	compare_printable "depth flag persists and applies" "$actual_tree_pb" "$expected_tree_pb"
-}
-
-test_temp_depth_applies_without_persisting() {
-	local workspace target state_file stdout_pb="" stderr_pb="" rc=0 actual_tree_pb expected_tree_plain expected_tree_pb
-	workspace=$(new_tmpdir)
-	target="$workspace/temp-depth"
-	mkdir -p "$target/sub/deep"
-	state_file="$target/.dirtree-state"
-	if ! capture_dirtree_printable stdout_pb stderr_pb rc -td 1 "$target"; then
-		echo "capture helper failed for temp-depth" >&2
-		return 1
-	fi
-	if [[ "$rc" -ne 0 ]]; then
-		echo "dirtree -td 1 failed with rc=$rc" >&2
-		return 1
-	fi
-	if [[ -e "$state_file" ]]; then
-		echo "temp-depth must not create .dirtree-state, but it exists" >&2
-		return 1
-	fi
-	actual_tree_pb="$stdout_pb"
-	printf -v expected_tree_plain '\xee\x97\xbf %s/\n\xe2\x94\x94\xe2\x94\x80\xe2\x94\x80 \xee\x97\xbf sub/*\n' "$target"
-	encode_printable expected_tree_pb "$expected_tree_plain"
-	compare_printable "temp-depth applies without persisting" "$actual_tree_pb" "$expected_tree_pb"
-}
-
-test_temp_depth_overrides_persisted_depth() {
-	local workspace target state_file stdout_pb="" stderr_pb="" rc=0 actual_tree_pb expected_tree_plain expected_tree_pb before_pb after_pb
-	workspace=$(new_tmpdir)
-	target="$workspace/temp-depth-override"
-	mkdir -p "$target/sub/deep"
-	state_file="$target/.dirtree-state"
-	run_quiet "$DIRTREE_BIN" -d 4 "$target"
-	encode_file_printable before_pb "$state_file"
-	if ! capture_dirtree_printable stdout_pb stderr_pb rc --temp-depth 1 "$target"; then
-		echo "capture helper failed for temp-depth override" >&2
-		return 1
-	fi
-	actual_tree_pb="$stdout_pb"
-	printf -v expected_tree_plain '\xee\x97\xbf %s/\n\xe2\x94\x94\xe2\x94\x80\xe2\x94\x80 \xee\x97\xbf sub/*\n' "$target"
-	encode_printable expected_tree_pb "$expected_tree_plain"
-	if ! compare_printable "temp-depth overrides persisted depth" "$actual_tree_pb" "$expected_tree_pb"; then
-		return 1
-	fi
-	encode_file_printable after_pb "$state_file"
-	compare_printable "temp-depth leaves state file unchanged" "$after_pb" "$before_pb"
 }
 
 test_path_flag_disambiguates_subcommand_name() {
@@ -4452,6 +4406,60 @@ test_no_hyperlinks_then_hyperlinks_restores() {
 	fi
 }
 
+
+test_temp_applies_without_persisting() {
+	# --temp / -t / --temporary / DIRTREE_TEMP apply persisting flags for this run
+	# only and must NOT write state. Output still renders.
+	local workspace target out rc inv
+	for inv in "--temp" "-t" "--temporary"; do
+		workspace=$(new_tmpdir); target="$workspace/temp_$RANDOM"; mkdir -p "$target/sub"
+		out=$("$DIRTREE_BIN" --no-color $inv "$target" 2>/dev/null); rc=$?
+		if [ $rc -ne 0 ]; then echo "$inv should be valid (rc=$rc)" >&2; return 1; fi
+		if [ -z "$out" ]; then echo "$inv should still render output" >&2; return 1; fi
+		if [ -f "$target/.dirtree-state" ]; then
+			echo "$inv must not persist .dirtree-state" >&2; cat "$target/.dirtree-state" >&2; return 1
+		fi
+	done
+	# Env var form.
+	workspace=$(new_tmpdir); target="$workspace/tempenv"; mkdir -p "$target/sub"
+	DIRTREE_TEMP=1 "$DIRTREE_BIN" --no-color "$target" >/dev/null 2>&1
+	if [ -f "$target/.dirtree-state" ]; then
+		echo "DIRTREE_TEMP=1 must not persist .dirtree-state" >&2; return 1
+	fi
+	# Control: without temp, it DOES persist.
+	workspace=$(new_tmpdir); target="$workspace/ctrl"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --no-color "$target" >/dev/null 2>&1
+	if [ ! -f "$target/.dirtree-state" ]; then echo "--no-color alone should persist (control)" >&2; return 1; fi
+}
+
+test_short_flag_clustering() {
+	# getopt-style clustering of no-arg single-letter flags: -ta == -t -a.
+	local out rc
+	out=$("$DIRTREE_BIN" -ta 2>/dev/null); rc=$?
+	if [ $rc -ne 0 ]; then echo "-ta should be valid (rc=$rc)" >&2; return 1; fi
+	case "$out" in *"Stateful directory"*) : ;; *) echo "-ta should include -a (about text)" >&2; return 1;; esac
+	# -th should include -h (help)
+	out=$("$DIRTREE_BIN" -th 2>/dev/null)
+	case "$out" in *"Usage: dirtree"*) : ;; *) echo "-th should include -h (help)" >&2; return 1;; esac
+	# Arg-taking shorts do NOT cluster: -dh is not a valid cluster.
+	"$DIRTREE_BIN" -dh /tmp >/dev/null 2>&1
+	if [ $? -eq 0 ]; then echo "-dh (arg-flag cluster) should be rejected" >&2; return 1; fi
+}
+
+test_temp_leaves_existing_state_untouched() {
+	# With a pre-existing state file, --temp must not modify it.
+	local workspace target before after
+	workspace=$(new_tmpdir); target="$workspace/temp2"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --depth 3 "$target" >/dev/null 2>&1
+	before=$(cat "$target/.dirtree-state")
+	"$DIRTREE_BIN" --depth 1 --temp "$target" >/dev/null 2>&1
+	after=$(cat "$target/.dirtree-state")
+	if [ "$before" != "$after" ]; then
+		echo "--temp must not modify an existing state file" >&2
+		echo "before: $before" >&2; echo "after: $after" >&2; return 1
+	fi
+}
+
 test_hide_scm_changed_file_kept_and_counted() {
 	local workspace target out="" err=""
 	command -v git >/dev/null 2>&1 || { echo "SKIP: git unavailable" >&2; return 0; }
@@ -4711,10 +4719,6 @@ run_all_tests() {
 		test_persist_default_array_via_multiple_tokens
 	run_test "depth flag persists and applies" \
 		test_depth_flag_persists_and_applies
-	run_test "temp-depth applies without persisting" \
-		test_temp_depth_applies_without_persisting
-	run_test "temp-depth overrides persisted depth" \
-		test_temp_depth_overrides_persisted_depth
 	run_test "--path disambiguates a subcommand-like dir name" \
 		test_path_flag_disambiguates_subcommand_name
 	run_test "--path allows a flag-like dir name" \
@@ -4963,6 +4967,12 @@ run_all_tests() {
 		test_no_color_then_color_restores
 	run_test "--no-hyperlinks then --hyperlinks restores" \
 		test_no_hyperlinks_then_hyperlinks_restores
+	run_test "--temp/-t/--temporary/DIRTREE_TEMP apply without persisting" \
+		test_temp_applies_without_persisting
+	run_test "short single-letter flags cluster (-ta)" \
+		test_short_flag_clustering
+	run_test "--temp leaves existing state untouched" \
+		test_temp_leaves_existing_state_untouched
 	run_test "--lang accepts uppercase codes" \
 		test_lang_code_case_insensitive
 	run_test "invalid --lang errors even with --help" \

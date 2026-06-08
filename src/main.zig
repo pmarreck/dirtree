@@ -53,6 +53,8 @@ pub const CliConfig = struct {
 	no_hyperlinks: bool = false,
 	// Affirmative inverse of --no-hyperlinks
 	hyperlinks: bool = false,
+	// Apply CLI overrides for this run only; do NOT persist to .dirtree-state.
+	temporary: bool = false,
 	show_hidden: bool = false,
 	rewrite_settings: bool = false,
 	show_config: bool = false,
@@ -61,7 +63,6 @@ pub const CliConfig = struct {
 	// Depth
 	depth: ?u32 = null,
 	// Temporary depth override (this run only, never persisted to state)
-	temp_depth: ?u32 = null,
 
 	// Sort
 	sort_mode: ?SortMode = null,
@@ -175,6 +176,18 @@ fn applyLangArg(raw_args: []const [:0]const u8) void {
 
 /// Parse CLI arguments into a CliConfig.
 /// Returns ParseResult which may be an early exit (help, about, test, error).
+/// True if every byte is a known NO-ARGUMENT single-letter short flag (h/a/t),
+/// so a token like "-ta" can be expanded as a getopt-style cluster. Arg-taking
+/// shorts (-d/-o/-c/-p) and the two-letter -td are deliberately excluded.
+fn allNoArgShortFlags(letters: []const u8) bool {
+	if (letters.len == 0) return false;
+	for (letters) |c| switch (c) {
+		'h', 'a', 't' => {},
+		else => return false,
+	};
+	return true;
+}
+
 pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) ParseResult {
 	var config = CliConfig{};
 
@@ -282,6 +295,30 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			config.deinit(allocator);
 			return .about;
 		}
+		if (std.mem.eql(u8, arg, "-t")) {
+			config.temporary = true;
+			i += 1;
+			continue;
+		}
+		// getopt-style clustering of no-argument single-letter flags (e.g. -ta == -t -a).
+		// Only the no-arg singles (h/a/t) cluster; -td and the arg-taking shorts
+		// (-d/-o/-c/-p) are matched as their own tokens below.
+		if (arg.len > 2 and arg[0] == '-' and arg[1] != '-' and allNoArgShortFlags(arg[1..])) {
+			for (arg[1..]) |ch| switch (ch) {
+				'h' => {
+					config.deinit(allocator);
+					return .help;
+				},
+				'a' => {
+					config.deinit(allocator);
+					return .about;
+				},
+				't' => config.temporary = true,
+				else => unreachable,
+			};
+			i += 1;
+			continue;
+		}
 
 		// End-of-options marker: everything after `--` is an operand, never a
 		// flag or subcommand (POSIX convention). dirtree's operand is the path,
@@ -380,22 +417,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						i += 1;
 						continue;
 					},
-					.temp_depth => {
-						i += 1;
-						if (i >= args.len) {
-							config.deinit(allocator);
-							return .{ .err = s.err_temp_depth_requires_number };
-						}
-						const td_str = args[i];
-						const td = std.fmt.parseInt(u32, td_str, 10) catch {
-							config.deinit(allocator);
-							return .{ .err = s.err_temp_depth_requires_number };
-						};
-						// Temp depth applies to this run only; never sets state_modified.
-						config.temp_depth = td;
-						i += 1;
-						continue;
-					},
 					.simple => {
 						config.simple_mode = true;
 						i += 1;
@@ -471,6 +492,11 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.hyperlinks => {
 						config.hyperlinks = true;
 						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.temporary => {
+						config.temporary = true;
 						i += 1;
 						continue;
 					},
@@ -703,21 +729,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			}
 			config.dir = args[i];
 			dir_pending = false;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "-td")) {
-			i += 1;
-			if (i >= args.len) {
-				config.deinit(allocator);
-				return .{ .err = s.err_temp_depth_requires_number };
-			}
-			const td_str = args[i];
-			const td = std.fmt.parseInt(u32, td_str, 10) catch {
-				config.deinit(allocator);
-				return .{ .err = s.err_temp_depth_requires_number };
-			};
-			config.temp_depth = td;
 			i += 1;
 			continue;
 		}
@@ -961,6 +972,9 @@ fn applyEnvVars(config: *CliConfig) void {
 	if (i18n.getEnvLocalized(.dirtree_hide_notes)) |val| {
 		if (isTruthyEnv(val)) config.cli_notes = false;
 	}
+	if (i18n.getEnvLocalized(.dirtree_temp)) |val| {
+		if (isTruthyEnv(val)) config.temporary = true;
+	}
 }
 
 fn isTruthyEnv(val: []const u8) bool {
@@ -1077,7 +1091,7 @@ fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
 		.{ .flag = "-h, --help", .text = s.help_opt_help, .args = &[_]i18n.CliArg{.help} },
 		.{ .flag = "-a, --about", .text = s.help_opt_about, .args = &[_]i18n.CliArg{.about} },
 		.{ .flag = "-d, --depth N", .text = s.help_opt_depth, .args = &[_]i18n.CliArg{.depth} },
-		.{ .flag = "-td, --temp-depth N", .text = s.help_opt_temp_depth, .args = &[_]i18n.CliArg{.temp_depth} },
+		.{ .flag = "-t, --temp", .text = s.help_opt_temp, .args = &[_]i18n.CliArg{.temporary} },
 		.{ .flag = "-p, --path PATH", .text = s.help_opt_path, .args = &[_]i18n.CliArg{.path} },
 		.{ .flag = "--simple", .text = s.help_opt_simple, .args = &[_]i18n.CliArg{.simple} },
 		.{ .flag = "--decorated", .text = s.help_opt_decorated, .args = &[_]i18n.CliArg{.decorated} },
@@ -1491,7 +1505,7 @@ pub fn main(init: std.process.Init) !u8 {
 			};
 
 			// Determine depth
-			const max_depth = cfg.temp_depth orelse cfg.depth orelse effective.depth orelse 4;
+			const max_depth = cfg.depth orelse effective.depth orelse 4;
 
 			const render_config = tree_render.RenderConfig{
 				.use_color = use_color,
@@ -1513,7 +1527,7 @@ pub fn main(init: std.process.Init) !u8 {
 			};
 
 			// Persist state if modified
-			if (cfg.state_modified or effective.needs_migration or cfg.rewrite_settings) {
+			if (!cfg.temporary and (cfg.state_modified or effective.needs_migration or cfg.rewrite_settings)) {
 				persistState(allocator, abs_dir, &cfg, &effective) catch |err| {
 					try stderr.print("Warning: could not persist state: {}\n", .{err});
 					try stderr.flush();
