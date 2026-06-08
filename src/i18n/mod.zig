@@ -223,7 +223,35 @@ const all_locales = [_]Locale{
 /// Comma-separated list of all locale codes (for error messages).
 /// NOTE: Update this when adding locales (Zig comptime can't build
 /// runtime-referencing slices from var buffers for global consts).
-pub const available_codes: [:0]const u8 = "ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur, sq, sr, hr, bs, bg, mk, sl, nl, sv, nb, da, fi, is, zh_hant, id, ha, am, yo, ig, fil";
+pub const available_codes: []const u8 = blk: {
+    @setEvalBranchQuota(100000);
+    // Single source of truth: derive the code list from all_locales and sort it
+    // alphabetically at comptime, so it can never drift from the registry or fall
+    // out of order as locales are added.
+    var codes: [all_locales.len][]const u8 = undefined;
+    for (all_locales, 0..) |loc, i| codes[i] = loc.code();
+    std.mem.sort([]const u8, codes[0..], {}, struct {
+        fn lt(_: void, a: []const u8, b: []const u8) bool {
+            return std.mem.lessThan(u8, a, b);
+        }
+    }.lt);
+    var total: usize = 0;
+    for (codes) |c| total += c.len;
+    total += (codes.len - 1) * 2; // ", " separators
+    var buf: [total]u8 = undefined;
+    var pos: usize = 0;
+    for (codes, 0..) |c, i| {
+        if (i > 0) {
+            buf[pos] = ',';
+            buf[pos + 1] = ' ';
+            pos += 2;
+        }
+        @memcpy(buf[pos .. pos + c.len], c);
+        pos += c.len;
+    }
+    const final = buf;
+    break :blk &final;
+};
 
 // ── Global state ──────────────────────────────────────────────────
 var current_locale: Locale = .en;
@@ -713,6 +741,24 @@ test "parseLocaleCode" {
 
 test "available_codes contains en" {
     try std.testing.expect(std.mem.indexOf(u8, available_codes, "en") != null);
+}
+
+test "available_codes is alphabetically sorted and complete" {
+    var iter = std.mem.splitSequence(u8, available_codes, ", ");
+    var prev: []const u8 = "";
+    var count: usize = 0;
+    while (iter.next()) |code| {
+        if (count > 0) {
+            try std.testing.expect(std.mem.lessThan(u8, prev, code));
+        }
+        prev = code;
+        count += 1;
+    }
+    // Every locale appears exactly once.
+    try std.testing.expectEqual(all_locales.len, count);
+    inline for (all_locales) |loc| {
+        try std.testing.expect(std.mem.indexOf(u8, available_codes, loc.code()) != null);
+    }
 }
 
 test "fmtRuntime: single substitution" {

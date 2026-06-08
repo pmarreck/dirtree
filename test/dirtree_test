@@ -1110,7 +1110,7 @@ Options:
   --config           Show computed effective configuration
   --test             Run associated tests
   --lang CODE        Set display language (e.g. en, de, fr, ja)
-                     Available language codes: ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur, sq, sr, hr, bs, bg, mk, sl, nl, sv, nb, da, fi, is, zh_hant, id, ha, am, yo, ig, fil
+                     Available language codes: am, ar, az, bg, bn, bs, da, de, el, en, es, fa, fi, fil, fr, ha, he, hi, hr, hu, id, ig, is, it, ja, km, ko, mk, nb, nl, pa, pl, ps, pt_br, ro, ru, sl, sq, sr, sv, sw, ta, th, tr, uk, ur, vi, yo, zh_hans, zh_hant
   --max-lines N      Set large output warning threshold (default: 500)
   --override-warning Suppress the large output warning
   --head N           Stop output after N lines
