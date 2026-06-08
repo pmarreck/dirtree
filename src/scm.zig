@@ -149,7 +149,13 @@ fn collectJjPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: *
 	// Run with cwd = repo_root so jj emits repo-root-relative paths (jj paths
 	// are relative to the process cwd, unlike git -C). Without this, paths
 	// double-prefix when dirtree is invoked from outside the repo.
-	const output = runCommand(allocator, &.{ "jj", "-R", repo_root, "diff", "--name-only" }, repo_root) catch return true;
+	// Run with `fsmonitor.backend=none` so jj does a direct full-tree crawl
+	// instead of using Watchman. For a one-shot CLI this is both faster and
+	// more predictable: a cold Watchman watch-establishment on a large tree can
+	// stall for seconds on the first run in a fresh shell, whereas the crawl is
+	// ~tens of ms. It also keeps dirtree from disturbing the repo's Watchman
+	// state. `-R` + cwd = repo_root keeps emitted paths repo-root-relative.
+	const output = runCommand(allocator, &.{ "jj", "--config", "fsmonitor.backend=none", "-R", repo_root, "diff", "--name-only" }, repo_root) catch return true;
 	defer allocator.free(output);
 
 	var iter = std.mem.splitScalar(u8, output, '\n');
@@ -190,7 +196,7 @@ fn getGitRoot(allocator: std.mem.Allocator, abs_dir: []const u8) ![]const u8 {
 
 /// Get the jj repository root for a directory.
 fn getJjRoot(allocator: std.mem.Allocator, abs_dir: []const u8) ![]const u8 {
-	const output = try runCommand(allocator, &.{ "jj", "-R", abs_dir, "root" }, null);
+	const output = try runCommand(allocator, &.{ "jj", "--ignore-working-copy", "-R", abs_dir, "root" }, null);
 	defer allocator.free(output);
 
 	const trimmed = std.mem.trimEnd(u8, output, "\n\r");
