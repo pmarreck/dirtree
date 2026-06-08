@@ -1091,12 +1091,12 @@ Options:
   --simple           Output a simple, LLM-friendly stateful tree
   --decorated        Force decorated output (even when piped)
   --no-icons         Disable icons (simple mode + decorated header)
-  --no-color        Disable ANSI colors and persist preference
+  --no-color/--color Enable/disable ANSI colors (persisted)
   --no-orphan-warning Suppress the orphaned-notes warning
   --no-notes/--show-notes Hide or show inline notes (DIRTREE_HIDE_NOTES=1 to hide by default)
   --notes MODE       Note layout: aligned (default) or inline
   --notes-leader     Draw dim leader dots from names to aligned notes
-  --no-hyperlinks   Disable OSC8 hyperlinks and persist preference
+  --no-hyperlinks/--hyperlinks Enable/disable OSC8 hyperlinks (persisted)
   --default X        Persist default state: opened|closed
   -o, --open DIR...  Open one or more subdirs (repeat flag to add more)
   -c, --close DIR... Close one or more subdirs (repeat flag to add more)
@@ -4422,6 +4422,36 @@ test_world_locales_selectable() {
 	fi
 }
 
+
+test_no_color_then_color_restores() {
+	# Regression: --no-color persists color=false; there must be a --color flag
+	# to restore it (one-way door otherwise).
+	local workspace target; workspace=$(new_tmpdir); target="$workspace/colorpref"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --no-color "$target" >/dev/null 2>&1
+	if ! grep -q '^color=false' "$target/.dirtree-state" 2>/dev/null; then
+		echo "--no-color should persist color=false" >&2; cat "$target/.dirtree-state" 2>/dev/null >&2; return 1
+	fi
+	"$DIRTREE_BIN" --color "$target" >/dev/null 2>&1
+	if grep -q '^color=false' "$target/.dirtree-state" 2>/dev/null; then
+		echo "--color should overwrite color=false" >&2; return 1
+	fi
+	if ! grep -q '^color=true' "$target/.dirtree-state" 2>/dev/null; then
+		echo "--color should persist color=true" >&2; cat "$target/.dirtree-state" 2>/dev/null >&2; return 1
+	fi
+}
+
+test_no_hyperlinks_then_hyperlinks_restores() {
+	local workspace target; workspace=$(new_tmpdir); target="$workspace/hlpref"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --no-hyperlinks "$target" >/dev/null 2>&1
+	if ! grep -q '^hyperlink=false' "$target/.dirtree-state" 2>/dev/null; then
+		echo "--no-hyperlinks should persist hyperlink=false" >&2; cat "$target/.dirtree-state" 2>/dev/null >&2; return 1
+	fi
+	"$DIRTREE_BIN" --hyperlinks "$target" >/dev/null 2>&1
+	if ! grep -q '^hyperlink=true' "$target/.dirtree-state" 2>/dev/null; then
+		echo "--hyperlinks should persist hyperlink=true" >&2; cat "$target/.dirtree-state" 2>/dev/null >&2; return 1
+	fi
+}
+
 test_hide_scm_changed_file_kept_and_counted() {
 	local workspace target out="" err=""
 	command -v git >/dev/null 2>&1 || { echo "SKIP: git unavailable" >&2; return 0; }
@@ -4929,6 +4959,10 @@ run_all_tests() {
 		test_balkan_locales_selectable
 	run_test "world locales (nl sv nb da fi is zh_hant id ha am yo ig fil) selectable" \
 		test_world_locales_selectable
+	run_test "--no-color then --color restores" \
+		test_no_color_then_color_restores
+	run_test "--no-hyperlinks then --hyperlinks restores" \
+		test_no_hyperlinks_then_hyperlinks_restores
 	run_test "--lang accepts uppercase codes" \
 		test_lang_code_case_insensitive
 	run_test "invalid --lang errors even with --help" \

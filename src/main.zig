@@ -40,6 +40,8 @@ pub const CliConfig = struct {
 	force_decorated: bool = false,
 	no_icons: bool = false,
 	no_color: bool = false,
+	// Affirmative inverse of --no-color: re-enable + persist color (escape the one-way door)
+	color: bool = false,
 	// Suppress the post-listing orphaned-notes warning (this run only, not persisted)
 	no_orphan_warning: bool = false,
 	// Tri-state note visibility: true=--show-notes, false=--no-notes, null=unset
@@ -49,6 +51,8 @@ pub const CliConfig = struct {
 	// Leader dots from name to note in aligned mode (opt-in, display-only).
 	note_leader: bool = false,
 	no_hyperlinks: bool = false,
+	// Affirmative inverse of --no-hyperlinks
+	hyperlinks: bool = false,
 	show_hidden: bool = false,
 	rewrite_settings: bool = false,
 	show_config: bool = false,
@@ -413,6 +417,12 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						i += 1;
 						continue;
 					},
+					.color => {
+						config.color = true;
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
 					.no_orphan_warning => {
 						// Display-only suppression; never persisted to the state file.
 						config.no_orphan_warning = true;
@@ -454,6 +464,12 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					},
 					.no_hyperlinks => {
 						config.no_hyperlinks = true;
+						config.state_modified = true;
+						i += 1;
+						continue;
+					},
+					.hyperlinks => {
+						config.hyperlinks = true;
 						config.state_modified = true;
 						i += 1;
 						continue;
@@ -1066,12 +1082,12 @@ fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
 		.{ .flag = "--simple", .text = s.help_opt_simple, .args = &[_]i18n.CliArg{.simple} },
 		.{ .flag = "--decorated", .text = s.help_opt_decorated, .args = &[_]i18n.CliArg{.decorated} },
 		.{ .flag = "--no-icons", .text = s.help_opt_no_icons, .args = &[_]i18n.CliArg{.no_icons} },
-		.{ .flag = "--no-color", .text = s.help_opt_no_color, .args = &[_]i18n.CliArg{.no_color} },
+		.{ .flag = "--no-color/--color", .text = s.help_opt_no_color, .args = &[_]i18n.CliArg{ .no_color, .color } },
 		.{ .flag = "--no-orphan-warning", .text = s.help_opt_no_orphan_warning, .args = &[_]i18n.CliArg{.no_orphan_warning} },
 		.{ .flag = "--no-notes/--show-notes", .text = s.help_opt_notes, .args = &[_]i18n.CliArg{ .no_notes, .show_notes } },
 		.{ .flag = "--notes MODE", .text = s.help_opt_notes_mode, .args = &[_]i18n.CliArg{.notes} },
 		.{ .flag = "--notes-leader", .text = s.help_opt_notes_leader, .args = &[_]i18n.CliArg{.note_leader} },
-		.{ .flag = "--no-hyperlinks", .text = s.help_opt_no_hyperlinks, .args = &[_]i18n.CliArg{.no_hyperlinks} },
+		.{ .flag = "--no-hyperlinks/--hyperlinks", .text = s.help_opt_no_hyperlinks, .args = &[_]i18n.CliArg{ .no_hyperlinks, .hyperlinks } },
 		.{ .flag = "--default X", .text = s.help_opt_default, .args = &[_]i18n.CliArg{.default} },
 		.{ .flag = "-o, --open DIR...", .text = s.help_opt_open, .args = &[_]i18n.CliArg{.open} },
 		.{ .flag = "-c, --close DIR...", .text = s.help_opt_close, .args = &[_]i18n.CliArg{.close} },
@@ -1653,8 +1669,14 @@ fn applyCliOverrides(allocator: std.mem.Allocator, cfg: *const CliConfig, effect
 	if (cfg.no_color) {
 		effective.color_preference = false;
 	}
+	if (cfg.color) {
+		effective.color_preference = true;
+	}
 	if (cfg.no_hyperlinks) {
 		effective.hyperlink_preference = false;
+	}
+	if (cfg.hyperlinks) {
+		effective.hyperlink_preference = true;
 	}
 
 	// Apply CLI max_lines
@@ -1820,8 +1842,14 @@ fn persistState(
 	if (cfg.no_color) {
 		sf.color_preference = false;
 	}
+	if (cfg.color) {
+		sf.color_preference = true;
+	}
 	if (cfg.no_hyperlinks) {
 		sf.hyperlink_preference = false;
+	}
+	if (cfg.hyperlinks) {
+		sf.hyperlink_preference = true;
 	}
 	if (cfg.max_lines) |ml| {
 		sf.max_lines = ml;
