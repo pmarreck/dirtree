@@ -1110,7 +1110,7 @@ Options:
   --config           Show computed effective configuration
   --test             Run associated tests
   --lang CODE        Set display language (e.g. en, de, fr, ja)
-                     Available language codes: ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur
+                     Available language codes: ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur, sq, sr, hr, bs, bg, mk, sl
   --max-lines N      Set large output warning threshold (default: 500)
   --override-warning Suppress the large output warning
   --head N           Stop output after N lines
@@ -4378,6 +4378,26 @@ test_localized_help_alias_sets_language() {
 	fi
 }
 
+
+test_balkan_locales_selectable() {
+	# Balkan expansion: Albanian, Serbian, Croatian, Bosnian, Bulgarian, Macedonian, Slovenian.
+	local target; target=$(new_tmpdir); mkdir -p "$target/sub"
+	local c
+	for c in sq sr hr bs bg mk sl; do
+		if ! "$DIRTREE_BIN" --lang "$c" --simple --no-icons "$target" >/dev/null 2>&1; then
+			echo "locale $c should be selectable via --lang" >&2
+			return 1
+		fi
+	done
+	# Each must actually translate the About text (not silently fall back to English).
+	local en_about sq_about
+	en_about=$("$DIRTREE_BIN" --about 2>/dev/null)
+	sq_about=$("$DIRTREE_BIN" --lang sq --about 2>/dev/null)
+	if [[ "$sq_about" == "$en_about" || -z "$sq_about" ]]; then
+		echo "Albanian --about should differ from English" >&2; return 1
+	fi
+}
+
 test_hide_scm_changed_file_kept_and_counted() {
 	local workspace target out="" err=""
 	command -v git >/dev/null 2>&1 || { echo "SKIP: git unavailable" >&2; return 0; }
@@ -4881,6 +4901,8 @@ run_all_tests() {
 		test_negation_warn_uses_localized_switches
 	run_test "new locales (bn hi pa ps sw ta th ur) selectable" \
 		test_new_locales_selectable
+	run_test "Balkan locales (sq sr hr bs bg mk sl) selectable" \
+		test_balkan_locales_selectable
 	run_test "--lang accepts uppercase codes" \
 		test_lang_code_case_insensitive
 	run_test "invalid --lang errors even with --help" \
