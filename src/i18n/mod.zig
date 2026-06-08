@@ -424,6 +424,22 @@ pub fn parseLocaleCode(code_str: []const u8) ?Locale {
             }
         }
     }
+    // Generic Chinese with no explicit script code (zh, zh_CN, zh_TW, zh-Hant…)
+    // isn't one of the defined codes above; fold it: default to Simplified,
+    // except Traditional script (Hant) or Traditional-script regions (TW/HK/MO).
+    if (best == null and code_str.len >= 2 and std.ascii.eqlIgnoreCase(code_str[0..2], "zh")) {
+        const at_boundary = code_str.len == 2 or switch (code_str[2]) {
+            '_', '-', '.' => true,
+            else => false,
+        };
+        if (at_boundary) {
+            const traditional = (std.ascii.indexOfIgnoreCase(code_str, "hant") != null) or
+                (std.ascii.indexOfIgnoreCase(code_str, "tw") != null) or
+                (std.ascii.indexOfIgnoreCase(code_str, "hk") != null) or
+                (std.ascii.indexOfIgnoreCase(code_str, "mo") != null);
+            return if (traditional) .zh_hant else .zh_hans;
+        }
+    }
     return best;
 }
 
@@ -737,6 +753,18 @@ test "parseLocaleCode" {
     // Longest defined code wins when one code is a prefix of another at a
     // separator boundary.
     try std.testing.expectEqual(Locale.pt_br, parseLocaleCode("pt_br_x").?);
+    // Generic Chinese folds by region/script: default Simplified, Traditional
+    // only for Hant / TW / HK / MO. Explicit zh_hans/zh_hant still resolve.
+    try std.testing.expectEqual(Locale.zh_hans, parseLocaleCode("zh").?);
+    try std.testing.expectEqual(Locale.zh_hans, parseLocaleCode("zh_CN").?);
+    try std.testing.expectEqual(Locale.zh_hans, parseLocaleCode("zh_SG").?);
+    try std.testing.expectEqual(Locale.zh_hans, parseLocaleCode("zh-Hans").?);
+    try std.testing.expectEqual(Locale.zh_hant, parseLocaleCode("zh_TW").?);
+    try std.testing.expectEqual(Locale.zh_hant, parseLocaleCode("zh_HK").?);
+    try std.testing.expectEqual(Locale.zh_hant, parseLocaleCode("zh_MO").?);
+    try std.testing.expectEqual(Locale.zh_hant, parseLocaleCode("zh-Hant-TW").?);
+    try std.testing.expectEqual(Locale.zh_hant, parseLocaleCode("zh_hant").?);
+    try std.testing.expectEqual(Locale.zh_hans, parseLocaleCode("zh_hans").?);
 }
 
 test "available_codes contains en" {
