@@ -176,16 +176,64 @@ fn applyLangArg(raw_args: []const [:0]const u8) void {
 
 /// Parse CLI arguments into a CliConfig.
 /// Returns ParseResult which may be an early exit (help, about, test, error).
-/// True if every byte is a known NO-ARGUMENT single-letter short flag (h/a/t),
-/// so a token like "-ta" can be expanded as a getopt-style cluster. Arg-taking
-/// shorts (-d/-o/-c/-p) and the two-letter -td are deliberately excluded.
-fn allNoArgShortFlags(letters: []const u8) bool {
-	if (letters.len == 0) return false;
-	for (letters) |c| switch (c) {
-		'h', 'a', 't' => {},
-		else => return false,
+/// Map a known single-letter short flag to its standalone token.
+fn shortFlagToken(c: u8) [:0]const u8 {
+	return switch (c) {
+		'h' => "-h",
+		'a' => "-a",
+		't' => "-t",
+		'd' => "-d",
+		'o' => "-o",
+		'c' => "-c",
+		'p' => "-p",
+		else => unreachable,
 	};
+}
+
+/// True if `tok` is an expandable getopt-style short-flag cluster: a single-dash
+/// token of >=2 letters where every letter is a known short flag and every
+/// letter EXCEPT the last is a no-argument flag (h/a/t). The last letter may be
+/// an argument-taking flag (d/o/c/p), which then consumes its argument as usual.
+/// So "-ta" => -t -a and "-td 3" => -t -d 3, while "-dt" (arg-flag not last) and
+/// long flags pass through untouched.
+fn isExpandableShortCluster(tok: []const u8) bool {
+	if (tok.len < 3 or tok[0] != '-' or tok[1] == '-') return false;
+	for (tok[1..], 0..) |c, idx| {
+		const is_last = idx == tok.len - 2;
+		const no_arg = c == 'h' or c == 'a' or c == 't';
+		const arg_taking = c == 'd' or c == 'o' or c == 'c' or c == 'p';
+		if (is_last) {
+			if (!no_arg and !arg_taking) return false;
+		} else if (!no_arg) {
+			return false;
+		}
+	}
 	return true;
+}
+
+/// Pre-expand short-flag clusters into individual flag tokens so the normal
+/// per-flag parser handles them (incl. an argument-taking flag as the last
+/// cluster member). Returns `argv` unchanged (no allocation) when no cluster is
+/// present. Allocated with `allocator` (arena in main, so no explicit free).
+fn expandShortFlagClusters(allocator: std.mem.Allocator, argv: []const [:0]const u8) ![]const [:0]const u8 {
+	var any = false;
+	for (argv) |tok| {
+		if (isExpandableShortCluster(tok)) {
+			any = true;
+			break;
+		}
+	}
+	if (!any) return argv;
+	var out: std.ArrayListUnmanaged([:0]const u8) = .empty;
+	errdefer out.deinit(allocator);
+	for (argv) |tok| {
+		if (isExpandableShortCluster(tok)) {
+			for (tok[1..]) |ch| try out.append(allocator, shortFlagToken(ch));
+		} else {
+			try out.append(allocator, tok);
+		}
+	}
+	return out.toOwnedSlice(allocator);
 }
 
 pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) ParseResult {
@@ -297,25 +345,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		}
 		if (std.mem.eql(u8, arg, "-t")) {
 			config.temporary = true;
-			i += 1;
-			continue;
-		}
-		// getopt-style clustering of no-argument single-letter flags (e.g. -ta == -t -a).
-		// Only the no-arg singles (h/a/t) cluster; -td and the arg-taking shorts
-		// (-d/-o/-c/-p) are matched as their own tokens below.
-		if (arg.len > 2 and arg[0] == '-' and arg[1] != '-' and allNoArgShortFlags(arg[1..])) {
-			for (arg[1..]) |ch| switch (ch) {
-				'h' => {
-					config.deinit(allocator);
-					return .help;
-				},
-				'a' => {
-					config.deinit(allocator);
-					return .about;
-				},
-				't' => config.temporary = true,
-				else => unreachable,
-			};
 			i += 1;
 			continue;
 		}
@@ -1247,7 +1276,9 @@ pub fn main(init: std.process.Init) !u8 {
 	const raw_args = try init.minimal.args.toSlice(allocator);
 	// No need for argsFree - arena handles cleanup
 
-	const result = parseArgs(allocator, raw_args);
+	// Expand getopt-style short-flag clusters (e.g. "-td 3" => "-t" "-d" "3").
+	const expanded_args = expandShortFlagClusters(allocator, raw_args) catch raw_args;
+	const result = parseArgs(allocator, expanded_args);
 
 	switch (result) {
 		.help => {
