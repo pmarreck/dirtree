@@ -44,6 +44,19 @@ const bs = @import("bs.zig");
 const bg = @import("bg.zig");
 const mk = @import("mk.zig");
 const sl = @import("sl.zig");
+const nl = @import("nl.zig");
+const sv = @import("sv.zig");
+const nb = @import("nb.zig");
+const da = @import("da.zig");
+const fi = @import("fi.zig");
+const is = @import("is.zig");
+const zh_hant = @import("zh_hant.zig");
+const id = @import("id.zig");
+const ha = @import("ha.zig");
+const am = @import("am.zig");
+const yo = @import("yo.zig");
+const ig = @import("ig.zig");
+const fil = @import("fil.zig");
 
 // ── Locale enum ───────────────────────────────────────────────────
 pub const Locale = enum {
@@ -84,6 +97,19 @@ pub const Locale = enum {
     bg,
     mk,
     sl,
+    nl,
+    sv,
+    nb,
+    da,
+    fi,
+    is,
+    zh_hant,
+    id,
+    ha,
+    am,
+    yo,
+    ig,
+    fil,
 
     pub fn code(self: Locale) [:0]const u8 {
         return switch (self) {
@@ -124,6 +150,19 @@ pub const Locale = enum {
             .bg => "bg",
             .mk => "mk",
             .sl => "sl",
+            .nl => "nl",
+            .sv => "sv",
+            .nb => "nb",
+            .da => "da",
+            .fi => "fi",
+            .is => "is",
+            .zh_hant => "zh_hant",
+            .id => "id",
+            .ha => "ha",
+            .am => "am",
+            .yo => "yo",
+            .ig => "ig",
+            .fil => "fil",
         };
     }
 };
@@ -166,12 +205,25 @@ const all_locales = [_]Locale{
     .bg,
     .mk,
     .sl,
+    .nl,
+    .sv,
+    .nb,
+    .da,
+    .fi,
+    .is,
+    .zh_hant,
+    .id,
+    .ha,
+    .am,
+    .yo,
+    .ig,
+    .fil,
 };
 
 /// Comma-separated list of all locale codes (for error messages).
 /// NOTE: Update this when adding locales (Zig comptime can't build
 /// runtime-referencing slices from var buffers for global consts).
-pub const available_codes: [:0]const u8 = "ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur, sq, sr, hr, bs, bg, mk, sl";
+pub const available_codes: [:0]const u8 = "ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur, sq, sr, hr, bs, bg, mk, sl, nl, sv, nb, da, fi, is, zh_hant, id, ha, am, yo, ig, fil";
 
 // ── Global state ──────────────────────────────────────────────────
 var current_locale: Locale = .en;
@@ -230,6 +282,19 @@ pub fn localeCliAliases(loc: Locale) []const CliAliasEntry {
         .bg => bg.aliases.cli,
         .mk => mk.aliases.cli,
         .sl => sl.aliases.cli,
+        .nl => nl.aliases.cli,
+        .sv => sv.aliases.cli,
+        .nb => nb.aliases.cli,
+        .da => da.aliases.cli,
+        .fi => fi.aliases.cli,
+        .is => is.aliases.cli,
+        .zh_hant => zh_hant.aliases.cli,
+        .id => id.aliases.cli,
+        .ha => ha.aliases.cli,
+        .am => am.aliases.cli,
+        .yo => yo.aliases.cli,
+        .ig => ig.aliases.cli,
+        .fil => fil.aliases.cli,
     };
 }
 
@@ -285,6 +350,19 @@ fn stringsFor(loc: Locale) *const Strings {
         .bg => &bg.strings,
         .mk => &mk.strings,
         .sl => &sl.strings,
+        .nl => &nl.strings,
+        .sv => &sv.strings,
+        .nb => &nb.strings,
+        .da => &da.strings,
+        .fi => &fi.strings,
+        .is => &is.strings,
+        .zh_hant => &zh_hant.strings,
+        .id => &id.strings,
+        .ha => &ha.strings,
+        .am => &am.strings,
+        .yo => &yo.strings,
+        .ig => &ig.strings,
+        .fil => &fil.strings,
     };
 }
 
@@ -293,39 +371,32 @@ fn stringsFor(loc: Locale) *const Strings {
 /// Parse a locale code string (e.g. "de", "de_DE", "de_DE.UTF-8") into a Locale.
 /// Returns null if unrecognized.
 pub fn parseLocaleCode(code_str: []const u8) ?Locale {
-    // Extract the 2-char language prefix
+    // Match the input against every known locale code (any length: 2/3/4/5/6/7),
+    // case-insensitively. The match must end at the full code — either the input
+    // ends there, or the next byte is a separator (`_`, `-`, `.`) — so a region
+    // or script suffix like "de_DE", "en-GB", "es_419", "en_US.UTF-8" resolves to
+    // its base locale. The separator boundary also prevents a longer code from
+    // false-matching a shorter one that happens to be a prefix (e.g. "fix" must
+    // NOT resolve to Finnish "fi", and a 3-char code like "fil" is matched in
+    // full rather than collapsing to "fi"). When several codes match, the
+    // longest wins.
     if (code_str.len < 2) return null;
-    const prefix = code_str[0..2];
-
+    var best: ?Locale = null;
+    var best_len: usize = 0;
     inline for (all_locales) |loc| {
-        const loc_code = comptime loc.code();
-        if (loc_code.len == 2) {
-            // Case-insensitive so an uppercased --lang code (e.g. "DE") works.
-            if (std.ascii.eqlIgnoreCase(prefix, loc_code)) return loc;
-        }
-    }
-
-    // Check longer codes (e.g. "pt_br" -> "pt_BR", "zh_hans" -> "zh_Hans")
-    if (code_str.len >= 7) {
-        const full7 = code_str[0..7];
-        inline for (all_locales) |loc| {
-            const loc_code = comptime loc.code();
-            if (loc_code.len == 7) {
-                if (std.ascii.eqlIgnoreCase(full7, loc_code)) return loc;
+        const lc = comptime loc.code();
+        if (code_str.len >= lc.len and std.ascii.eqlIgnoreCase(code_str[0..lc.len], lc)) {
+            const at_boundary = code_str.len == lc.len or switch (code_str[lc.len]) {
+                '_', '-', '.' => true,
+                else => false,
+            };
+            if (at_boundary and lc.len > best_len) {
+                best = loc;
+                best_len = lc.len;
             }
         }
     }
-    if (code_str.len >= 5) {
-        const full = code_str[0..5];
-        inline for (all_locales) |loc| {
-            const loc_code = comptime loc.code();
-            if (loc_code.len == 5) {
-                if (std.ascii.eqlIgnoreCase(full, loc_code)) return loc;
-            }
-        }
-    }
-
-    return null;
+    return best;
 }
 
 /// Detect locale from environment variables.
@@ -363,7 +434,7 @@ pub fn detectLocaleFromAliases(args: []const [:0]const u8) ?Locale {
 
 /// Comptime-built map from all locale CLI aliases to CliArg.
 const cli_alias_map = blk: {
-    @setEvalBranchQuota(2000000);
+    @setEvalBranchQuota(20000000);
     // Collect all entries from all locales
     const locale_aliases = [_][]const CliAliasEntry{
         ar.aliases.cli,
@@ -403,6 +474,19 @@ const cli_alias_map = blk: {
         bg.aliases.cli,
         mk.aliases.cli,
         sl.aliases.cli,
+        nl.aliases.cli,
+        sv.aliases.cli,
+        nb.aliases.cli,
+        da.aliases.cli,
+        fi.aliases.cli,
+        is.aliases.cli,
+        zh_hant.aliases.cli,
+        id.aliases.cli,
+        ha.aliases.cli,
+        am.aliases.cli,
+        yo.aliases.cli,
+        ig.aliases.cli,
+        fil.aliases.cli,
     };
 
     // Count total entries
@@ -489,6 +573,19 @@ fn envAliasesFor(comptime env_var: EnvVar) []const [:0]const u8 {
         bg.aliases.env,
         mk.aliases.env,
         sl.aliases.env,
+        nl.aliases.env,
+        sv.aliases.env,
+        nb.aliases.env,
+        da.aliases.env,
+        fi.aliases.env,
+        is.aliases.env,
+        zh_hant.aliases.env,
+        id.aliases.env,
+        ha.aliases.env,
+        am.aliases.env,
+        yo.aliases.env,
+        ig.aliases.env,
+        fil.aliases.env,
     };
 
     // Count matching entries
@@ -600,6 +697,18 @@ test "parseLocaleCode" {
     try std.testing.expect(parseLocaleCode("xx") == null);
     try std.testing.expect(parseLocaleCode("") == null);
     try std.testing.expect(parseLocaleCode("e") == null);
+    // Region/script suffixes resolve to the base locale (incl. 6-char inputs).
+    try std.testing.expectEqual(Locale.en, parseLocaleCode("en-GB").?);
+    try std.testing.expectEqual(Locale.es, parseLocaleCode("es_419").?);
+    try std.testing.expectEqual(Locale.pt_br, parseLocaleCode("PT_BR").?);
+    // A longer code that merely shares a 2-char prefix must NOT false-match the
+    // 2-char locale (regression: the old prefix-only matcher returned Finnish
+    // for "fix"). Without a separator boundary it is not that locale.
+    try std.testing.expect(parseLocaleCode("fix") == null);
+    try std.testing.expect(parseLocaleCode("deu") == null);
+    // Longest defined code wins when one code is a prefix of another at a
+    // separator boundary.
+    try std.testing.expectEqual(Locale.pt_br, parseLocaleCode("pt_br_x").?);
 }
 
 test "available_codes contains en" {
@@ -676,6 +785,19 @@ test {
     _ = @import("bg.zig");
     _ = @import("mk.zig");
     _ = @import("sl.zig");
+    _ = @import("nl.zig");
+    _ = @import("sv.zig");
+    _ = @import("nb.zig");
+    _ = @import("da.zig");
+    _ = @import("fi.zig");
+    _ = @import("is.zig");
+    _ = @import("zh_hant.zig");
+    _ = @import("id.zig");
+    _ = @import("ha.zig");
+    _ = @import("am.zig");
+    _ = @import("yo.zig");
+    _ = @import("ig.zig");
+    _ = @import("fil.zig");
 }
 
 test "every locale resolves and has all Strings fields populated" {

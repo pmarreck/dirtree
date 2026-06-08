@@ -1110,7 +1110,7 @@ Options:
   --config           Show computed effective configuration
   --test             Run associated tests
   --lang CODE        Set display language (e.g. en, de, fr, ja)
-                     Available language codes: ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur, sq, sr, hr, bs, bg, mk, sl
+                     Available language codes: ar, az, de, el, en, es, fa, fr, he, hu, it, ja, km, ko, pl, pt_br, ro, ru, tr, uk, vi, zh_hans, bn, hi, pa, ps, sw, ta, th, ur, sq, sr, hr, bs, bg, mk, sl, nl, sv, nb, da, fi, is, zh_hant, id, ha, am, yo, ig, fil
   --max-lines N      Set large output warning threshold (default: 500)
   --override-warning Suppress the large output warning
   --head N           Stop output after N lines
@@ -4398,6 +4398,30 @@ test_balkan_locales_selectable() {
 	fi
 }
 
+
+test_world_locales_selectable() {
+	# Expansion to 50: tech-belt + large underserved languages.
+	local target; target=$(new_tmpdir); mkdir -p "$target/sub"
+	local c
+	for c in nl sv nb da fi is zh_hant id ha am yo ig fil; do
+		if ! "$DIRTREE_BIN" --lang "$c" --simple --no-icons "$target" >/dev/null 2>&1; then
+			echo "locale $c should be selectable via --lang" >&2
+			return 1
+		fi
+	done
+	# A couple must actually translate (not silently fall back to English).
+	local en_about id_about nl_about
+	en_about=$("$DIRTREE_BIN" --about 2>/dev/null)
+	id_about=$("$DIRTREE_BIN" --lang id --about 2>/dev/null)
+	nl_about=$("$DIRTREE_BIN" --lang nl --about 2>/dev/null)
+	if [[ "$id_about" == "$en_about" || -z "$id_about" ]]; then
+		echo "Indonesian --about should differ from English" >&2; return 1
+	fi
+	if [[ "$nl_about" == "$en_about" || -z "$nl_about" ]]; then
+		echo "Dutch --about should differ from English" >&2; return 1
+	fi
+}
+
 test_hide_scm_changed_file_kept_and_counted() {
 	local workspace target out="" err=""
 	command -v git >/dev/null 2>&1 || { echo "SKIP: git unavailable" >&2; return 0; }
@@ -4903,6 +4927,8 @@ run_all_tests() {
 		test_new_locales_selectable
 	run_test "Balkan locales (sq sr hr bs bg mk sl) selectable" \
 		test_balkan_locales_selectable
+	run_test "world locales (nl sv nb da fi is zh_hant id ha am yo ig fil) selectable" \
+		test_world_locales_selectable
 	run_test "--lang accepts uppercase codes" \
 		test_lang_code_case_insensitive
 	run_test "invalid --lang errors even with --help" \
