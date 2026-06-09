@@ -4432,6 +4432,48 @@ test_temp_applies_without_persisting() {
 	if [ ! -f "$target/.dirtree-state" ]; then echo "--no-color alone should persist (control)" >&2; return 1; fi
 }
 
+test_localized_color_hyperlink_affirmative() {
+	# Localized affirmative aliases (work globally via the merged alias map):
+	# de --farbe restores color, de --verknuepfungen restores hyperlinks.
+	local t; t=$(mktemp -d)/clr; mkdir -p "$t/sub"
+	"$DIRTREE_BIN" --no-color "$t" >/dev/null 2>&1
+	"$DIRTREE_BIN" --farbe "$t" >/dev/null 2>&1
+	if ! grep -q '^color=true' "$t/.dirtree-state" 2>/dev/null; then
+		echo "de --farbe should restore color=true" >&2; cat "$t/.dirtree-state" 2>/dev/null >&2; return 1
+	fi
+	"$DIRTREE_BIN" --no-hyperlinks "$t" >/dev/null 2>&1
+	"$DIRTREE_BIN" --verknuepfungen "$t" >/dev/null 2>&1
+	if ! grep -q '^hyperlink=true' "$t/.dirtree-state" 2>/dev/null; then
+		echo "de --verknuepfungen should restore hyperlink=true" >&2; cat "$t/.dirtree-state" 2>/dev/null >&2; return 1
+	fi
+}
+
+test_attached_short_flag_args() {
+	# getopt attached arguments: -d3 == -d 3, -td3 == -t -d 3, -p<path> == -p <path>.
+	local ws out1 out2 rc
+	ws=$(new_tmpdir)
+	local t1="$ws/a1"; mkdir -p "$t1/x/y/z/w"
+	out1=$("$DIRTREE_BIN" --no-color -d2 "$t1" 2>/dev/null)
+	out2=$("$DIRTREE_BIN" --no-color -d 2 "$t1" 2>/dev/null)
+	if [ "$out1" != "$out2" ] || [ -z "$out1" ]; then echo "-d2 should equal -d 2" >&2; return 1; fi
+	local t2="$ws/a2"; mkdir -p "$t2/x/y/z"
+	"$DIRTREE_BIN" --no-color -td2 "$t2" >/dev/null 2>&1
+	if [ -f "$t2/.dirtree-state" ]; then echo "-td2 must not persist" >&2; return 1; fi
+	local t3="$ws/a3"; mkdir -p "$t3/sub"
+	out1=$("$DIRTREE_BIN" --no-color "-p$t3" 2>/dev/null); rc=$?
+	if [ $rc -ne 0 ] || [ -z "$out1" ]; then echo "-p<path> attached should work (rc=$rc)" >&2; return 1; fi
+}
+
+test_cluster_expansion_respects_end_of_options() {
+	# `--` and `--path` must protect a flag-like operand from cluster expansion.
+	local ws rc; ws=$(new_tmpdir)
+	mkdir -p "$ws/-td/inside"
+	( cd "$ws" && "$DIRTREE_BIN" --no-color --path -td >/dev/null 2>&1 ); rc=$?
+	if [ $rc -ne 0 ]; then echo "--path -td should treat -td as a dir name (rc=$rc)" >&2; return 1; fi
+	( cd "$ws" && "$DIRTREE_BIN" --no-color -- -td >/dev/null 2>&1 ); rc=$?
+	if [ $rc -ne 0 ]; then echo "-- -td should treat -td as a dir name (rc=$rc)" >&2; return 1; fi
+}
+
 test_short_flag_clustering() {
 	# getopt-style clustering of no-arg single-letter flags: -ta == -t -a.
 	local out rc
@@ -4969,8 +5011,14 @@ run_all_tests() {
 		test_no_hyperlinks_then_hyperlinks_restores
 	run_test "--temp/-t/--temporary/DIRTREE_TEMP apply without persisting" \
 		test_temp_applies_without_persisting
+	run_test "localized affirmative --color/--hyperlinks aliases" \
+		test_localized_color_hyperlink_affirmative
 	run_test "short single-letter flags cluster (-ta)" \
 		test_short_flag_clustering
+	run_test "attached short-flag args (-d3/-td3/-p<path>)" \
+		test_attached_short_flag_args
+	run_test "cluster expansion respects -- and --path" \
+		test_cluster_expansion_respects_end_of_options
 	run_test "--temp leaves existing state untouched" \
 		test_temp_leaves_existing_state_untouched
 	run_test "--lang accepts uppercase codes" \

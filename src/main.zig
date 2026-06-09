@@ -196,29 +196,55 @@ fn shortFlagToken(c: u8) [:0]const u8 {
 /// an argument-taking flag (d/o/c/p), which then consumes its argument as usual.
 /// So "-ta" => -t -a and "-td 3" => -t -d 3, while "-dt" (arg-flag not last) and
 /// long flags pass through untouched.
-fn isExpandableShortCluster(tok: []const u8) bool {
-	if (tok.len < 3 or tok[0] != '-' or tok[1] == '-') return false;
-	for (tok[1..], 0..) |c, idx| {
-		const is_last = idx == tok.len - 2;
-		const no_arg = c == 'h' or c == 'a' or c == 't';
-		const arg_taking = c == 'd' or c == 'o' or c == 'c' or c == 'p';
-		if (is_last) {
-			if (!no_arg and !arg_taking) return false;
-		} else if (!no_arg) {
-			return false;
+fn isExpandableShort(tok: []const u8) bool {
+	if (tok.len < 2 or tok[0] != '-' or tok[1] == '-') return false;
+	var idx: usize = 1;
+	while (idx < tok.len) : (idx += 1) {
+		switch (tok[idx]) {
+			'h', 'a', 't' => {},
+			'd', 'o', 'c', 'p' => return true, // arg-taking flag ends the scan
+			else => return false,
 		}
 	}
 	return true;
 }
 
-/// Pre-expand short-flag clusters into individual flag tokens so the normal
-/// per-flag parser handles them (incl. an argument-taking flag as the last
-/// cluster member). Returns `argv` unchanged (no allocation) when no cluster is
-/// present. Allocated with `allocator` (arena in main, so no explicit free).
+/// Expand one validated short token into flag tokens, appending to `out`.
+/// Returns true if the token ends in `-p` (path) with NO attached value, so the
+/// caller knows the FOLLOWING argv token is a verbatim path (skip its expansion).
+fn expandOneShort(allocator: std.mem.Allocator, tok: [:0]const u8, out: *std.ArrayListUnmanaged([:0]const u8)) !bool {
+	var idx: usize = 1;
+	while (idx < tok.len) : (idx += 1) {
+		const c = tok[idx];
+		switch (c) {
+			'h', 'a', 't' => try out.append(allocator, shortFlagToken(c)),
+			'd', 'o', 'c', 'p' => {
+				try out.append(allocator, shortFlagToken(c));
+				const rest = tok[idx + 1 ..]; // [:0] slice of the original token
+				if (rest.len > 0) {
+					try out.append(allocator, rest); // attached argument, e.g. -d3 -> "3"
+				} else if (c == 'p') {
+					return true; // -p with no attached value consumes the next token verbatim
+				}
+				return false;
+			},
+			else => unreachable, // guaranteed by isExpandableShort
+		}
+	}
+	return false;
+}
+
+/// Pre-expand short-flag clusters / attached args into individual tokens so the
+/// normal per-flag parser handles them (e.g. "-td3" => "-t" "-d" "3"). Respects
+/// the POSIX `--` end-of-options marker and path flags (`--path`/`-p` and
+/// localized aliases), which take their following token verbatim — so a
+/// flag-like operand is never mistakenly expanded. Returns `argv` unchanged (no
+/// allocation) when there is nothing to expand. Allocated with `allocator`
+/// (arena in main, so no explicit free).
 fn expandShortFlagClusters(allocator: std.mem.Allocator, argv: []const [:0]const u8) ![]const [:0]const u8 {
 	var any = false;
 	for (argv) |tok| {
-		if (isExpandableShortCluster(tok)) {
+		if (isExpandableShort(tok)) {
 			any = true;
 			break;
 		}
@@ -226,12 +252,40 @@ fn expandShortFlagClusters(allocator: std.mem.Allocator, argv: []const [:0]const
 	if (!any) return argv;
 	var out: std.ArrayListUnmanaged([:0]const u8) = .empty;
 	errdefer out.deinit(allocator);
-	for (argv) |tok| {
-		if (isExpandableShortCluster(tok)) {
-			for (tok[1..]) |ch| try out.append(allocator, shortFlagToken(ch));
-		} else {
+	var i: usize = 0;
+	var after_ddash = false;
+	while (i < argv.len) : (i += 1) {
+		const tok = argv[i];
+		if (after_ddash) {
 			try out.append(allocator, tok);
+			continue;
 		}
+		if (std.mem.eql(u8, tok, "--")) {
+			try out.append(allocator, tok);
+			after_ddash = true;
+			continue;
+		}
+		// A long path flag (--path or a localized alias) takes the next token
+		// verbatim as a path; pass that operand through unexpanded.
+		if (i18n.matchLongFlag(tok)) |a| {
+			if (a == .path) {
+				try out.append(allocator, tok);
+				if (i + 1 < argv.len) {
+					i += 1;
+					try out.append(allocator, argv[i]);
+				}
+				continue;
+			}
+		}
+		if (isExpandableShort(tok)) {
+			const consumes_path = try expandOneShort(allocator, tok, &out);
+			if (consumes_path and i + 1 < argv.len) {
+				i += 1;
+				try out.append(allocator, argv[i]); // verbatim path after -p
+			}
+			continue;
+		}
+		try out.append(allocator, tok);
 	}
 	return out.toOwnedSlice(allocator);
 }
