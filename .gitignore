@@ -9,3 +9,5 @@ ZIG_RECENT_API_CHANGES_2025.md
 
 # Nix build output symlink
 result
+AGENTS*.md
+CLAUDE*.md
