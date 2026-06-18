@@ -898,3 +898,139 @@ test "every locale resolves and has all Strings fields populated" {
 test "all_locales covers every Locale enum value" {
     try std.testing.expectEqual(@typeInfo(Locale).@"enum".fields.len, all_locales.len);
 }
+
+// ── Exhaustive i18n classifier tests (over the full locale set) ────
+
+/// Per-locale env aliases (mirrors localeCliAliases). Kept local to the test
+/// scope; product code resolves env vars by EnvVar, not by locale.
+fn localeEnvAliases(loc: Locale) []const EnvAliasEntry {
+    return switch (loc) {
+        .ar => ar.aliases.env,
+        .az => az.aliases.env,
+        .de => de.aliases.env,
+        .el => el.aliases.env,
+        .en => en.aliases.env,
+        .es => es.aliases.env,
+        .fa => fa.aliases.env,
+        .fr => fr.aliases.env,
+        .he => he.aliases.env,
+        .hu => hu.aliases.env,
+        .it => it.aliases.env,
+        .ja => ja.aliases.env,
+        .km => km.aliases.env,
+        .ko => ko.aliases.env,
+        .pl => pl.aliases.env,
+        .pt_br => pt_br.aliases.env,
+        .ro => ro.aliases.env,
+        .ru => ru.aliases.env,
+        .tr => tr_locale.aliases.env,
+        .uk => uk.aliases.env,
+        .vi => vi.aliases.env,
+        .zh_hans => zh_hans.aliases.env,
+        .bn => bn.aliases.env,
+        .hi => hi.aliases.env,
+        .pa => pa.aliases.env,
+        .ps => ps.aliases.env,
+        .sw => sw.aliases.env,
+        .ta => ta.aliases.env,
+        .th => th.aliases.env,
+        .ur => ur.aliases.env,
+        .sq => sq.aliases.env,
+        .sr => sr.aliases.env,
+        .hr => hr.aliases.env,
+        .bs => bs.aliases.env,
+        .bg => bg.aliases.env,
+        .mk => mk.aliases.env,
+        .sl => sl.aliases.env,
+        .nl => nl.aliases.env,
+        .sv => sv.aliases.env,
+        .nb => nb.aliases.env,
+        .da => da.aliases.env,
+        .fi => fi.aliases.env,
+        .is => is.aliases.env,
+        .zh_hant => zh_hant.aliases.env,
+        .id => id.aliases.env,
+        .ha => ha.aliases.env,
+        .am => am.aliases.env,
+        .yo => yo.aliases.env,
+        .ig => ig.aliases.env,
+        .fil => fil.aliases.env,
+    };
+}
+
+test "Test A: every CLI/env alias resolves to its declared arg/var (all locales)" {
+    @setEvalBranchQuota(2000000);
+    // CLI: every (name -> arg) declared by every locale must round-trip through
+    // the public matchLongFlag map back to that exact arg. Catches a locale that
+    // maps a word to the wrong CliArg by copy-paste.
+    inline for (all_locales) |loc| {
+        for (localeCliAliases(loc)) |entry| {
+            const got = matchLongFlag(entry.name) orelse {
+                std.debug.print("locale '{s}': CLI alias '{s}' did not resolve at all\n", .{ loc.code(), entry.name });
+                return error.CliAliasUnresolved;
+            };
+            if (got != entry.arg) {
+                std.debug.print("locale '{s}': CLI alias '{s}' resolves to .{s}, declared .{s}\n", .{ loc.code(), entry.name, @tagName(got), @tagName(entry.arg) });
+                return error.CliAliasWrongArg;
+            }
+        }
+    }
+    // Env: every (name -> var_id) declared by every locale must appear in the
+    // comptime alias list for that EnvVar (i.e. resolve to its declared var),
+    // and must NOT appear in any other EnvVar's alias list (unique resolution).
+    inline for (all_locales) |loc| {
+        for (localeEnvAliases(loc)) |entry| {
+            var found_in_declared = false;
+            inline for (std.meta.fields(EnvVar)) |evf| {
+                const ev = @field(EnvVar, evf.name);
+                const names = comptime envAliasesFor(ev);
+                var present = false;
+                for (names) |n| {
+                    if (std.mem.eql(u8, n, entry.name)) {
+                        present = true;
+                        break;
+                    }
+                }
+                if (ev == entry.var_id) {
+                    if (present) found_in_declared = true;
+                } else if (present) {
+                    std.debug.print("locale '{s}': env alias '{s}' (declared .{s}) also resolves to .{s}\n", .{ loc.code(), entry.name, @tagName(entry.var_id), @tagName(ev) });
+                    return error.EnvAliasWrongVar;
+                }
+            }
+            if (!found_in_declared) {
+                std.debug.print("locale '{s}': env alias '{s}' does not resolve to its declared .{s}\n", .{ loc.code(), entry.name, @tagName(entry.var_id) });
+                return error.EnvAliasUnresolved;
+            }
+        }
+    }
+}
+
+test "Test B: non-Latin-script locales are genuinely translated (not English)" {
+    // Guards against a translation being reverted to the English value. Only
+    // non-Latin-script locales are checked: Latin/Germanic locales can legally
+    // share strings with English via loanwords and would false-fail.
+    const en_strings = stringsFor(.en);
+    const sentinel = [_]Locale{ .ja, .ar, .ru, .zh_hans, .ko, .el, .he, .th };
+    inline for (sentinel) |loc| {
+        const s = stringsFor(loc);
+        if (std.mem.eql(u8, s.help_title, en_strings.help_title)) {
+            std.debug.print("locale '{s}': help_title is byte-equal to English (untranslated)\n", .{loc.code()});
+            return error.LocaleNotTranslated;
+        }
+    }
+}
+
+test "Test C: parseLocaleCode round-trips over the full locale set" {
+    inline for (all_locales) |loc| {
+        try std.testing.expectEqual(loc, parseLocaleCode(loc.code()).?);
+        // Region/encoding suffixes must still fold back to the base locale.
+        var buf: [32]u8 = undefined;
+        const code = comptime loc.code();
+        const with_region = std.fmt.bufPrint(&buf, "{s}_XX", .{code}) catch unreachable;
+        try std.testing.expectEqual(loc, parseLocaleCode(with_region).?);
+        var buf2: [32]u8 = undefined;
+        const with_enc = std.fmt.bufPrint(&buf2, "{s}.UTF-8", .{code}) catch unreachable;
+        try std.testing.expectEqual(loc, parseLocaleCode(with_enc).?);
+    }
+}

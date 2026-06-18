@@ -1176,6 +1176,112 @@ test "evaluatePath: literal beats regex in open/close conflict" {
 	try std.testing.expect(!result.is_closed);
 }
 
+test "evaluatePath: open literal vs close literal same-type conflict resolves closed" {
+	const allocator = std.testing.allocator;
+	var es = EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
+	// Same path is matched by BOTH an open literal AND a close literal.
+	const open_key = try es.dupeStr("src");
+	try es.open_literals.put(allocator, open_key, {});
+	const close_key = try es.dupeStr("src");
+	try es.close_literals.put(allocator, close_key, {});
+
+	const result = es.evaluatePath("src", false, false, true, null, null);
+	// Documented intent (path_eval.zig ~:163): same-type conflict lets close win.
+	try std.testing.expect(result.is_closed);
+}
+
+test "evaluatePath: open regex vs close regex same-type conflict resolves closed" {
+	const allocator = std.testing.allocator;
+	var es = EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
+	// Same path is matched by BOTH an open regex AND a close regex.
+	const open_pat = try es.dupeStr("^src$");
+	const open_compiled = try regex_lib.Regex.compile(allocator, open_pat);
+	try es.open_regexes.append(allocator, .{
+		.pattern = open_pat,
+		.negated = false,
+		.compiled = open_compiled,
+	});
+
+	const close_pat = try es.dupeStr("^src$");
+	const close_compiled = try regex_lib.Regex.compile(allocator, close_pat);
+	try es.close_regexes.append(allocator, .{
+		.pattern = close_pat,
+		.negated = false,
+		.compiled = close_compiled,
+	});
+
+	const result = es.evaluatePath("src", false, false, true, null, null);
+	// Documented intent: same-type conflict lets close win.
+	try std.testing.expect(result.is_closed);
+}
+
+test "evaluatePath: show literal vs hide literal same-type conflict resolves hidden" {
+	const allocator = std.testing.allocator;
+	var es = EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
+	// Same path is matched by BOTH a show literal AND a hide literal.
+	const show_key = try es.dupeStr("secret");
+	try es.show_literals.put(allocator, show_key, {});
+	const hide_key = try es.dupeStr("secret");
+	try es.hide_literals.put(allocator, hide_key, {});
+
+	const result = es.evaluatePath("secret", false, false, true, null, null);
+	// Parallel to the open/close case: same-type conflict lets hide win.
+	try std.testing.expect(result.is_hidden);
+}
+
+test "evaluatePath: show regex vs hide regex same-type conflict resolves hidden" {
+	const allocator = std.testing.allocator;
+	var es = EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
+	// Same path is matched by BOTH a show regex AND a hide regex.
+	const show_pat = try es.dupeStr("^secret$");
+	const show_compiled = try regex_lib.Regex.compile(allocator, show_pat);
+	try es.show_regexes.append(allocator, .{
+		.pattern = show_pat,
+		.negated = false,
+		.compiled = show_compiled,
+	});
+
+	const hide_pat = try es.dupeStr("^secret$");
+	const hide_compiled = try regex_lib.Regex.compile(allocator, hide_pat);
+	try es.hide_regexes.append(allocator, .{
+		.pattern = hide_pat,
+		.negated = false,
+		.compiled = hide_compiled,
+	});
+
+	const result = es.evaluatePath("secret", false, false, true, null, null);
+	// Parallel to the open/close case: same-type conflict lets hide win.
+	try std.testing.expect(result.is_hidden);
+}
+
+test "evaluatePath: priority_files force-shows hide-matched path with scm_kept" {
+	const allocator = std.testing.allocator;
+	var es = EffectiveState{ .allocator = allocator };
+	defer es.deinit();
+
+	// Path is hide-matched...
+	const hide_key = try es.dupeStr("build/out.o");
+	try es.hide_literals.put(allocator, hide_key, {});
+
+	// ...but present in priority_files (an SCM working-copy change).
+	var pf = std.StringHashMapUnmanaged(void){};
+	defer pf.deinit(allocator);
+	try pf.put(allocator, "build/out.o", {});
+
+	const result = es.evaluatePath("build/out.o", false, false, false, null, &pf);
+	// SCM priority forces visibility and records that a hide rule was overridden.
+	try std.testing.expect(!result.is_hidden);
+	try std.testing.expect(result.scm_kept);
+}
+
 test "evaluatePath: regex hide" {
 	const allocator = std.testing.allocator;
 	var es = EffectiveState{ .allocator = allocator };
