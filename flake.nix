@@ -74,5 +74,44 @@
           dontInstall = true;
           dontFixup = true;
         };
+
+        # The check Garnix was missing: it builds packages.default (compile only),
+        # but nothing RAN the tests or EXECUTED the binary — so a passing build said
+        # nothing about whether the code works or even runs (this is exactly how the
+        # musl-loader "won't exec on NixOS" bug hid behind a green badge). This check
+        # (1) runs the unit/integration suite and (2) smoke-execs the release binary.
+        checks.test = pkgs.stdenv.mkDerivation {
+          name = "${pname}-test";
+          src = self;
+          nativeBuildInputs = [ zig pkgs.git pkgs.jujutsu ]
+            ++ pkgs.lib.optionals isDarwin [
+              pkgs.darwin.cctools
+              pkgs.apple-sdk
+            ];
+          dontConfigure = true;
+          buildPhase = ''
+            export HOME="$TMPDIR"
+            export ZIG_GLOBAL_CACHE_DIR=$TMPDIR/zig-cache
+            mkdir -p $ZIG_GLOBAL_CACHE_DIR
+            cp -r ${zigDeps}/* $ZIG_GLOBAL_CACHE_DIR/
+            chmod -R u+w $ZIG_GLOBAL_CACHE_DIR
+            # identity for the real git/jj working copies the SCM-priority tests build
+            git config --global user.name test
+            git config --global user.email test@example.com
+            git config --global init.defaultBranch main
+            export JJ_USER=test JJ_EMAIL=test@example.com
+            # 1) actually RUN the suite (the part that was never wired into CI)
+            zig build test
+            # 2) smoke-EXECUTE the release binary — catches runtime/loader regressions
+            #    a compile-only gate can't (the musl-loader bug that started all this)
+            zig build -Doptimize=ReleaseFast
+            ./zig-out/bin/dirtree --about >/dev/null
+          '';
+          installPhase = ''
+            mkdir -p $out
+            echo "tests passed and binary executes" > $out/result
+          '';
+          dontFixup = true;
+        };
       });
 }
