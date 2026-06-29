@@ -391,19 +391,17 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 					try state.passthrough_lines.append(allocator, duped);
 				}
 			} else if (std.mem.eql(u8, key, "sort")) {
-				if (std.mem.eql(u8, value, "alpha")) {
-					state.sort_mode = .alpha;
-				} else if (std.mem.eql(u8, value, "modified")) {
-					state.sort_mode = .modified;
+				// Enum field names == serialized values ("alpha"/"modified"), so
+				// stringToEnum dispatches exhaustively; unknown -> passthrough.
+				if (std.meta.stringToEnum(SortMode, value)) |m| {
+					state.sort_mode = m;
 				} else {
 					const duped = try state.dupeStr(raw_line);
 					try state.passthrough_lines.append(allocator, duped);
 				}
 			} else if (std.mem.eql(u8, key, "sort_direction")) {
-				if (std.mem.eql(u8, value, "asc")) {
-					state.sort_direction = .asc;
-				} else if (std.mem.eql(u8, value, "desc")) {
-					state.sort_direction = .desc;
+				if (std.meta.stringToEnum(SortDirection, value)) |d| {
+					state.sort_direction = d;
 				} else {
 					const duped = try state.dupeStr(raw_line);
 					try state.passthrough_lines.append(allocator, duped);
