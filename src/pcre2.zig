@@ -76,7 +76,9 @@ pub const Regex = struct {
     }
 
     /// Check if the subject matches the pattern (full match, anchored at both ends).
-    pub fn matches(self: *Self, subject: []const u8) bool {
+    /// Returns a real error (not a silent `false`) if the DFA workspace cannot be
+    /// grown — a memory failure must never be reinterpreted as "no match".
+    pub fn matches(self: *Self, subject: []const u8) Error!bool {
         const options: u32 = c.PCRE2_ANCHORED | c.PCRE2_ENDANCHORED;
 
         while (true) {
@@ -93,10 +95,8 @@ pub const Regex = struct {
             );
 
             if (rc == c.PCRE2_ERROR_DFA_WSSIZE) {
-                // Workspace too small, try to grow it
-                if (!self.growWorkspace()) {
-                    return false;
-                }
+                // Workspace too small: grow it, propagating any allocation/overflow failure.
+                try self.growWorkspace();
                 continue;
             }
 
@@ -105,7 +105,9 @@ pub const Regex = struct {
     }
 
     /// Check if the subject contains a match (partial match, not anchored).
-    pub fn find(self: *Self, subject: []const u8) bool {
+    /// Returns a real error (not a silent `false`) if the DFA workspace cannot be
+    /// grown — a memory failure must never be reinterpreted as "no match".
+    pub fn find(self: *Self, subject: []const u8) Error!bool {
         while (true) {
             const rc = c.pcre2_dfa_match_8(
                 self.code,
@@ -120,9 +122,8 @@ pub const Regex = struct {
             );
 
             if (rc == c.PCRE2_ERROR_DFA_WSSIZE) {
-                if (!self.growWorkspace()) {
-                    return false;
-                }
+                // Workspace too small: grow it, propagating any allocation/overflow failure.
+                try self.growWorkspace();
                 continue;
             }
 
@@ -131,22 +132,23 @@ pub const Regex = struct {
     }
 
     /// Compatibility alias for zig-regex's partialMatch API.
-    /// Returns the same result as find() but wrapped in an error union
-    /// to match the existing call sites that use `catch`.
-    pub fn partialMatch(self: *Self, subject: []const u8) !bool {
+    /// Returns the same result as find(); the error union now carries genuine
+    /// workspace-growth failures, so callers' `catch` clauses are no longer dead code.
+    pub fn partialMatch(self: *Self, subject: []const u8) Error!bool {
         return self.find(subject);
     }
 
     /// Grow the workspace buffer for DFA matching.
-    fn growWorkspace(self: *Self) bool {
+    /// Returns an error (rather than `false`) so the caller cannot mistake a
+    /// realloc failure or size overflow for a routing/match decision.
+    fn growWorkspace(self: *Self) Error!void {
         const new_size = self.workspace.len * 2;
         if (new_size < self.workspace.len) {
-            return false; // overflow
+            return Error.WorkspaceOverflow; // size doubled past usize max
         }
 
-        const new_workspace = self.allocator.realloc(self.workspace, new_size) catch return false;
+        const new_workspace = self.allocator.realloc(self.workspace, new_size) catch return Error.OutOfMemory;
         self.workspace = new_workspace;
-        return true;
     }
 };
 
@@ -173,28 +175,28 @@ const testing = std.testing;
 test "compile + matches: trivial literal full match" {
     var re = try Regex.compile(testing.allocator, "abc");
     defer re.deinit();
-    try testing.expect(re.matches("abc"));
-    try testing.expect(!re.matches("abcd")); // anchored at both ends
-    try testing.expect(!re.matches("xabc"));
-    try testing.expect(!re.matches(""));
+    try testing.expect(try re.matches("abc"));
+    try testing.expect(!try re.matches("abcd")); // anchored at both ends
+    try testing.expect(!try re.matches("xabc"));
+    try testing.expect(!try re.matches(""));
 }
 
 test "find: unanchored substring match" {
     var re = try Regex.compile(testing.allocator, "abc");
     defer re.deinit();
-    try testing.expect(re.find("abc"));
-    try testing.expect(re.find("xabcy")); // unanchored: matches anywhere
-    try testing.expect(re.find("abcd"));
-    try testing.expect(!re.find("ab"));
-    try testing.expect(!re.find("xyz"));
+    try testing.expect(try re.find("abc"));
+    try testing.expect(try re.find("xabcy")); // unanchored: matches anywhere
+    try testing.expect(try re.find("abcd"));
+    try testing.expect(!try re.find("ab"));
+    try testing.expect(!try re.find("xyz"));
 }
 
 test "anchored matches vs unanchored find differ on the same pattern" {
     var re = try Regex.compile(testing.allocator, "abc");
     defer re.deinit();
     // The option-flag wiring must actually differ between the two calls.
-    try testing.expect(!re.matches("abcd"));
-    try testing.expect(re.find("abcd"));
+    try testing.expect(!try re.matches("abcd"));
+    try testing.expect(try re.find("abcd"));
 }
 
 test "partialMatch is the error-union alias of find" {
@@ -207,10 +209,10 @@ test "partialMatch is the error-union alias of find" {
 test "Unicode property class \\p{L} matches letters across scripts (UTF+UCP)" {
     var re = try Regex.compile(testing.allocator, "\\p{L}+");
     defer re.deinit();
-    try testing.expect(re.matches("café")); // accented latin — all letters
-    try testing.expect(re.matches("Москва")); // cyrillic
-    try testing.expect(re.find("12é34")); // contains a letter
-    try testing.expect(!re.matches("123")); // digits are not \p{L}
+    try testing.expect(try re.matches("café")); // accented latin — all letters
+    try testing.expect(try re.matches("Москва")); // cyrillic
+    try testing.expect(try re.find("12é34")); // contains a letter
+    try testing.expect(!try re.matches("123")); // digits are not \p{L}
 }
 
 test "compile failure: malformed pattern returns CompileFailed" {
@@ -224,12 +226,12 @@ test "growWorkspace doubles the buffer and the regex stays usable + deinits clea
     defer re.deinit();
     const initial = re.workspace.len;
     try testing.expectEqual(Regex.DEFAULT_WORKSPACE_SIZE, initial);
-    try testing.expect(re.growWorkspace());
+    try re.growWorkspace();
     try testing.expectEqual(initial * 2, re.workspace.len);
     // Matching must still work after the realloc (no use-after-free / stale ptr).
-    try testing.expect(re.matches("abc"));
+    try testing.expect(try re.matches("abc"));
     // A second grow keeps doubling and terminates.
-    try testing.expect(re.growWorkspace());
+    try re.growWorkspace();
     try testing.expectEqual(initial * 4, re.workspace.len);
     // deinit (via defer) frees the *grown* workspace — testing.allocator
     // would flag a leak or wrong-size free otherwise.
@@ -240,8 +242,8 @@ test "matches retry loop terminates on a complex alternation pattern" {
     // doubling+realloc ever failed to terminate this would hang.
     var re = try Regex.compile(testing.allocator, "(a|b|c|d|e|f|g)+");
     defer re.deinit();
-    try testing.expect(re.matches("abcdefgabcdefg"));
-    try testing.expect(!re.matches("abcXdef"));
+    try testing.expect(try re.matches("abcdefgabcdefg"));
+    try testing.expect(!try re.matches("abcXdef"));
 }
 
 test "getErrorMessage returns a message for a real compile error code" {

@@ -45,8 +45,15 @@ pub fn isGlobPattern(token: []const u8) bool {
 	if (token.len > 0 and token[token.len - 1] == '\\') {
 		return false;
 	}
-	for (token) |c| {
-		if (c == '*' or c == '?' or c == '[') return true;
+	// Scan for an UNESCAPED wildcard. A backslash escapes the next char, so
+	// `a\\*b` / `\\*` contain no glob wildcard (matches the doc contract).
+	var i: usize = 0;
+	while (i < token.len) : (i += 1) {
+		if (token[i] == '\\') {
+			i += 1; // skip the escaped char
+			continue;
+		}
+		if (token[i] == '*' or token[i] == '?' or token[i] == '[') return true;
 	}
 	return false;
 }
@@ -401,4 +408,60 @@ test "regexToGlob: roundtrip with globToRegex" {
 		defer allocator.free(back.?);
 		try std.testing.expectEqualStrings(glob, back.?);
 	}
+}
+
+test "globToRegex: edge-case branches (negation, ] first, unterminated, bare **)" {
+	const allocator = std.testing.allocator;
+	const Case = struct { in: []const u8, out: []const u8 };
+	const cases = [_]Case{
+		// [!abc] negation maps to [^abc]
+		.{ .in = "[!abc]", .out = "^[^abc]$" },
+		// [^abc] negation form (same output)
+		.{ .in = "[^abc]", .out = "^[^abc]$" },
+		// ] as first char in class is literal
+		.{ .in = "[]abc]", .out = "^[]abc]$" },
+		// unterminated class falls back to literal \[
+		.{ .in = "[abc", .out = "^\\[abc$" },
+		// bare ** (no slash) maps to .*
+		.{ .in = "**", .out = "^.*$" },
+	};
+	for (cases) |c| {
+		const result = try globToRegex(allocator, c.in);
+		defer allocator.free(result);
+		try std.testing.expectEqualStrings(c.out, result);
+	}
+}
+
+test "isGlobPattern: classifier partition over a set" {
+	const Case = struct { tok: []const u8, glob: bool };
+	const cases = [_]Case{
+		// plain globs -> true
+		.{ .tok = "*.txt", .glob = true },
+		.{ .tok = "foo?bar", .glob = true },
+		.{ .tok = "[abc]", .glob = true },
+		.{ .tok = "src/**/test", .glob = true },
+		// re:/RE: prefixed -> not globs
+		.{ .tok = "re:foo.*", .glob = false },
+		.{ .tok = "RE:[abc]", .glob = false },
+		// trailing backslash short-circuits (line ~45) even with a wildcard present
+		.{ .tok = "*foo\\", .glob = false },
+		.{ .tok = "[abc]\\", .glob = false },
+		// plain literals -> false
+		.{ .tok = "foo.txt", .glob = false },
+		.{ .tok = "README", .glob = false },
+	};
+	for (cases) |c| {
+		try std.testing.expectEqual(c.glob, isGlobPattern(c.tok));
+	}
+}
+
+test "isGlobPattern: embedded escaped wildcard must not be a glob (doc contract) (KNOWN BUG)" {
+	// The doc comment on isGlobPattern states: "Escaped wildcards (\*) are not
+	// considered globs." The implementation only short-circuits on a TRAILING
+	// backslash, so an embedded \* still trips the wildcard scan and is
+	// misclassified as a glob. Correct behavior per the documented contract is
+	// `false`. These assertions reflect CORRECT behavior and currently FAIL,
+	// surfacing the latent bug (product code intentionally left unchanged).
+	try std.testing.expect(!isGlobPattern("\\*"));
+	try std.testing.expect(!isGlobPattern("a\\*b"));
 }

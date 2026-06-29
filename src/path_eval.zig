@@ -11,6 +11,19 @@ pub const MatchType = enum {
 	regex,
 };
 
+/// Abort loudly when a regex match fails for a non-routing reason (the PCRE2 DFA
+/// workspace could not grow — i.e. out of memory). Crashing with a clear message is
+/// strictly better than silently letting a memory failure decide show/hide/open/close.
+/// (evaluatePath's value-returning signature is fixed by external callers in
+/// tree_render.zig/main.zig, so it cannot itself return this error.)
+fn regexMatchFatal(input: []const u8, e: anyerror) noreturn {
+	std.debug.panic(
+		"dirtree: PCRE2 DFA workspace could not grow while matching '{s}' ({s}); " ++
+			"aborting instead of silently treating a memory failure as a show/hide/open/close decision",
+		.{ input, @errorName(e) },
+	);
+}
+
 /// Result of evaluating a path against the effective state.
 pub const PathEvalResult = struct {
 	is_hidden: bool,
@@ -39,14 +52,11 @@ pub const CompiledRegex = struct {
 	}
 
 	/// Test if a string matches this regex (respecting negation).
-	pub fn matches(self: *CompiledRegex, input: []const u8) bool {
-		if (self.negated) {
-			// Negated: matches if the pattern does NOT match
-			const did_match = self.compiled.partialMatch(input) catch return true;
-			return !did_match;
-		} else {
-			return self.compiled.partialMatch(input) catch return false;
-		}
+	/// Propagates a real error on workspace-growth failure instead of silently
+	/// reinterpreting an out-of-memory condition as a (non-)match.
+	pub fn matches(self: *CompiledRegex, input: []const u8) regex_lib.Error!bool {
+		const did_match = try self.compiled.partialMatch(input);
+		return if (self.negated) !did_match else did_match;
 	}
 };
 
@@ -143,10 +153,10 @@ pub const EffectiveState = struct {
 		priority_files: ?*const std.StringHashMapUnmanaged(void),
 	) PathEvalResult {
 		// open/close only apply to directories — skip expensive regex evaluation for files
-		var open_type: MatchType = if (is_dir) self.matchCategory(rel, &self.open_literals, &self.open_regexes, &self.open_combined) else .none;
-		var close_type: MatchType = if (is_dir) self.matchCategory(rel, &self.close_literals, &self.close_regexes, &self.close_combined) else .none;
-		var show_type = self.matchCategory(rel, &self.show_literals, &self.show_regexes, &self.show_combined);
-		var hide_type = self.matchCategory(rel, &self.hide_literals, &self.hide_regexes, &self.hide_combined);
+		var open_type: MatchType = if (is_dir) (self.matchCategory(rel, &self.open_literals, &self.open_regexes, &self.open_combined) catch |e| regexMatchFatal(rel, e)) else .none;
+		var close_type: MatchType = if (is_dir) (self.matchCategory(rel, &self.close_literals, &self.close_regexes, &self.close_combined) catch |e| regexMatchFatal(rel, e)) else .none;
+		var show_type = self.matchCategory(rel, &self.show_literals, &self.show_regexes, &self.show_combined) catch |e| regexMatchFatal(rel, e);
+		var hide_type = self.matchCategory(rel, &self.hide_literals, &self.hide_regexes, &self.hide_combined) catch |e| regexMatchFatal(rel, e);
 
 		// If show_hidden, disable hide matching
 		if (show_hidden) {
@@ -224,13 +234,15 @@ pub const EffectiveState = struct {
 	}
 
 	/// Check if a path matches any entry in a category (literal or regex).
+	/// Propagates a real error on workspace-growth failure instead of swallowing it
+	/// into a routing decision; evaluatePath turns that into a loud abort.
 	fn matchCategory(
 		self: *EffectiveState,
 		rel: []const u8,
 		literals: *const std.StringHashMapUnmanaged(void),
 		regexes: *const std.ArrayListUnmanaged(CompiledRegex),
 		combined: *?regex_lib.Regex,
-	) MatchType {
+	) regex_lib.Error!MatchType {
 		_ = self;
 		// Check literals first
 		if (rel.len > 0 and literals.contains(rel)) {
@@ -239,19 +251,19 @@ pub const EffectiveState = struct {
 
 		if (combined.*) |*c| {
 			// Fast path: combined regex covers all non-negated patterns
-			if (c.partialMatch(rel) catch false) {
+			if (try c.partialMatch(rel)) {
 				return .regex;
 			}
 			// Only check negated patterns individually
 			for (@constCast(regexes).items) |*r| {
-				if (r.negated and r.matches(rel)) {
+				if (r.negated and try r.matches(rel)) {
 					return .regex;
 				}
 			}
 		} else {
 			// No combined regex built: check all patterns individually (fallback)
 			for (@constCast(regexes).items) |*r| {
-				if (r.matches(rel)) {
+				if (try r.matches(rel)) {
 					return .regex;
 				}
 			}
@@ -969,7 +981,7 @@ fn rebuildEffectiveState(
 		while (iter.next()) |entry| {
 			const pattern = entry.key_ptr.*;
 			const info = entry.value_ptr.*;
-			if (regexMatchesString(allocator, pattern, info.negated, state_file_name)) {
+			if (try regexMatchesString(allocator, pattern, info.negated, state_file_name)) {
 				show_state_visible = true;
 				break;
 			}
@@ -1071,10 +1083,12 @@ fn buildCombinedRegex(
 }
 
 /// Helper: test if a single regex pattern matches a string (used for .dirtree-state check).
-fn regexMatchesString(allocator: std.mem.Allocator, pattern: []const u8, negated: bool, input: []const u8) bool {
+/// A compile failure is treated as "no match" (unchanged), but a workspace-growth
+/// failure at match time is propagated as a real error rather than swallowed.
+fn regexMatchesString(allocator: std.mem.Allocator, pattern: []const u8, negated: bool, input: []const u8) regex_lib.Error!bool {
 	var compiled = regex_lib.Regex.compile(allocator, pattern) catch return false;
 	defer compiled.deinit();
-	const did_match = compiled.partialMatch(input) catch return false;
+	const did_match = try compiled.partialMatch(input);
 	if (negated) return !did_match;
 	return did_match;
 }

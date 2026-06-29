@@ -29,8 +29,23 @@ pub fn cachePath(allocator: std.mem.Allocator) ![]u8 {
 			return try std.fs.path.join(allocator, &.{ xdg, "dirtree", "update_check" });
 		}
 	}
-	const home = runtime.getEnv("HOME") orelse return error.NoHome;
-	return try std.fs.path.join(allocator, &.{ home, ".cache", "dirtree", "update_check" });
+	if (runtime.getEnv("HOME")) |home| {
+		if (home.len > 0) {
+			return try std.fs.path.join(allocator, &.{ home, ".cache", "dirtree", "update_check" });
+		}
+	}
+	// Windows fallbacks: neither XDG_CACHE_HOME nor HOME is set there.
+	if (runtime.getEnv("LOCALAPPDATA")) |lad| {
+		if (lad.len > 0) {
+			return try std.fs.path.join(allocator, &.{ lad, "dirtree", "update_check" });
+		}
+	}
+	if (runtime.getEnv("USERPROFILE")) |up| {
+		if (up.len > 0) {
+			return try std.fs.path.join(allocator, &.{ up, ".cache", "dirtree", "update_check" });
+		}
+	}
+	return error.NoHome;
 }
 
 /// Compare two dotted-semver strings ("1.2.3"). Tolerates a leading 'v'.
@@ -239,6 +254,24 @@ pub fn fetchLatestTag(allocator: std.mem.Allocator) FetchError![]u8 {
 	return allocator.dupe(u8, tag) catch return error.NetworkUnavailable;
 }
 // ── Tests ────────────────────────────────────────────────────────────────
+
+test "cachePath: Windows LOCALAPPDATA fallback when XDG/HOME absent" {
+	// Stub the process env: no XDG_CACHE_HOME, no HOME, but LOCALAPPDATA set
+	// (the Windows shape). Leak the map via page_allocator so the pointer
+	// handed to runtime.init() stays valid for the process lifetime and the
+	// testing leak-checker does not flag it.
+	const heap = std.heap.page_allocator;
+	const map = try heap.create(std.process.Environ.Map);
+	map.* = std.process.Environ.Map.init(heap);
+	try map.put("LOCALAPPDATA", "C:\\Users\\me\\AppData\\Local");
+	runtime.init(std.testing.io, map);
+
+	const got = try cachePath(std.testing.allocator);
+	defer std.testing.allocator.free(got);
+	const want = try std.fs.path.join(std.testing.allocator, &.{ "C:\\Users\\me\\AppData\\Local", "dirtree", "update_check" });
+	defer std.testing.allocator.free(want);
+	try std.testing.expectEqualStrings(want, got);
+}
 
 test "compareSemver: numerical not lexical" {
 	try std.testing.expectEqual(VersionOrdering.older, compareSemver("1.0.0", "1.0.1"));

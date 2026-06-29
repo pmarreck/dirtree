@@ -29,15 +29,15 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 - [ ] **3.3 ⚠️ Unify truthy parsing**: one `parseBool(s) ?bool` (StaticStringMap, case-insensitive). Fixes `state.zig` rejecting `"TRUE"` while `main.zig` accepts it.
 - [ ] **3.4 ⚠️ `flake_staleness.sh`**: add `FLAKE_LOCK_NOW` override (epoch only). *NOTE (Peter): `date` may be GNU or BSD — keep math in `date +%s` epoch (portable); guard/detect `gdate` if a formatted date is ever needed.* Port `python3` JSON parse → `jq` or pure bash (no-Python stance).
 - [ ] **3.5 ⚠️ `tree_render.zig`**: move `visible` cleanup `defer` ABOVE the accumulation loop (2 sites) — OOM-path hardening (arena currently masks).
-- [ ] **3.6 ⚠️ SCM jj-failure → git fallback**: `scm.zig:158` conflates "jj repo present" with "jj succeeded"; only short-circuit git when jj actually produced output.
-- [ ] **3.7 ⚠️ PCRE2 workspace-grow OOM**: propagate a real error instead of silent "no match" (`pcre2.zig:122`, swallowed in `path_eval.zig`).
-- [ ] **3.8 ⚠️ `update_check` cachePath Windows fallback**: `LOCALAPPDATA`/`USERPROFILE` before erroring.
+- [x] **3.6 ⚠️ SCM jj-failure → git fallback**: `scm.zig:158` conflates "jj repo present" with "jj succeeded"; only short-circuit git when jj actually produced output.
+- [x] **3.7 ⚠️ PCRE2 workspace-grow OOM**: propagate a real error instead of silent "no match" (`pcre2.zig:122`, swallowed in `path_eval.zig`).
+- [x] **3.8 ⚠️ `update_check` cachePath Windows fallback**: `LOCALAPPDATA`/`USERPROFILE` before erroring.
 - [ ] **3.9 ⚠️ Numeric boundary tests**: `-d 0` (root-only), `-d` overflow message, and 0/neg/overflow for `--max-lines`.
-- [ ] **3.10 ⚠️ glob char-class edge tests** (`regex.zig`): `[!a-z]`, `[]abc]`, unterminated `[abc`→literal fallback, bare `**`, escaped `a\*b`; `isGlobPattern` as a set classifier.
+- [x] **3.10 ⚠️ glob char-class edge tests** (`regex.zig`): `[!a-z]`, `[]abc]`, unterminated `[abc`→literal fallback, bare `**`, escaped `a\*b`; `isGlobPattern` as a set classifier.
 - [ ] **3.11 ⚠️ state round-trip test**: actually re-parse `output` and compare structurally (current test only substring-greps).
 - [ ] **3.12 ⚠️ Strengthen weak tests**: `root-points-to-repo-root` assert basename; `scanDir` assert `build.zig` present; drop/rewrite the `available_codes` `"en"` substring test (redundant with the sorted+complete test).
 - [ ] **3.13 ⚠️ Docs/notes**: fix stale `MEMORY.md` ("22 locales" → 50); add `dirtree note` for every source file (dogfood annotate); create `PROJECT_OVERVIEW.md` + `RULES.md`; note `run-tests` vs `./test` convention.
-- [ ] **3.14 ⚠️ `icons.zig` → `std.StaticStringMap`** (AFTER 1.3 test is green — refactor under coverage). File-isolated → good worktree-subagent candidate.
+- [x] **3.14 ⚠️ `icons.zig` → `std.StaticStringMap`** (AFTER 1.3 test is green — refactor under coverage). File-isolated → good worktree-subagent candidate.
 
 ## Phase 4 — Bigger refactors (each scoped; offer safe vs bold)
 
@@ -56,3 +56,4 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 - 2026-06-29: **1.1 — false positive.** Empty annotation is an intentional *tombstone* to suppress an inherited parent-dir note (existing `test_annotate_empty_clears_local_entry` asserts it); "clears" = clears the *displayed* note. No change.
 - 2026-06-29: **1.2 — resolved by removal.** `--head`/`--tail` compose into a middle window (not "later wins"); they duplicate unix `head`/`tail` (the help even said "prefer piping to tail -N"). **Removed entirely** — 2 CliArgs, parse arms, the tail-buffer render path + `head_reached` threading + `BufListWriter`, 6 Strings fields × 50 locales, localized aliases, and the old tests; added a rejection test. Pure subtraction.
 - 2026-06-29: **Phase 2** done. `Locale.code()` is now just `@tagName(self)` (deleted the 50-arm switch); the `cli_alias_map` hand-list is derived from `all_locales` via `localeCliAliases`. Removed 2 of the 6 hand-maintained 50-entry lists (registry pattern, as `available_codes` already proved). Validated by the 1734-assertion alias-resolution test + parseLocaleCode round-trip.
+- 2026-06-29: **Phase 3 wave 1** (5 worktree subagents). 3.14 icons->StaticStringMap (122 ext + 25 filename rows, exhaustive test green). 3.6 scm jj-diff failure now falls back to git (was silently dark). 3.7 pcre2 workspace-OOM now propagates/aborts-loud instead of silently mis-routing show/hide (scan-time path panics; state-build path returns a real error). 3.8 update_check cachePath Windows fallback (LOCALAPPDATA/USERPROFILE) + test. 3.10 glob char-class edge tests — surfaced + fixed an `isGlobPattern` bug (embedded `\*` was wrongly a wildcard; now escape-aware).

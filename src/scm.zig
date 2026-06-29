@@ -140,6 +140,12 @@ fn collectGitPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: 
 }
 
 /// Collect changed paths from jj.
+/// Returns true ONLY when this is a jj repo AND `jj diff` ran cleanly (so jj
+/// authoritatively governs and git fallback must be skipped). Returns false
+/// when this is not a jj repo OR the jj command errored — in both cases the
+/// caller should fall back to git. Conflating "jj errored" with "jj governs"
+/// would silently kill SCM highlighting in a healthy colocated git repo whose
+/// jj invocation happened to fail.
 fn collectJjPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: *PriorityPaths) !bool {
 	// Check if we're in a jj repo
 	const repo_root = getJjRoot(allocator, abs_dir) catch return false;
@@ -155,7 +161,9 @@ fn collectJjPaths(allocator: std.mem.Allocator, abs_dir: []const u8, priority: *
 	// stall for seconds on the first run in a fresh shell, whereas the crawl is
 	// ~tens of ms. It also keeps dirtree from disturbing the repo's Watchman
 	// state. `-R` + cwd = repo_root keeps emitted paths repo-root-relative.
-	const output = runCommand(allocator, &.{ "jj", "--config", "fsmonitor.backend=none", "-R", repo_root, "diff", "--name-only" }, repo_root) catch return true;
+	// On a jj *command* failure (not a clean empty result) return false so the
+	// caller falls back to git. Only a cleanly-run diff lets jj govern.
+	const output = runCommand(allocator, &.{ "jj", "--config", "fsmonitor.backend=none", "-R", repo_root, "diff", "--name-only" }, repo_root) catch return false;
 	defer allocator.free(output);
 
 	var iter = std.mem.splitScalar(u8, output, '\n');
