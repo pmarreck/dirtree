@@ -1051,6 +1051,78 @@ test "round-trip: parse then write produces equivalent output" {
 	try std.testing.expect(std.mem.indexOf(u8, output, "\t.gitignore") != null);
 }
 
+test "round-trip structural: parse -> write -> re-parse preserves all fields" {
+	const a = std.testing.allocator;
+	const input =
+		"ver=1.2\n" ++
+		"depth=3\n" ++
+		"sort=alpha\n" ++
+		"sort_direction=desc\n" ++
+		"color=true\n" ++
+		"hyperlink=false\n" ++
+		"max_lines=200\n" ++
+		"note_column=50\n" ++
+		"\nopen=[\n\tsrc\n]\n" ++
+		"\nclose=[\n\t.git\n\t/^(.*/)?node_modules$/\n\t!/keep_me/\n]\n" ++
+		"\nhide=[\n\t.gitignore\n]\n" ++
+		"\nshow=[\n\t.env\n]\n" ++
+		"\nannotate=[\n\tsrc/main.zig = entry point\n\tREADME.md = docs\n]\n" ++
+		"\ncustom_key=preserved_value\n";
+
+	var s1 = try parseStateFile(a, input);
+	defer s1.deinit();
+
+	// Serialize s1, then re-parse the serialization into s2.
+	var buf1: [8192]u8 = undefined;
+	var w1 = std.Io.Writer.fixed(&buf1);
+	try writeStateFile(&s1, &w1);
+	const out1 = w1.buffered();
+
+	var s2 = try parseStateFile(a, out1);
+	defer s2.deinit();
+
+	// Scalars must survive the round-trip exactly.
+	try std.testing.expectEqual(s1.depth, s2.depth);
+	try std.testing.expectEqual(s1.default_state, s2.default_state);
+	try std.testing.expectEqual(s1.sort_mode, s2.sort_mode);
+	try std.testing.expectEqual(s1.sort_direction, s2.sort_direction);
+	try std.testing.expectEqual(s1.color_preference, s2.color_preference);
+	try std.testing.expectEqual(s1.hyperlink_preference, s2.hyperlink_preference);
+	try std.testing.expectEqual(s1.max_lines, s2.max_lines);
+	try std.testing.expectEqual(s1.note_column, s2.note_column);
+
+	// Entry lists compared as SETS (the writer sorts, so order may differ).
+	inline for (.{ "open_entries", "close_entries", "show_entries", "hide_entries" }) |field| {
+		const l1 = @field(s1, field).items;
+		const l2 = @field(s2, field).items;
+		try std.testing.expectEqual(l1.len, l2.len);
+		for (l1) |e| try std.testing.expect(StateFile.hasEntry(l2, e.kind, e.value, e.negated));
+		for (l2) |e| try std.testing.expect(StateFile.hasEntry(l1, e.kind, e.value, e.negated));
+	}
+
+	// Annotations compared as a set of (path, description).
+	try std.testing.expectEqual(s1.annotate_entries.items.len, s2.annotate_entries.items.len);
+	for (s1.annotate_entries.items) |e1| {
+		var found = false;
+		for (s2.annotate_entries.items) |e2| {
+			if (std.mem.eql(u8, e1.path, e2.path) and std.mem.eql(u8, e1.description, e2.description)) found = true;
+		}
+		try std.testing.expect(found);
+	}
+
+	// Passthrough (unknown keys) preserved in order.
+	try std.testing.expectEqual(s1.passthrough_lines.items.len, s2.passthrough_lines.items.len);
+	for (s1.passthrough_lines.items, s2.passthrough_lines.items) |p1, p2| {
+		try std.testing.expectEqualStrings(p1, p2);
+	}
+
+	// Idempotency: serializing s2 yields byte-identical output (writer is a fixed point).
+	var buf2: [8192]u8 = undefined;
+	var w2 = std.Io.Writer.fixed(&buf2);
+	try writeStateFile(&s2, &w2);
+	try std.testing.expectEqualStrings(out1, w2.buffered());
+}
+
 test "parse suggested-default-home-dir state file" {
 	const content = "ver=1.1\ndepth=3\n\nclose=[\n" ++
 		"\t/^(.*/)?_build$/\n" ++
