@@ -80,6 +80,53 @@ case "$out" in
 esac
 check "warning suggests 'nix flake update'" "present" "$verdict"
 
+# 7) Deterministic age via FLAKE_LOCK_NOW override (no dependence on wall clock).
+#    Fixed pin + fixed "now" exactly 10 days apart => "10 days old", every run.
+cat > "$tmpdir/fixed.lock" <<'JSON'
+{
+  "nodes": {
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1000000000,
+        "rev": "deadbeef",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
+JSON
+out=$(FLAKE_LOCK_NOW=$((1000000000 + 10 * 86400)) check_flake_staleness "$tmpdir/fixed.lock" 2>&1)
+case "$out" in
+  *"is 10 days old"*) verdict="10d" ;;
+  *) verdict="$out" ;;
+esac
+check "FLAKE_LOCK_NOW yields deterministic exact age" "10d" "$verdict"
+
+# 8) No-Python stance: must still work when python3 is unavailable/broken.
+fakebin="$tmpdir/fakebin"
+mkdir -p "$fakebin"
+printf '#!/bin/sh\nexit 127\n' > "$fakebin/python3"; chmod +x "$fakebin/python3"
+out=$(PATH="$fakebin:$PATH" FLAKE_LOCK_NOW=$((1000000000 + 30 * 86400)) \
+      check_flake_staleness "$tmpdir/fixed.lock" 2>&1)
+case "$out" in *"is 30 days old"*) verdict=warned ;; *) verdict="$out" ;; esac
+check "warns without python3 (no-Python stance)" "warned" "$verdict"
+
+# 9) Pure-bash fallback: works with BOTH python3 and jq unavailable.
+printf '#!/bin/sh\nexit 127\n' > "$fakebin/jq"; chmod +x "$fakebin/jq"
+out=$(PATH="$fakebin:$PATH" FLAKE_LOCK_NOW=$((1000000000 + 30 * 86400)) \
+      check_flake_staleness "$tmpdir/fixed.lock" 2>&1)
+case "$out" in *"is 30 days old"*) verdict=warned ;; *) verdict="$out" ;; esac
+check "warns via pure-bash fallback (no python3, no jq)" "warned" "$verdict"
+
+# 10) The script source must not invoke python3 (enforce the no-Python stance).
+if grep -q 'python3' "$SCRIPT_DIR/scripts/flake_staleness.sh"; then
+  check "flake_staleness.sh is python-free" "clean" "references-python3"
+else
+  check "flake_staleness.sh is python-free" "clean" "clean"
+fi
+
 echo ""
 echo "build_staleness_test: $pass passed, $fail failed"
 [[ $fail -eq 0 ]]
