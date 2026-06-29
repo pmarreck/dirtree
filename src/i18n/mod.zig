@@ -222,59 +222,18 @@ pub fn tr() *const Strings {
 
 /// Get the Strings for a specific locale.
 /// The CLI alias array for a locale (mirrors stringsFor).
+const locale_cli_alias_table = blk: {
+    // Registry: derive Locale -> CLI aliases from all_locales at comptime (see above).
+    var arr: [all_locales.len][]const CliAliasEntry = undefined;
+    for (all_locales) |loc| {
+        const name = if (loc == .tr) "tr_locale" else @tagName(loc);
+        arr[@intFromEnum(loc)] = @field(@This(), name).aliases.cli;
+    }
+    break :blk arr;
+};
+
 pub fn localeCliAliases(loc: Locale) []const CliAliasEntry {
-    return switch (loc) {
-        .ar => ar.aliases.cli,
-        .az => az.aliases.cli,
-        .de => de.aliases.cli,
-        .el => el.aliases.cli,
-        .en => en.aliases.cli,
-        .es => es.aliases.cli,
-        .fa => fa.aliases.cli,
-        .fr => fr.aliases.cli,
-        .he => he.aliases.cli,
-        .hu => hu.aliases.cli,
-        .it => it.aliases.cli,
-        .ja => ja.aliases.cli,
-        .km => km.aliases.cli,
-        .ko => ko.aliases.cli,
-        .pl => pl.aliases.cli,
-        .pt_br => pt_br.aliases.cli,
-        .ro => ro.aliases.cli,
-        .ru => ru.aliases.cli,
-        .tr => tr_locale.aliases.cli,
-        .uk => uk.aliases.cli,
-        .vi => vi.aliases.cli,
-        .zh_hans => zh_hans.aliases.cli,
-        .bn => bn.aliases.cli,
-        .hi => hi.aliases.cli,
-        .pa => pa.aliases.cli,
-        .ps => ps.aliases.cli,
-        .sw => sw.aliases.cli,
-        .ta => ta.aliases.cli,
-        .th => th.aliases.cli,
-        .ur => ur.aliases.cli,
-        .sq => sq.aliases.cli,
-        .sr => sr.aliases.cli,
-        .hr => hr.aliases.cli,
-        .bs => bs.aliases.cli,
-        .bg => bg.aliases.cli,
-        .mk => mk.aliases.cli,
-        .sl => sl.aliases.cli,
-        .nl => nl.aliases.cli,
-        .sv => sv.aliases.cli,
-        .nb => nb.aliases.cli,
-        .da => da.aliases.cli,
-        .fi => fi.aliases.cli,
-        .is => is.aliases.cli,
-        .zh_hant => zh_hant.aliases.cli,
-        .id => id.aliases.cli,
-        .ha => ha.aliases.cli,
-        .am => am.aliases.cli,
-        .yo => yo.aliases.cli,
-        .ig => ig.aliases.cli,
-        .fil => fil.aliases.cli,
-    };
+    return locale_cli_alias_table[@intFromEnum(loc)];
 }
 
 /// The current locale's preferred (first-listed) alias for a flag, falling back
@@ -290,59 +249,19 @@ pub fn localizedFlagName(arg: CliArg) [:0]const u8 {
     return "?";
 }
 
+const locale_strings_table = blk: {
+    // Registry: derive Locale -> *Strings from all_locales at comptime instead of a
+    // hand-maintained 50-arm switch. tr's import is `tr_locale` (avoids pub fn tr()).
+    var arr: [all_locales.len]*const Strings = undefined;
+    for (all_locales) |loc| {
+        const name = if (loc == .tr) "tr_locale" else @tagName(loc);
+        arr[@intFromEnum(loc)] = &@field(@This(), name).strings;
+    }
+    break :blk arr;
+};
+
 fn stringsFor(loc: Locale) *const Strings {
-    return switch (loc) {
-        .ar => &ar.strings,
-        .az => &az.strings,
-        .de => &de.strings,
-        .el => &el.strings,
-        .en => &en.strings,
-        .es => &es.strings,
-        .fa => &fa.strings,
-        .fr => &fr.strings,
-        .he => &he.strings,
-        .hu => &hu.strings,
-        .it => &it.strings,
-        .ja => &ja.strings,
-        .km => &km.strings,
-        .ko => &ko.strings,
-        .pl => &pl.strings,
-        .pt_br => &pt_br.strings,
-        .ro => &ro.strings,
-        .ru => &ru.strings,
-        .tr => &tr_locale.strings,
-        .uk => &uk.strings,
-        .vi => &vi.strings,
-        .zh_hans => &zh_hans.strings,
-        .bn => &bn.strings,
-        .hi => &hi.strings,
-        .pa => &pa.strings,
-        .ps => &ps.strings,
-        .sw => &sw.strings,
-        .ta => &ta.strings,
-        .th => &th.strings,
-        .ur => &ur.strings,
-        .sq => &sq.strings,
-        .sr => &sr.strings,
-        .hr => &hr.strings,
-        .bs => &bs.strings,
-        .bg => &bg.strings,
-        .mk => &mk.strings,
-        .sl => &sl.strings,
-        .nl => &nl.strings,
-        .sv => &sv.strings,
-        .nb => &nb.strings,
-        .da => &da.strings,
-        .fi => &fi.strings,
-        .is => &is.strings,
-        .zh_hant => &zh_hant.strings,
-        .id => &id.strings,
-        .ha => &ha.strings,
-        .am => &am.strings,
-        .yo => &yo.strings,
-        .ig => &ig.strings,
-        .fil => &fil.strings,
-    };
+    return locale_strings_table[@intFromEnum(loc)];
 }
 
 // ── Locale detection ──────────────────────────────────────────────
