@@ -107,6 +107,28 @@ pub fn writeFileName(writer: anytype, name: []const u8, is_executable: bool, is_
 }
 
 /// Write the hidden count message to stderr.
+/// Print "1 <singular>" or "<n> <plural>" — count pluralization for stat lines.
+fn printCount(writer: anytype, n: u32, singular: []const u8, plural: []const u8) !void {
+	if (n == 1) {
+		try writer.print("1 {s}", .{singular});
+	} else {
+		try writer.print("{} {s}", .{ n, plural });
+	}
+}
+
+/// Print "<n> dirs and <m> files" with localized words, omitting either half when zero.
+fn printDirFilePair(writer: anytype, dirs: u32, files: u32, s: anytype) !void {
+	var wrote_part = false;
+	if (dirs > 0) {
+		try printCount(writer, dirs, s.hidden_dir_singular, s.hidden_dir_plural);
+		wrote_part = true;
+	}
+	if (files > 0) {
+		if (wrote_part) try writer.writeAll(s.hidden_and);
+		try printCount(writer, files, s.hidden_file_singular, s.hidden_file_plural);
+	}
+}
+
 pub fn writeStatsMessage(writer: anytype, shown_dirs: u32, shown_files: u32, total_lines: u32, hidden_dirs: u32, hidden_files: u32, scm_kept_dirs: u32, scm_kept_files: u32, simple_mode: bool) !void {
 	const has_hidden = hidden_dirs > 0 or hidden_files > 0;
 	const has_scm = scm_kept_dirs > 0 or scm_kept_files > 0;
@@ -122,23 +144,7 @@ pub fn writeStatsMessage(writer: anytype, shown_dirs: u32, shown_files: u32, tot
 
 	// Shown section: "N directories and M files shown (L lines)"
 	if (has_shown) {
-		var wrote_part = false;
-		if (shown_dirs > 0) {
-			if (shown_dirs == 1) {
-				try writer.print("1 {s}", .{s.hidden_dir_singular});
-			} else {
-				try writer.print("{} {s}", .{ shown_dirs, s.hidden_dir_plural });
-			}
-			wrote_part = true;
-		}
-		if (shown_files > 0) {
-			if (wrote_part) try writer.writeAll(s.hidden_and);
-			if (shown_files == 1) {
-				try writer.print("1 {s}", .{s.hidden_file_singular});
-			} else {
-				try writer.print("{} {s}", .{ shown_files, s.hidden_file_plural });
-			}
-		}
+		try printDirFilePair(writer, shown_dirs, shown_files, s);
 		try writer.writeAll(s.stats_shown);
 		// Line count
 		if (total_lines > 0) {
@@ -150,45 +156,13 @@ pub fn writeStatsMessage(writer: anytype, shown_dirs: u32, shown_files: u32, tot
 	// Hidden section: "N directories and M files hidden."
 	if (has_hidden) {
 		if (has_shown) try writer.writeAll(s.stats_separator);
-		var wrote_part = false;
-		if (hidden_dirs > 0) {
-			if (hidden_dirs == 1) {
-				try writer.print("1 {s}", .{s.hidden_dir_singular});
-			} else {
-				try writer.print("{} {s}", .{ hidden_dirs, s.hidden_dir_plural });
-			}
-			wrote_part = true;
-		}
-		if (hidden_files > 0) {
-			if (wrote_part) try writer.writeAll(s.hidden_and);
-			if (hidden_files == 1) {
-				try writer.print("1 {s}", .{s.hidden_file_singular});
-			} else {
-				try writer.print("{} {s}", .{ hidden_files, s.hidden_file_plural });
-			}
-		}
+		try printDirFilePair(writer, hidden_dirs, hidden_files, s);
 		try writer.writeAll(s.stats_hidden);
 	}
 
 	if (has_scm) {
 		if (has_shown or has_hidden) try writer.writeAll(s.stats_separator);
-		var wrote_part = false;
-		if (scm_kept_dirs > 0) {
-			if (scm_kept_dirs == 1) {
-				try writer.print("1 {s}", .{s.hidden_dir_singular});
-			} else {
-				try writer.print("{} {s}", .{ scm_kept_dirs, s.hidden_dir_plural });
-			}
-			wrote_part = true;
-		}
-		if (scm_kept_files > 0) {
-			if (wrote_part) try writer.writeAll(s.hidden_and);
-			if (scm_kept_files == 1) {
-				try writer.print("1 {s}", .{s.hidden_file_singular});
-			} else {
-				try writer.print("{} {s}", .{ scm_kept_files, s.hidden_file_plural });
-			}
-		}
+		try printDirFilePair(writer, scm_kept_dirs, scm_kept_files, s);
 		try writer.writeAll(s.stats_scm_kept);
 	}
 
