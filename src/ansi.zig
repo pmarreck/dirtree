@@ -15,6 +15,7 @@ pub const bold_green = "\x1b[1;32m";
 pub const cyan = "\x1b[36m";
 pub const bold_cyan = "\x1b[1;36m";
 pub const yellow = "\x1b[33m";
+pub const bold_yellow = "\x1b[1;33m";
 pub const red = "\x1b[31m";
 
 /// OSC8 hyperlink: start

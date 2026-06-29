@@ -1287,7 +1287,7 @@ pub fn main(init: std.process.Init) !u8 {
 
 	// Warn if running an unoptimized debug build
 	if (comptime @import("builtin").mode == .Debug) {
-		try stderr.writeAll("\x1b[33mDEBUG BUILD\x1b[0m\n");
+		try stderr.writeAll(ansi_mod.yellow ++ "DEBUG BUILD" ++ ansi_mod.reset ++ "\n");
 		try stderr.flush();
 	}
 
@@ -1457,7 +1457,7 @@ pub fn main(init: std.process.Init) !u8 {
 						if (!isNegationFootgun(re.value, re.negated)) continue;
 						if (!neg_found) {
 							neg_found = true;
-							if (!cfg.simple_mode) try stderr.writeAll("\x1b[2;3m");
+							if (!cfg.simple_mode) try stderr.writeAll(ansi_mod.dim_italic);
 							try stderr.writeAll(s.warn_negation_intro);
 							try stderr.writeAll("\n");
 						}
@@ -1468,7 +1468,7 @@ pub fn main(init: std.process.Init) !u8 {
 					var advice_buf: [1024]u8 = undefined;
 					const advice = i18n.fmtRuntime(&advice_buf, s.warn_negation_advice, &.{ i18n.localizedFlagName(.only), i18n.localizedFlagName(.show) });
 					try stderr.writeAll(advice);
-					if (!cfg.simple_mode) try stderr.writeAll("\x1b[0m");
+					if (!cfg.simple_mode) try stderr.writeAll(ansi_mod.reset);
 					try stderr.writeAll("\n");
 					try stderr.flush();
 				}
@@ -1556,7 +1556,7 @@ pub fn main(init: std.process.Init) !u8 {
 			};
 
 			// Determine depth
-			const max_depth = cfg.depth orelse effective.depth orelse 4;
+			const max_depth = cfg.depth orelse effective.depth orelse tree_render.DEFAULT_DEPTH;
 
 			const render_config = tree_render.RenderConfig{
 				.use_color = use_color,
@@ -1567,7 +1567,7 @@ pub fn main(init: std.process.Init) !u8 {
 				.show_notes = cfg.cli_notes orelse true,
 				.note_align = !cfg.notes_inline,
 				.note_leader = cfg.note_leader,
-				.note_column = effective.note_column orelse 40,
+				.note_column = effective.note_column orelse tree_render.DEFAULT_NOTE_COLUMN,
 				.max_depth = max_depth,
 				.show_hidden = cfg.show_hidden,
 				.sort_mode = sort_mode,
@@ -1585,7 +1585,7 @@ pub fn main(init: std.process.Init) !u8 {
 
 			// Pre-scan warning for large output when piped
 			if (!cfg.stdout_is_tty and !cfg.override_warning) {
-				const threshold = effective.max_lines orelse 500;
+				const threshold = effective.max_lines orelse tree_render.DEFAULT_MAX_LINES;
 				const estimated = tree_render.countVisibleEntries(
 					allocator,
 					abs_dir,
@@ -1600,13 +1600,13 @@ pub fn main(init: std.process.Init) !u8 {
 				if (estimated + 1 > threshold) { // +1 for root header line
 					const ws = i18n.tr();
 					try stderr.writeAll("\n");
-					if (!use_simple) try stderr.writeAll("\x1b[1;33m");
+					if (!use_simple) try stderr.writeAll(ansi_mod.bold_yellow);
 					try stderr.writeAll(ws.warn_large_output_prefix);
 					try stderr.print("{}", .{estimated + 1});
 					try stderr.writeAll(ws.warn_large_output_mid);
 					try stderr.print("{}", .{threshold});
 					try stderr.writeAll(ws.warn_large_output_suffix);
-					if (!use_simple) try stderr.writeAll("\x1b[0m");
+					if (!use_simple) try stderr.writeAll(ansi_mod.reset);
 					try stderr.writeAll("\n");
 				}
 			}
@@ -1637,11 +1637,11 @@ pub fn main(init: std.process.Init) !u8 {
 				scanOrphanedNotes(allocator, abs_dir, &orphan_sf, &orphans) catch {};
 				if (orphans.items.len > 0) {
 					const ws = i18n.tr();
-					if (!use_simple) try stderr.writeAll("\x1b[1;33m");
+					if (!use_simple) try stderr.writeAll(ansi_mod.bold_yellow);
 					try stderr.writeAll(ws.warn_orphaned_prefix);
 					try stderr.print("{}", .{orphans.items.len});
 					try stderr.writeAll(ws.warn_orphaned_suffix);
-					if (!use_simple) try stderr.writeAll("\x1b[0m");
+					if (!use_simple) try stderr.writeAll(ansi_mod.reset);
 					try stderr.writeAll("\n");
 				}
 			}

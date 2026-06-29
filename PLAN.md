@@ -24,8 +24,8 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 
 ## Phase 3 — Hygiene (small, mostly file-isolated → some parallelizable)
 
-- [ ] **3.1 ⚠️ ANSI constants**: replace 7 hardcoded escapes in `main.zig` with `ansi.*`; add `ansi.bold_yellow`.
-- [ ] **3.2 ⚠️ Named constants** for magic numbers: `DEFAULT_DEPTH=4`, `DEFAULT_NOTE_COLUMN=40`, `DEFAULT_MAX_LINES=500` (co-locate with `RenderConfig`).
+- [x] **3.1 ⚠️ ANSI constants**: replace 7 hardcoded escapes in `main.zig` with `ansi.*`; add `ansi.bold_yellow`.
+- [x] **3.2 ⚠️ Named constants** for magic numbers: `DEFAULT_DEPTH=4`, `DEFAULT_NOTE_COLUMN=40`, `DEFAULT_MAX_LINES=500` (co-locate with `RenderConfig`).
 - [ ] **3.3 ⚠️ Unify truthy parsing**: one `parseBool(s) ?bool` (StaticStringMap, case-insensitive). Fixes `state.zig` rejecting `"TRUE"` while `main.zig` accepts it.
 - [ ] **3.4 ⚠️ `flake_staleness.sh`**: add `FLAKE_LOCK_NOW` override (epoch only). *NOTE (Peter): `date` may be GNU or BSD — keep math in `date +%s` epoch (portable); guard/detect `gdate` if a formatted date is ever needed.* Port `python3` JSON parse → `jq` or pure bash (no-Python stance).
 - [ ] **3.5 ⚠️ `tree_render.zig`**: move `visible` cleanup `defer` ABOVE the accumulation loop (2 sites) — OOM-path hardening (arena currently masks).

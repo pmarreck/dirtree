@@ -88,6 +88,11 @@ fn writeNote(writer: anytype, config: RenderConfig, desc: []const u8) !void {
 	if (config.use_color) try writer.writeAll(ansi.reset);
 }
 
+/// Defaults applied when neither a CLI flag nor persisted state sets the value.
+pub const DEFAULT_DEPTH: u32 = 4;
+pub const DEFAULT_NOTE_COLUMN: u32 = 40;
+pub const DEFAULT_MAX_LINES: u32 = 500;
+
 pub const RenderConfig = struct {
 	use_color: bool = true,
 	use_icons: bool = true,
