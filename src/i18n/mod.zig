@@ -112,58 +112,9 @@ pub const Locale = enum {
     fil,
 
     pub fn code(self: Locale) [:0]const u8 {
-        return switch (self) {
-            .ar => "ar",
-            .az => "az",
-            .de => "de",
-            .el => "el",
-            .en => "en",
-            .es => "es",
-            .fa => "fa",
-            .fr => "fr",
-            .he => "he",
-            .hu => "hu",
-            .it => "it",
-            .ja => "ja",
-            .km => "km",
-            .ko => "ko",
-            .pl => "pl",
-            .pt_br => "pt_br",
-            .ro => "ro",
-            .ru => "ru",
-            .tr => "tr",
-            .uk => "uk",
-            .vi => "vi",
-            .zh_hans => "zh_hans",
-            .bn => "bn",
-            .hi => "hi",
-            .pa => "pa",
-            .ps => "ps",
-            .sw => "sw",
-            .ta => "ta",
-            .th => "th",
-            .ur => "ur",
-            .sq => "sq",
-            .sr => "sr",
-            .hr => "hr",
-            .bs => "bs",
-            .bg => "bg",
-            .mk => "mk",
-            .sl => "sl",
-            .nl => "nl",
-            .sv => "sv",
-            .nb => "nb",
-            .da => "da",
-            .fi => "fi",
-            .is => "is",
-            .zh_hant => "zh_hant",
-            .id => "id",
-            .ha => "ha",
-            .am => "am",
-            .yo => "yo",
-            .ig => "ig",
-            .fil => "fil",
-        };
+        // Enum field names ARE the locale codes (de, pt_br, zh_hans, ...), so
+        // @tagName is the single source of truth — no hand-maintained switch.
+        return @tagName(self);
     }
 };
 
@@ -480,70 +431,18 @@ pub fn detectLocaleFromAliases(args: []const [:0]const u8) ?Locale {
 const cli_alias_map = blk: {
     @setEvalBranchQuota(20000000);
     // Collect all entries from all locales
-    const locale_aliases = [_][]const CliAliasEntry{
-        ar.aliases.cli,
-        az.aliases.cli,
-        de.aliases.cli,
-        el.aliases.cli,
-        en.aliases.cli,
-        es.aliases.cli,
-        fa.aliases.cli,
-        fr.aliases.cli,
-        he.aliases.cli,
-        hu.aliases.cli,
-        it.aliases.cli,
-        ja.aliases.cli,
-        km.aliases.cli,
-        ko.aliases.cli,
-        pl.aliases.cli,
-        pt_br.aliases.cli,
-        ro.aliases.cli,
-        ru.aliases.cli,
-        tr_locale.aliases.cli,
-        uk.aliases.cli,
-        vi.aliases.cli,
-        zh_hans.aliases.cli,
-        bn.aliases.cli,
-        hi.aliases.cli,
-        pa.aliases.cli,
-        ps.aliases.cli,
-        sw.aliases.cli,
-        ta.aliases.cli,
-        th.aliases.cli,
-        ur.aliases.cli,
-        sq.aliases.cli,
-        sr.aliases.cli,
-        hr.aliases.cli,
-        bs.aliases.cli,
-        bg.aliases.cli,
-        mk.aliases.cli,
-        sl.aliases.cli,
-        nl.aliases.cli,
-        sv.aliases.cli,
-        nb.aliases.cli,
-        da.aliases.cli,
-        fi.aliases.cli,
-        is.aliases.cli,
-        zh_hant.aliases.cli,
-        id.aliases.cli,
-        ha.aliases.cli,
-        am.aliases.cli,
-        yo.aliases.cli,
-        ig.aliases.cli,
-        fil.aliases.cli,
-    };
 
     // Count total entries
     var total: usize = 0;
-    for (locale_aliases) |entries| {
-        total += entries.len;
+    for (all_locales) |loc| {
+        total += localeCliAliases(loc).len;
     }
 
     // Build flat array of kvs
     var kvs: [total]struct { [:0]const u8, CliArg } = undefined;
     var idx: usize = 0;
-    for (locale_aliases) |entries| {
-        for (entries) |entry| {
+    for (all_locales) |loc| {
+        for (localeCliAliases(loc)) |entry| {
             // Check for collisions with different CliArg values
             for (kvs[0..idx]) |existing| {
                 if (std.mem.eql(u8, existing[0], entry.name)) {

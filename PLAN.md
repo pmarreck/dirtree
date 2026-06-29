@@ -19,8 +19,8 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 
 ## Phase 2 — Safe locale-dedup slice (fix-pattern already proven via `available_codes`)
 
-- [ ] **2.1 ⚠️ `Locale.code()` → `@tagName(self)`** (delete the 50-arm switch; enum names == codes). Handle `tr`/`tr_locale` import-name collision.
-- [ ] **2.2 ⚠️ Derive `cli_alias_map` `locale_aliases` array (and env array) from `all_locales`** at comptime instead of hand-listing. (Removes 2 of 6 sync points. `stringsFor`/`localeCliAliases` switches = bold, deferred to 4.4.)
+- [x] **2.1 ⚠️ `Locale.code()` → `@tagName(self)`** (delete the 50-arm switch; enum names == codes). Handle `tr`/`tr_locale` import-name collision.
+- [x] **2.2 ⚠️ Derive `cli_alias_map` `locale_aliases` array (and env array) from `all_locales`** at comptime instead of hand-listing. (Removes 2 of 6 sync points. `stringsFor`/`localeCliAliases` switches = bold, deferred to 4.4.)
 
 ## Phase 3 — Hygiene (small, mostly file-isolated → some parallelizable)
 
@@ -55,3 +55,4 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 - 2026-06-29 (eacde65d): **1.3–1.7** exhaustive coverage tests landed; the icon test caught + fixed a real **icon-precedence bug** (Cargo.toml/package.json/*.lock showed wrong icons). i18n alias-resolution / distinctness / round-trip + path-eval precedence coverage all green.
 - 2026-06-29: **1.1 — false positive.** Empty annotation is an intentional *tombstone* to suppress an inherited parent-dir note (existing `test_annotate_empty_clears_local_entry` asserts it); "clears" = clears the *displayed* note. No change.
 - 2026-06-29: **1.2 — resolved by removal.** `--head`/`--tail` compose into a middle window (not "later wins"); they duplicate unix `head`/`tail` (the help even said "prefer piping to tail -N"). **Removed entirely** — 2 CliArgs, parse arms, the tail-buffer render path + `head_reached` threading + `BufListWriter`, 6 Strings fields × 50 locales, localized aliases, and the old tests; added a rejection test. Pure subtraction.
+- 2026-06-29: **Phase 2** done. `Locale.code()` is now just `@tagName(self)` (deleted the 50-arm switch); the `cli_alias_map` hand-list is derived from `all_locales` via `localeCliAliases`. Removed 2 of the 6 hand-maintained 50-entry lists (registry pattern, as `available_codes` already proved). Validated by the 1734-assertion alias-resolution test + parseLocaleCode round-trip.
