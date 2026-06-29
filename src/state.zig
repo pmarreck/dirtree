@@ -145,6 +145,17 @@ pub const StateFile = struct {
 };
 
 /// Parse a .dirtree-state file from raw bytes.
+/// Parse a boolean-ish string, case-insensitively: true for 1/true/yes/on,
+/// false for 0/false/no/off, null if unrecognized. Single source of truth for
+/// env vars, state-file values, and the TTY override.
+pub fn parseBool(s: []const u8) ?bool {
+	const truthy = [_][]const u8{ "1", "true", "yes", "on" };
+	const falsy = [_][]const u8{ "0", "false", "no", "off" };
+	for (truthy) |t| if (std.ascii.eqlIgnoreCase(s, t)) return true;
+	for (falsy) |f| if (std.ascii.eqlIgnoreCase(s, f)) return false;
+	return null;
+}
+
 pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateFile {
 	var state = StateFile{ .allocator = allocator };
 	errdefer state.deinit();
@@ -398,19 +409,15 @@ pub fn parseStateFile(allocator: std.mem.Allocator, content: []const u8) !StateF
 					try state.passthrough_lines.append(allocator, duped);
 				}
 			} else if (std.mem.eql(u8, key, "color")) {
-				if (std.mem.eql(u8, value, "true")) {
-					state.color_preference = true;
-				} else if (std.mem.eql(u8, value, "false")) {
-					state.color_preference = false;
+				if (parseBool(value)) |b| {
+					state.color_preference = b;
 				} else {
 					const duped = try state.dupeStr(raw_line);
 					try state.passthrough_lines.append(allocator, duped);
 				}
 			} else if (std.mem.eql(u8, key, "hyperlink")) {
-				if (std.mem.eql(u8, value, "true")) {
-					state.hyperlink_preference = true;
-				} else if (std.mem.eql(u8, value, "false")) {
-					state.hyperlink_preference = false;
+				if (parseBool(value)) |b| {
+					state.hyperlink_preference = b;
 				} else {
 					const duped = try state.dupeStr(raw_line);
 					try state.passthrough_lines.append(allocator, duped);
@@ -963,6 +970,18 @@ fn splitInlineItems(content: []const u8) InlineItemIterator {
 }
 
 // Tests
+
+test "parseBool: classifier over the set" {
+	for ([_][]const u8{ "1", "true", "TRUE", "True", "yes", "YES", "on", "ON" }) |t| {
+		try std.testing.expect(parseBool(t).? == true);
+	}
+	for ([_][]const u8{ "0", "false", "FALSE", "False", "no", "NO", "off", "OFF" }) |f| {
+		try std.testing.expect(parseBool(f).? == false);
+	}
+	for ([_][]const u8{ "", "2", "tru", "yep", "y", "n", "enabled", " true" }) |x| {
+		try std.testing.expect(parseBool(x) == null);
+	}
+}
 
 test "parse empty state file" {
 	var state = try parseStateFile(std.testing.allocator, "");

@@ -990,20 +990,8 @@ fn collectDefaultArgs(args: []const [:0]const u8, config: *CliConfig) DefaultArg
 fn detectTty() bool {
 	// Check PIPED_STDOUT env var first (all locale aliases)
 	if (i18n.getEnvLocalized(.piped_stdout)) |val| {
-		if (std.ascii.eqlIgnoreCase(val, "0") or
-			std.ascii.eqlIgnoreCase(val, "false") or
-			std.ascii.eqlIgnoreCase(val, "no") or
-			std.ascii.eqlIgnoreCase(val, "off"))
-		{
-			return true; // PIPED_STDOUT=0 means treat as TTY
-		}
-		if (std.ascii.eqlIgnoreCase(val, "1") or
-			std.ascii.eqlIgnoreCase(val, "true") or
-			std.ascii.eqlIgnoreCase(val, "yes") or
-			std.ascii.eqlIgnoreCase(val, "on"))
-		{
-			return false; // PIPED_STDOUT=1 means treat as piped
-		}
+		// PIPED_STDOUT truthy => treat as piped; falsy => treat as TTY.
+		if (state_mod.parseBool(val)) |piped| return !piped;
 	}
 	return std.Io.File.stdout().isTty(runtime.io()) catch false;
 }
@@ -1029,13 +1017,7 @@ fn applyEnvVars(config: *CliConfig) void {
 }
 
 fn isTruthyEnv(val: []const u8) bool {
-	return std.mem.eql(u8, val, "1") or
-		std.mem.eql(u8, val, "true") or
-		std.mem.eql(u8, val, "TRUE") or
-		std.mem.eql(u8, val, "yes") or
-		std.mem.eql(u8, val, "YES") or
-		std.mem.eql(u8, val, "on") or
-		std.mem.eql(u8, val, "ON");
+	return state_mod.parseBool(val) orelse false;
 }
 
 /// One help option/subcommand row for the rendered Options table.
