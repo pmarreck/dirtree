@@ -292,65 +292,11 @@ fn renderDir(
 	const entries = try dir_scan.scanDir(allocator, scan_path, config.sort_mode, config.sort_direction);
 	defer dir_scan.freeEntries(allocator, entries);
 
-	// First pass: evaluate and filter entries
-	var visible = std.ArrayListUnmanaged(VisibleEntry).empty;
-	defer visible.deinit(allocator);
+	// First pass: evaluate + filter entries (shared with the other render path).
+	var visible = try collectVisible(allocator, entries, rel_dir, parent_closed, effective, priority_dirs, priority_files, config, stats);
 	defer {
 		for (visible.items) |v| allocator.free(v.child_rel);
-	}
-
-	for (entries) |entry| {
-		// Skip . and ..
-		if (std.mem.eql(u8, entry.name, ".") or std.mem.eql(u8, entry.name, "..")) continue;
-
-		// Build relative path for this entry
-		const child_rel = if (rel_dir.len == 0)
-			try allocator.dupe(u8, entry.name)
-		else
-			try std.fs.path.join(allocator, &.{ rel_dir, entry.name });
-		defer allocator.free(child_rel);
-
-		// Evaluate the path
-		const eval_result = effective.evaluatePath(
-			child_rel,
-			parent_closed,
-			config.show_hidden,
-			entry.kind == .directory,
-			priority_dirs,
-			priority_files,
-		);
-
-		if (eval_result.is_hidden) {
-			// Don't count .dirtree-state in hidden totals (silently excluded)
-			if (!std.mem.eql(u8, entry.name, ".dirtree-state")) {
-				if (entry.kind == .directory) {
-					stats.hidden_dirs += 1;
-				} else {
-					stats.hidden_files += 1;
-				}
-			}
-			continue;
-		}
-
-		// Track shown counts
-		if (entry.kind == .directory) {
-			stats.shown_dirs += 1;
-		} else {
-			stats.shown_files += 1;
-		}
-		if (eval_result.scm_kept) {
-			if (entry.kind == .directory) {
-				stats.scm_kept_dirs += 1;
-			} else {
-				stats.scm_kept_files += 1;
-			}
-		}
-
-		try visible.append(allocator, .{
-			.entry = entry,
-			.is_closed = eval_result.is_closed,
-			.child_rel = try allocator.dupe(u8, child_rel),
-		});
+		visible.deinit(allocator);
 	}
 
 	// Second pass: render visible entries
@@ -593,60 +539,11 @@ fn renderDirFocused(
 	const entries = try dir_scan.scanDir(allocator, scan_path, config.sort_mode, config.sort_direction);
 	defer dir_scan.freeEntries(allocator, entries);
 
-	// First pass: evaluate and filter entries
-	var visible = std.ArrayListUnmanaged(VisibleEntry).empty;
-	defer visible.deinit(allocator);
+	// First pass: evaluate + filter entries (shared with the other render path).
+	var visible = try collectVisible(allocator, entries, rel_dir, parent_closed, effective, priority_dirs, priority_files, config, stats);
 	defer {
 		for (visible.items) |v| allocator.free(v.child_rel);
-	}
-
-	for (entries) |entry| {
-		if (std.mem.eql(u8, entry.name, ".") or std.mem.eql(u8, entry.name, "..")) continue;
-
-		const child_rel = if (rel_dir.len == 0)
-			try allocator.dupe(u8, entry.name)
-		else
-			try std.fs.path.join(allocator, &.{ rel_dir, entry.name });
-		defer allocator.free(child_rel);
-
-		const eval_result = effective.evaluatePath(
-			child_rel,
-			parent_closed,
-			config.show_hidden,
-			entry.kind == .directory,
-			priority_dirs,
-			priority_files,
-		);
-
-		if (eval_result.is_hidden) {
-			if (!std.mem.eql(u8, entry.name, ".dirtree-state")) {
-				if (entry.kind == .directory) {
-					stats.hidden_dirs += 1;
-				} else {
-					stats.hidden_files += 1;
-				}
-			}
-			continue;
-		}
-
-		if (entry.kind == .directory) {
-			stats.shown_dirs += 1;
-		} else {
-			stats.shown_files += 1;
-		}
-		if (eval_result.scm_kept) {
-			if (entry.kind == .directory) {
-				stats.scm_kept_dirs += 1;
-			} else {
-				stats.scm_kept_files += 1;
-			}
-		}
-
-		try visible.append(allocator, .{
-			.entry = entry,
-			.is_closed = eval_result.is_closed,
-			.child_rel = try allocator.dupe(u8, child_rel),
-		});
+		visible.deinit(allocator);
 	}
 
 	// Second pass: render with focus awareness
@@ -737,6 +634,82 @@ fn renderDirFocused(
 			stats.total_lines += 1;
 		}
 	}
+}
+
+/// First render pass: evaluate every scanned entry against the effective state,
+/// accumulate the visible ones (each with a heap-duped child_rel) and tally
+/// hidden/shown/scm stats. Caller owns the result: free each .child_rel, then
+/// deinit the list. On error mid-accumulation, errdefer frees what was appended.
+fn collectVisible(
+	allocator: std.mem.Allocator,
+	entries: []dir_scan.DirEntry,
+	rel_dir: []const u8,
+	parent_closed: bool,
+	effective: *path_eval.EffectiveState,
+	priority_dirs: ?*const std.StringHashMapUnmanaged(void),
+	priority_files: ?*const std.StringHashMapUnmanaged(void),
+	config: RenderConfig,
+	stats: *TreeStats,
+) !std.ArrayListUnmanaged(VisibleEntry) {
+	var visible = std.ArrayListUnmanaged(VisibleEntry).empty;
+	errdefer {
+		for (visible.items) |v| allocator.free(v.child_rel);
+		visible.deinit(allocator);
+	}
+	for (entries) |entry| {
+		// Skip . and ..
+		if (std.mem.eql(u8, entry.name, ".") or std.mem.eql(u8, entry.name, "..")) continue;
+
+		// Build relative path for this entry
+		const child_rel = if (rel_dir.len == 0)
+			try allocator.dupe(u8, entry.name)
+		else
+			try std.fs.path.join(allocator, &.{ rel_dir, entry.name });
+		defer allocator.free(child_rel);
+
+		// Evaluate the path
+		const eval_result = effective.evaluatePath(
+			child_rel,
+			parent_closed,
+			config.show_hidden,
+			entry.kind == .directory,
+			priority_dirs,
+			priority_files,
+		);
+
+		if (eval_result.is_hidden) {
+			// Don't count .dirtree-state in hidden totals (silently excluded)
+			if (!std.mem.eql(u8, entry.name, ".dirtree-state")) {
+				if (entry.kind == .directory) {
+					stats.hidden_dirs += 1;
+				} else {
+					stats.hidden_files += 1;
+				}
+			}
+			continue;
+		}
+
+		// Track shown counts
+		if (entry.kind == .directory) {
+			stats.shown_dirs += 1;
+		} else {
+			stats.shown_files += 1;
+		}
+		if (eval_result.scm_kept) {
+			if (entry.kind == .directory) {
+				stats.scm_kept_dirs += 1;
+			} else {
+				stats.scm_kept_files += 1;
+			}
+		}
+
+		try visible.append(allocator, .{
+			.entry = entry,
+			.is_closed = eval_result.is_closed,
+			.child_rel = try allocator.dupe(u8, child_rel),
+		});
+	}
+	return visible;
 }
 
 const VisibleEntry = struct {
