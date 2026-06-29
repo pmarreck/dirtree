@@ -149,8 +149,13 @@ test "scanDir returns entries for current directory" {
 	const allocator = std.testing.allocator;
 	const entries = try scanDir(allocator, ".", .alpha, .asc);
 	defer freeEntries(allocator, entries);
-	// Current dir should have at least build.zig
-	try std.testing.expect(entries.len > 0);
+	// The project root must actually contain build.zig — assert it by name, not
+	// just len>0 (which a broken scanner returning garbage could also satisfy).
+	var found_build_zig = false;
+	for (entries) |e| {
+		if (std.mem.eql(u8, e.name, "build.zig")) found_build_zig = true;
+	}
+	try std.testing.expect(found_build_zig);
 }
 
 test "scanDir alpha sort is alphabetical" {

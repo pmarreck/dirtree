@@ -666,10 +666,6 @@ test "parseLocaleCode" {
     try std.testing.expectEqual(Locale.zh_hans, parseLocaleCode("zh_hans").?);
 }
 
-test "available_codes contains en" {
-    try std.testing.expect(std.mem.indexOf(u8, available_codes, "en") != null);
-}
-
 test "available_codes is alphabetically sorted and complete" {
     var iter = std.mem.splitSequence(u8, available_codes, ", ");
     var prev: []const u8 = "";
@@ -683,8 +679,15 @@ test "available_codes is alphabetically sorted and complete" {
     }
     // Every locale appears exactly once.
     try std.testing.expectEqual(all_locales.len, count);
+    // Exact-token membership (not substring): each code must equal a full
+    // comma-separated token, so e.g. "en" can't pass by matching inside another code.
     inline for (all_locales) |loc| {
-        try std.testing.expect(std.mem.indexOf(u8, available_codes, loc.code()) != null);
+        var code_it = std.mem.splitSequence(u8, available_codes, ", ");
+        var present = false;
+        while (code_it.next()) |tok| {
+            if (std.mem.eql(u8, tok, loc.code())) present = true;
+        }
+        try std.testing.expect(present);
     }
 }
 

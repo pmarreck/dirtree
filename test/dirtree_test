@@ -494,11 +494,17 @@ test_dirtree_root_points_to_repo_root() {
 		echo "dirtree binary not found at $DIRTREE_BIN" >&2
 		return 1
 	fi
-	# Verify the binary runs and produces output
-	local out
+	# The root header (first line) must actually name the repo root, not just be
+	# non-empty: assert it ends with the resolved basename + "/".
+	local out base
 	out=$("$DIRTREE_BIN" --simple --no-icons "$DIRTREE_ROOT" 2>/dev/null | head -1)
 	if [[ -z "$out" ]]; then
 		echo "dirtree binary produced no output" >&2
+		return 1
+	fi
+	base=$(basename "$DIRTREE_ROOT")
+	if [[ "$out" != *"$base/"* ]]; then
+		echo "root header should name the repo root '$base/'; got: $out" >&2
 		return 1
 	fi
 }
