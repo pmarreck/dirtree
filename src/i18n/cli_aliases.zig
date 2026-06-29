@@ -33,8 +33,6 @@ pub const CliArg = enum {
     lang,
     max_lines,
     override_warning,
-    head,
-    tail,
     only,
     annotate,
     orphaned_notes,

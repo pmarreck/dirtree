@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── ਮਦਦ ਟੈਕਸਟ (ਨਵੇਂ ਫਲੈਗ) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      ਵੱਡੀ ਆਉਟਪੁੱਟ ਚੇਤਾਵਨੀ ਥ੍ਰੈਸ਼ਹੋਲਡ ਸੈੱਟ ਕਰੋ (ਮੂਲ: 500)",
     .help_opt_override_warning = "  --override-warning ਵੱਡੀ ਆਉਟਪੁੱਟ ਚੇਤਾਵਨੀ ਨੂੰ ਦਬਾਓ",
-    .help_opt_head = "  --head N           N ਲਾਈਨਾਂ ਤੋਂ ਬਾਅਦ ਆਉਟਪੁੱਟ ਰੋਕੋ",
-    .help_opt_tail = "  --tail N           ਸਿਰਫ਼ ਆਖਰੀ N ਲਾਈਨਾਂ ਵਿਖਾਓ (tail -N ਨੂੰ ਪਾਈਪ ਕਰਨਾ ਬਿਹਤਰ ਹੈ)",
     .help_opt_only = "  --only PATH        ਇੱਕ ਉਪ-ਰੁੱਖ 'ਤੇ ਧਿਆਨ ਕੇਂਦਰਿਤ ਕਰੋ, ਭੈਣ-ਭਰਾ ਡਾਇਰੈਕਟਰੀਆਂ ਨੂੰ ਸਮੇਟੋ (ਦੁਹਰਾਉਣਯੋਗ)",
 
     // ── ਚੇਤਾਵਨੀ ਸੁਨੇਹੇ (ਵੱਡੀ ਆਉਟਪੁੱਟ) ──────────────────────────
     .warn_large_output_prefix = "ਚੇਤਾਵਨੀ: ਆਉਟਪੁੱਟ ਲਗਭਗ ~",
     .warn_large_output_mid = " ਲਾਈਨਾਂ ਹੈ (ਥ੍ਰੈਸ਼ਹੋਲਡ: ",
     .warn_large_output_suffix = ")। ਵਿਚਾਰ ਕਰੋ: --depth N, --head N, ਜਾਂ --hide ਪੈਟਰਨ।",
-    .warn_truncated_head_prefix = "(--head ਦੁਆਰਾ ",
-    .warn_truncated_head_suffix = " ਲਾਈਨਾਂ ਤੋਂ ਬਾਅਦ ਆਉਟਪੁੱਟ ਛਾਂਗੀ ਗਈ)",
 
     // ── ਗਲਤੀ ਸੁਨੇਹੇ ─────────────────────────────────────────────
     .err_max_lines_requires_number = "ਗਲਤੀ: --max-lines ਨੂੰ ਇੱਕ ਸੰਖਿਆਤਮਕ ਆਰਗੂਮੈਂਟ ਚਾਹੀਦਾ ਹੈ (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "ਗਲਤੀ: --head ਨੂੰ ਇੱਕ ਸੰਖਿਆਤਮਕ ਆਰਗੂਮੈਂਟ ਚਾਹੀਦਾ ਹੈ (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "ਗਲਤੀ: --tail ਨੂੰ ਇੱਕ ਸੰਖਿਆਤਮਕ ਆਰਗੂਮੈਂਟ ਚਾਹੀਦਾ ਹੈ (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "ਗਲਤੀ: --only ਨੂੰ ਇੱਕ ਮਾਰਗ ਆਰਗੂਮੈਂਟ ਚਾਹੀਦਾ ਹੈ (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "ਗਲਤੀ: --depth ਨੂੰ ਇੱਕ ਸੰਖਿਆਤਮਕ ਆਰਗੂਮੈਂਟ ਚਾਹੀਦਾ ਹੈ (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "ਗਲਤੀ: --path ਨੂੰ ਇੱਕ ਡਾਇਰੈਕਟਰੀ ਆਰਗੂਮੈਂਟ ਚਾਹੀਦਾ ਹੈ (en: Error: --path requires a directory argument)",
@@ -171,8 +165,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--aarzi", .arg = .temporary },
         .{ .name = "--vaadhu-lainan", .arg = .max_lines },
         .{ .name = "--chetavani-rad", .arg = .override_warning },
-        .{ .name = "--sira", .arg = .head },
-        .{ .name = "--punchh", .arg = .tail },
         .{ .name = "--sirf", .arg = .only },
         .{ .name = "tippani", .arg = .annotate },
         .{ .name = "anaath-not", .arg = .orphaned_notes },

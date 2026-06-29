@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Teksti i ndihmës (flamuj të rinj) ──────────────────────
     .help_opt_max_lines = "  --max-lines N      Cakto pragun e paralajmërimit për dalje të madhe (parazgjedhja: 500)",
     .help_opt_override_warning = "  --override-warning Shtyp paralajmërimin për dalje të madhe",
-    .help_opt_head = "  --head N           Ndalo daljen pas N rreshtash",
-    .help_opt_tail = "  --tail N           Shfaq vetëm N rreshtat e fundit (më mirë kanalizo te tail -N)",
     .help_opt_only = "  --only PATH        Fokusohu te një nënpemë, duke palosur drejtoritë motra (i përsëritshëm)",
 
     // ── Mesazhe paralajmërimi (dalje e madhe) ──────────────────
     .warn_large_output_prefix = "Paralajmërim: dalja është ~",
     .warn_large_output_mid = " rreshta (pragu: ",
     .warn_large_output_suffix = "). Konsidero: --depth N, --head N, ose motivet --hide.",
-    .warn_truncated_head_prefix = "(Dalja u shkurtua pas ",
-    .warn_truncated_head_suffix = " rreshtash nga --head)",
 
     // ── Mesazhe gabimi ─────────────────────────────────────────
     .err_max_lines_requires_number = "Gabim: --max-lines kërkon një argument numerik (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Gabim: --head kërkon një argument numerik (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Gabim: --tail kërkon një argument numerik (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Gabim: --only kërkon një argument shtegu (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Gabim: --depth kërkon një argument numerik (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Gabim: --path kërkon një argument drejtorie (en: Error: --path requires a directory argument)",

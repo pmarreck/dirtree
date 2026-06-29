@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Help text (new flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      بڑی آؤٹ پٹ کی تنبیہ کی حد مقرر کریں (طے شدہ: 500)",
     .help_opt_override_warning = "  --override-warning بڑی آؤٹ پٹ کی تنبیہ کو دبائیں",
-    .help_opt_head = "  --head N           N سطروں کے بعد آؤٹ پٹ روک دیں",
-    .help_opt_tail = "  --tail N           صرف آخری N سطریں دکھائیں (tail -N کی طرف پائپ کرنا بہتر ہے)",
     .help_opt_only = "  --only PATH        ایک ذیلی ٹری پر توجہ مرکوز کریں، ہم پلہ ڈائریکٹریاں سمیٹیں (دہرایا جا سکتا ہے)",
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "تنبیہ: آؤٹ پٹ تقریباً ~",
     .warn_large_output_mid = " سطریں ہیں (حد: ",
     .warn_large_output_suffix = ")۔ غور کریں: --depth N، --head N، یا --hide پیٹرنز۔",
-    .warn_truncated_head_prefix = "(آؤٹ پٹ ",
-    .warn_truncated_head_suffix = " سطروں کے بعد --head کے ذریعے مختصر کر دی گئی)",
 
     // ── Error messages ─────────────────────────────────────────
     .err_max_lines_requires_number = "خرابی: --max-lines کو ایک عددی دلیل درکار ہے (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "خرابی: --head کو ایک عددی دلیل درکار ہے (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "خرابی: --tail کو ایک عددی دلیل درکار ہے (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "خرابی: --only کو ایک راستے کی دلیل درکار ہے (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "خرابی: --depth کو ایک عددی دلیل درکار ہے (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "خرابی: --path کو ایک ڈائریکٹری دلیل درکار ہے (en: Error: --path requires a directory argument)",
@@ -171,8 +165,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--waqti", .arg = .temporary },
         .{ .name = "--zyada-se-zyada-satrein", .arg = .max_lines },
         .{ .name = "--tanbeeh-radd-karo", .arg = .override_warning },
-        .{ .name = "--sar", .arg = .head },
-        .{ .name = "--dum", .arg = .tail },
         .{ .name = "--sirf", .arg = .only },
         .{ .name = "tashreeh", .arg = .annotate },
         .{ .name = "yateem-note", .arg = .orphaned_notes },

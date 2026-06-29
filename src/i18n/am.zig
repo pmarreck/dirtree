@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── የእገዛ ጽሑፍ (አዲስ flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      ለትልቅ ውጤት ማስጠንቀቂያ ደጃፍ አስቀምጥ (ነባሪ: 500)",
     .help_opt_override_warning = "  --override-warning የትልቅ ውጤት ማስጠንቀቂያን አፍን",
-    .help_opt_head = "  --head N           ከ N መስመሮች በኋላ ውጤትን አቁም",
-    .help_opt_tail = "  --tail N           የመጨረሻዎቹን N መስመሮች ብቻ አሳይ (ወደ tail -N ማጣራት ይመረጣል)",
     .help_opt_only = "  --only PATH        በንዑስ-ዛፍ ላይ አተኩር፣ የእኩዮች ማውጫዎችን አጥፋ (ሊደገም ይችላል)",
 
     // ── የማስጠንቀቂያ መልእክቶች (ትልቅ ውጤት) ───────────────────────────
     .warn_large_output_prefix = "ማስጠንቀቂያ: ውጤቱ ~",
     .warn_large_output_mid = " መስመሮች (ደጃፍ: ",
     .warn_large_output_suffix = ") ነው። አስብ: --depth N, --head N, ወይም --hide ስርዓተ-ጥለቶች።",
-    .warn_truncated_head_prefix = "(ውጤት ከ ",
-    .warn_truncated_head_suffix = " መስመሮች በኋላ በ --head ተቆርጧል)",
 
     // ── የስህተት መልእክቶች ──────────────────────────────────────────
     .err_max_lines_requires_number = "ስህተት: --max-lines የቁጥር መከራከሪያ ይፈልጋል (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "ስህተት: --head የቁጥር መከራከሪያ ይፈልጋል (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "ስህተት: --tail የቁጥር መከራከሪያ ይፈልጋል (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "ስህተት: --only የመንገድ መከራከሪያ ይፈልጋል (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "ስህተት: --depth የቁጥር መከራከሪያ ይፈልጋል (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "ስህተት: --path የማውጫ መከራከሪያ ይፈልጋል (en: Error: --path requires a directory argument)",

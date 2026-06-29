@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Ọ̀rọ̀ ìrànlọ́wọ́ (flag tuntun) ────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Ṣètò ààlà ìkìlọ̀ ìjáde ńlá (àbínibí: 500)",
     .help_opt_override_warning = "  --override-warning Tẹ́ ìkìlọ̀ ìjáde ńlá mọ́lẹ̀",
-    .help_opt_head = "  --head N           Dúró ìjáde lẹ́yìn ìlà N",
-    .help_opt_tail = "  --tail N           Fi ìlà N tó kẹ́yìn nìkan hàn (ó dára kí a fi piping ránṣẹ́ sí tail -N)",
     .help_opt_only = "  --only PATH        Dojúkọ igi-abẹ́ kan, ká àwọn ìwé-ìpamọ́ ẹgbẹ́ jọ (a lè tún ṣe)",
 
     // ── Àwọn ìkìlọ̀ (ìjáde ńlá) ──────────────────────────────────
     .warn_large_output_prefix = "Ìkìlọ̀: ìjáde tó ~",
     .warn_large_output_mid = " ìlà (ààlà: ",
     .warn_large_output_suffix = "). Gbèrò: --depth N, --head N, tàbí àwọn àpẹẹrẹ --hide.",
-    .warn_truncated_head_prefix = "(A gé ìjáde kúrú lẹ́yìn ìlà ",
-    .warn_truncated_head_suffix = " nípasẹ̀ --head)",
 
     // ── Àwọn ìfìránṣẹ́ àṣìṣe ─────────────────────────────────────
     .err_max_lines_requires_number = "Àṣìṣe: --max-lines nílò àríyànjiyàn nọ́mbà (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Àṣìṣe: --head nílò àríyànjiyàn nọ́mbà (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Àṣìṣe: --tail nílò àríyànjiyàn nọ́mbà (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Àṣìṣe: --only nílò àríyànjiyàn ọ̀nà (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Àṣìṣe: --depth nílò àríyànjiyàn nọ́mbà (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Àṣìṣe: --path nílò àríyànjiyàn ìwé-ìpamọ́ (en: Error: --path requires a directory argument)",

@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Help text (new flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      বড় আউটপুট সতর্কতার থ্রেশহোল্ড নির্ধারণ করুন (ডিফল্ট: 500)",
     .help_opt_override_warning = "  --override-warning বড় আউটপুট সতর্কতা দমন করুন",
-    .help_opt_head = "  --head N           N লাইনের পরে আউটপুট বন্ধ করুন",
-    .help_opt_tail = "  --tail N           শুধু শেষ N লাইন দেখান (tail -N-এ পাইপ করা ভালো)",
     .help_opt_only = "  --only PATH        একটি সাবট্রিতে মনোনিবেশ করুন, সহোদর ডিরেক্টরি ভাঁজ করে (পুনরাবৃত্তিযোগ্য)",
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "সতর্কতা: আউটপুট প্রায় ~",
     .warn_large_output_mid = " লাইন (থ্রেশহোল্ড: ",
     .warn_large_output_suffix = ")। বিবেচনা করুন: --depth N, --head N, অথবা --hide প্যাটার্ন।",
-    .warn_truncated_head_prefix = "(--head দ্বারা ",
-    .warn_truncated_head_suffix = " লাইনের পরে আউটপুট কাটা হয়েছে)",
 
     // ── Error messages ─────────────────────────────────────────
     .err_max_lines_requires_number = "ত্রুটি: --max-lines একটি সংখ্যাসূচক আর্গুমেন্ট প্রয়োজন (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "ত্রুটি: --head একটি সংখ্যাসূচক আর্গুমেন্ট প্রয়োজন (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "ত্রুটি: --tail একটি সংখ্যাসূচক আর্গুমেন্ট প্রয়োজন (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "ত্রুটি: --only একটি পাথ আর্গুমেন্ট প্রয়োজন (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "ত্রুটি: --depth একটি সংখ্যাসূচক আর্গুমেন্ট প্রয়োজন (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "ত্রুটি: --path একটি ডিরেক্টরি আর্গুমেন্ট প্রয়োজন (en: Error: --path requires a directory argument)",
@@ -171,8 +165,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--osthayi", .arg = .temporary },
         .{ .name = "--sorbocho-line", .arg = .max_lines },
         .{ .name = "--sotorkota-uposhomon", .arg = .override_warning },
-        .{ .name = "--matha", .arg = .head },
-        .{ .name = "--lej", .arg = .tail },
         .{ .name = "--shudhu", .arg = .only },
         .{ .name = "tika-dao", .arg = .annotate },
         .{ .name = "anath-note", .arg = .orphaned_notes },

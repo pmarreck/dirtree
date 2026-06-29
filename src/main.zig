@@ -84,8 +84,6 @@ pub const CliConfig = struct {
 	// Output control
 	max_lines: ?u32 = null,
 	override_warning: bool = false,
-	head_lines: ?u32 = null,
-	tail_lines: ?u32 = null,
 
 	// Focus mode
 	only_paths: std.ArrayListUnmanaged([]const u8) = .empty,
@@ -616,36 +614,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					},
 					.override_warning => {
 						config.override_warning = true;
-						i += 1;
-						continue;
-					},
-					.head => {
-						i += 1;
-						if (i >= args.len) {
-							config.deinit(allocator);
-							return .{ .err = s.err_head_requires_number };
-						}
-						const head_str = args[i];
-						const head_val = std.fmt.parseInt(u32, head_str, 10) catch {
-							config.deinit(allocator);
-							return .{ .err = s.err_head_requires_number };
-						};
-						config.head_lines = head_val;
-						i += 1;
-						continue;
-					},
-					.tail => {
-						i += 1;
-						if (i >= args.len) {
-							config.deinit(allocator);
-							return .{ .err = s.err_tail_requires_number };
-						}
-						const tail_str = args[i];
-						const tail_val = std.fmt.parseInt(u32, tail_str, 10) catch {
-							config.deinit(allocator);
-							return .{ .err = s.err_tail_requires_number };
-						};
-						config.tail_lines = tail_val;
 						i += 1;
 						continue;
 					},
@@ -1200,8 +1168,6 @@ fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
 		.{ .flag = "--lang CODE", .text = s.help_opt_lang, .args = &[_]i18n.CliArg{.lang} },
 		.{ .flag = "--max-lines N", .text = s.help_opt_max_lines, .args = &[_]i18n.CliArg{.max_lines} },
 		.{ .flag = "--override-warning", .text = s.help_opt_override_warning, .args = &[_]i18n.CliArg{.override_warning} },
-		.{ .flag = "--head N", .text = s.help_opt_head, .args = &[_]i18n.CliArg{.head} },
-		.{ .flag = "--tail N", .text = s.help_opt_tail, .args = &[_]i18n.CliArg{.tail} },
 		.{ .flag = "--only PATH", .text = s.help_opt_only, .args = &[_]i18n.CliArg{.only} },
 		.{ .flag = "annotate PATH DESC", .text = s.help_opt_annotate, .args = &[_]i18n.CliArg{.annotate}, .subcmd = true },
 		.{ .flag = "orphaned-notes [DIR]", .text = s.help_opt_orphaned_notes, .args = &[_]i18n.CliArg{.orphaned_notes}, .subcmd = true },
@@ -1606,8 +1572,6 @@ pub fn main(init: std.process.Init) !u8 {
 				.show_hidden = cfg.show_hidden,
 				.sort_mode = sort_mode,
 				.sort_direction = sort_direction,
-				.head_lines = cfg.head_lines,
-				.tail_lines = cfg.tail_lines,
 				.only_paths = cfg.only_paths.items,
 			};
 

@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── 說明文字 (新選項) ──────────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      設定大量輸出警告閾值 (預設: 500)",
     .help_opt_override_warning = "  --override-warning 抑制大量輸出警告",
-    .help_opt_head = "  --head N           在 N 行後停止輸出",
-    .help_opt_tail = "  --tail N           僅顯示最後 N 行 (建議改用管道 tail -N)",
     .help_opt_only = "  --only PATH        聚焦某個子樹，折疊同層目錄 (可重複)",
 
     // ── 警告訊息 (大量輸出) ────────────────────────────────────
     .warn_large_output_prefix = "警告: 輸出約 ~",
     .warn_large_output_mid = " 行 (閾值: ",
     .warn_large_output_suffix = ")。請考慮: --depth N、--head N 或 --hide 模式。",
-    .warn_truncated_head_prefix = "(輸出在 ",
-    .warn_truncated_head_suffix = " 行後被 --head 截斷)",
 
     // ── 錯誤訊息 ───────────────────────────────────────────────
     .err_max_lines_requires_number = "錯誤: --max-lines 需要一個數字參數 (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "錯誤: --head 需要一個數字參數 (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "錯誤: --tail 需要一個數字參數 (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "錯誤: --only 需要一個路徑參數 (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "錯誤: --depth 需要一個數字參數 (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "錯誤: --path 需要一個目錄參數 (en: Error: --path requires a directory argument)",

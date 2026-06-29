@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Hjelpetekst (nye flagg) ────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Angi terskel for advarsel om stor utdata (standard: 500)",
     .help_opt_override_warning = "  --override-warning Undertrykk advarselen om stor utdata",
-    .help_opt_head = "  --head N           Stopp utdata etter N linjer",
-    .help_opt_tail = "  --tail N           Vis kun de siste N linjene (foretrekk å rør til tail -N)",
     .help_opt_only = "  --only PATH        Fokuser på et undertre, klapp sammen søskenkataloger (gjentakbar)",
 
     // ── Advarsler (stor utdata) ────────────────────────────────
     .warn_large_output_prefix = "Advarsel: utdata er ~",
     .warn_large_output_mid = " linjer (terskel: ",
     .warn_large_output_suffix = "). Vurder: --depth N, --head N eller --hide-mønstre.",
-    .warn_truncated_head_prefix = "(Utdata avkortet etter ",
-    .warn_truncated_head_suffix = " linjer av --head)",
 
     // ── Feilmeldinger ──────────────────────────────────────────
     .err_max_lines_requires_number = "Feil: --max-lines krever et numerisk argument (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Feil: --head krever et numerisk argument (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Feil: --tail krever et numerisk argument (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Feil: --only krever et sti-argument (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Feil: --depth krever et numerisk argument (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Feil: --path krever et katalog-argument (en: Error: --path requires a directory argument)",

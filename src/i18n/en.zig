@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Help text (new flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Set large output warning threshold (default: 500)",
     .help_opt_override_warning = "  --override-warning Suppress the large output warning",
-    .help_opt_head = "  --head N           Stop output after N lines",
-    .help_opt_tail = "  --tail N           Show only the last N lines (prefer piping to tail -N)",
     .help_opt_only = "  --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)",
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "Warning: output is ~",
     .warn_large_output_mid = " lines (threshold: ",
     .warn_large_output_suffix = "). Consider: --depth N, --head N, or --hide patterns.",
-    .warn_truncated_head_prefix = "(Output truncated after ",
-    .warn_truncated_head_suffix = " lines by --head)",
 
     // ── Error messages ─────────────────────────────────────────
     .err_max_lines_requires_number = "Error: --max-lines requires a numeric argument",
-    .err_head_requires_number = "Error: --head requires a numeric argument",
-    .err_tail_requires_number = "Error: --tail requires a numeric argument",
     .err_only_requires_path = "Error: --only requires a path argument",
     .err_depth_requires_number = "Error: --depth requires a numeric argument",
     .err_path_requires_arg = "Error: --path requires a directory argument",
@@ -172,8 +166,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--lang", .arg = .lang },
         .{ .name = "--max-lines", .arg = .max_lines },
         .{ .name = "--override-warning", .arg = .override_warning },
-        .{ .name = "--head", .arg = .head },
-        .{ .name = "--tail", .arg = .tail },
         .{ .name = "--only", .arg = .only },
         .{ .name = "annotate", .arg = .annotate },
         .{ .name = "orphaned-notes", .arg = .orphaned_notes },

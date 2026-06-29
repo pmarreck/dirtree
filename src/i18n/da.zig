@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Hjælpetekst (nye flag) ─────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Angiv tærskel for advarsel om stor udskrift (standard: 500)",
     .help_opt_override_warning = "  --override-warning Undertryk advarslen om stor udskrift",
-    .help_opt_head = "  --head N           Stop udskrift efter N linjer",
-    .help_opt_tail = "  --tail N           Vis kun de sidste N linjer (foretræk at pipe til tail -N)",
     .help_opt_only = "  --only PATH        Fokusér på et undertræ og klap søskendemapper sammen (gentagelig)",
 
     // ── Advarsler (stor udskrift) ──────────────────────────────
     .warn_large_output_prefix = "Advarsel: udskriften er ~",
     .warn_large_output_mid = " linjer (tærskel: ",
     .warn_large_output_suffix = "). Overvej: --depth N, --head N eller --hide-mønstre.",
-    .warn_truncated_head_prefix = "(Udskrift afkortet efter ",
-    .warn_truncated_head_suffix = " linjer af --head)",
 
     // ── Fejlmeddelelser ────────────────────────────────────────
     .err_max_lines_requires_number = "Fejl: --max-lines kræver et numerisk argument (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Fejl: --head kræver et numerisk argument (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Fejl: --tail kræver et numerisk argument (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Fejl: --only kræver et sti-argument (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Fejl: --depth kræver et numerisk argument (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Fejl: --path kræver et mappe-argument (en: Error: --path requires a directory argument)",

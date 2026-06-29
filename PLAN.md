@@ -9,13 +9,13 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 
 ## Phase 1 — Behavioral bugs + the coverage that would have caught them
 
-- [ ] **1.1 🔥 `annotate PATH ""` does not clear the note** (`main.zig` `persistAnnotation` ~:2272). Help says "empty DESC clears"; impl removes then re-adds an empty tombstone (`\tpath = \n`). Fix: when `description.len==0`, remove and skip re-add. *Failing CLI test first*: after `annotate p ""`, the `annotate=[` block / that path is absent.
-- [ ] **1.2 🔥 `--head N --tail N` ignores arg order** (`tree_render.zig:165` checks tail first, always wins). Violates "later wins". Fix: mutually exclusive at parse (later clears earlier). *Failing tests*: both orderings.
-- [ ] **1.3 ‼️ Icon map exhaustive test** (`icons.zig:55-176`, 82 mappings, ~4 tested). Table-driven Zig test over EVERY extension alias + EVERY special filename + a negative set (unknown→`file_icon`). Classifier-over-set.
-- [ ] **1.4 ‼️ CLI alias resolution test** (`i18n/mod.zig`). `inline for (all_locales)` → for each `aliases.cli` entry assert `matchLongFlag(name).? == arg`; same for env-var alias map. Assert each `CliArg` reachable per locale (or document gaps).
-- [ ] **1.5 ‼️ Locale "not just English" distinctness test.** Assert a sentinel set of **non-Latin-script** locales (`ja ar ru zh_hans ko el he th`) differ from English on a visible field (e.g. `help_title`). *NOTE (Peter): do NOT use Germanic Latin-script locales (de/nl) — loanwords can legitimately equal English and would false-fail.* (Missing fields already hard-fail to compile since defaults were removed.)
-- [ ] **1.6 ‼️ `parseLocaleCode` round-trip over the full set** (`mod.zig:401`). `inline for (all_locales) |loc| expectEqual(loc, parseLocaleCode(loc.code()).?)`; plus `code()++"_XX"` and `code()++".UTF-8"` still resolve.
-- [ ] **1.7 ‼️ path_eval same-type precedence tests** (`path_eval.zig:155`). As a set: open-lit+close-lit→closed; open-rgx+close-rgx→closed; show-lit+hide-lit→hidden; show-rgx+hide-rgx→hidden; hide-matched ∧ priority_files → `scm_kept==true`.
+- [x] **1.1 — NOT A BUG (audit #1 false positive)** `annotate PATH ""` (`main.zig` `persistAnnotation` ~:2272). Help says "empty DESC clears"; impl removes then re-adds an empty tombstone (`\tpath = \n`). Fix: when `description.len==0`, remove and skip re-add. *Failing CLI test first*: after `annotate p ""`, the `annotate=[` block / that path is absent.
+- [x] **1.2 — RESOLVED by removing `--head`/`--tail`** (compose into a middle window, not "later wins"; duplicate unix head/tail). See Done log.
+- [x] **1.3 ‼️ Icon map exhaustive test** (`icons.zig:55-176`, 82 mappings, ~4 tested). Table-driven Zig test over EVERY extension alias + EVERY special filename + a negative set (unknown→`file_icon`). Classifier-over-set.
+- [x] **1.4 ‼️ CLI alias resolution test** (`i18n/mod.zig`). `inline for (all_locales)` → for each `aliases.cli` entry assert `matchLongFlag(name).? == arg`; same for env-var alias map. Assert each `CliArg` reachable per locale (or document gaps).
+- [x] **1.5 ‼️ Locale "not just English" distinctness test.** Assert a sentinel set of **non-Latin-script** locales (`ja ar ru zh_hans ko el he th`) differ from English on a visible field (e.g. `help_title`). *NOTE (Peter): do NOT use Germanic Latin-script locales (de/nl) — loanwords can legitimately equal English and would false-fail.* (Missing fields already hard-fail to compile since defaults were removed.)
+- [x] **1.6 ‼️ `parseLocaleCode` round-trip over the full set** (`mod.zig:401`). `inline for (all_locales) |loc| expectEqual(loc, parseLocaleCode(loc.code()).?)`; plus `code()++"_XX"` and `code()++".UTF-8"` still resolve.
+- [x] **1.7 ‼️ path_eval same-type precedence tests** (`path_eval.zig:155`). As a set: open-lit+close-lit→closed; open-rgx+close-rgx→closed; show-lit+hide-lit→hidden; show-rgx+hide-rgx→hidden; hide-matched ∧ priority_files → `scm_kept==true`.
 
 ## Phase 2 — Safe locale-dedup slice (fix-pattern already proven via `available_codes`)
 
@@ -32,7 +32,7 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 - [ ] **3.6 ⚠️ SCM jj-failure → git fallback**: `scm.zig:158` conflates "jj repo present" with "jj succeeded"; only short-circuit git when jj actually produced output.
 - [ ] **3.7 ⚠️ PCRE2 workspace-grow OOM**: propagate a real error instead of silent "no match" (`pcre2.zig:122`, swallowed in `path_eval.zig`).
 - [ ] **3.8 ⚠️ `update_check` cachePath Windows fallback**: `LOCALAPPDATA`/`USERPROFILE` before erroring.
-- [ ] **3.9 ⚠️ Numeric boundary tests**: `-d 0` (root-only), `-d` overflow message, and 0/neg/overflow for `--max-lines`/`--head`/`--tail`.
+- [ ] **3.9 ⚠️ Numeric boundary tests**: `-d 0` (root-only), `-d` overflow message, and 0/neg/overflow for `--max-lines`.
 - [ ] **3.10 ⚠️ glob char-class edge tests** (`regex.zig`): `[!a-z]`, `[]abc]`, unterminated `[abc`→literal fallback, bare `**`, escaped `a\*b`; `isGlobPattern` as a set classifier.
 - [ ] **3.11 ⚠️ state round-trip test**: actually re-parse `output` and compare structurally (current test only substring-greps).
 - [ ] **3.12 ⚠️ Strengthen weak tests**: `root-points-to-repo-root` assert basename; `scanDir` assert `build.zig` present; drop/rewrite the `available_codes` `"en"` substring test (redundant with the sorted+complete test).
@@ -52,4 +52,6 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 ---
 
 ## Done log
-(move completed items here with date/commit)
+- 2026-06-29 (eacde65d): **1.3–1.7** exhaustive coverage tests landed; the icon test caught + fixed a real **icon-precedence bug** (Cargo.toml/package.json/*.lock showed wrong icons). i18n alias-resolution / distinctness / round-trip + path-eval precedence coverage all green.
+- 2026-06-29: **1.1 — false positive.** Empty annotation is an intentional *tombstone* to suppress an inherited parent-dir note (existing `test_annotate_empty_clears_local_entry` asserts it); "clears" = clears the *displayed* note. No change.
+- 2026-06-29: **1.2 — resolved by removal.** `--head`/`--tail` compose into a middle window (not "later wins"); they duplicate unix `head`/`tail` (the help even said "prefer piping to tail -N"). **Removed entirely** — 2 CliArgs, parse arms, the tail-buffer render path + `head_reached` threading + `BufListWriter`, 6 Strings fields × 50 locales, localized aliases, and the old tests; added a rejection test. Pure subtraction.

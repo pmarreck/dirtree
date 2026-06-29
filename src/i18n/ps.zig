@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── د مرستې متن (نوي بیرغونه) ──────────────────────────────
     .help_opt_max_lines = "  --max-lines N      د لوی وتلون خبرتیا حد وټاکه (تلواله: 500)",
     .help_opt_override_warning = "  --override-warning د لوی وتلون خبرتیا بنده کړه",
-    .help_opt_head = "  --head N           وتلون له N کرښو وروسته ودروه",
-    .help_opt_tail = "  --tail N           یوازې وروستۍ N کرښې وښایه (د tail -N ته پایپ کول غوره دي)",
     .help_opt_only = "  --only PATH        په یوه فرعي ونه تمرکز وکړه، خویندوسره لارښودونه راجمع کړه (تکراریدونکی)",
 
     // ── د خبرتیا پیغامونه (لوی وتلون) ──────────────────────────
     .warn_large_output_prefix = "خبرتیا: وتلون نږدې ~",
     .warn_large_output_mid = " کرښې دي (حد: ",
     .warn_large_output_suffix = "). فکر وکړه: --depth N، --head N، یا --hide نمونې.",
-    .warn_truncated_head_prefix = "(وتلون له ",
-    .warn_truncated_head_suffix = " کرښو وروسته د --head له خوا پرې شو)",
 
     // ── د تېروتنې پیغامونه ──────────────────────────────────────
     .err_max_lines_requires_number = "تېروتنه: --max-lines یوه شمیریزه دلیل ته اړتیا لري (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "تېروتنه: --head یوه شمیریزه دلیل ته اړتیا لري (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "تېروتنه: --tail یوه شمیریزه دلیل ته اړتیا لري (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "تېروتنه: --only یوه لارې دلیل ته اړتیا لري (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "تېروتنه: --depth یوه شمیریزه دلیل ته اړتیا لري (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "تېروتنه: --path یوه لارښود دلیل ته اړتیا لري (en: Error: --path requires a directory argument)",
@@ -171,8 +165,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--lanmahala", .arg = .temporary },
         .{ .name = "--aezami-krshay", .arg = .max_lines },
         .{ .name = "--khabartiya-band", .arg = .override_warning },
-        .{ .name = "--sar", .arg = .head },
-        .{ .name = "--lakai", .arg = .tail },
         .{ .name = "--yawazey", .arg = .only },
         .{ .name = "yadasht-wakra", .arg = .annotate },
         .{ .name = "besarparasta-yadashtona", .arg = .orphaned_notes },

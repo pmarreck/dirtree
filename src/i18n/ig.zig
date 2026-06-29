@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Ederede enyemaka (ọkọlọtọ ọhụrụ) ───────────────────────
     .help_opt_max_lines = "  --max-lines N      Tọọ oke ịdọ aka na ntị maka nnukwu mmepụta (ndabara: 500)",
     .help_opt_override_warning = "  --override-warning Kwụsị ịdọ aka na ntị maka nnukwu mmepụta",
-    .help_opt_head = "  --head N           Kwụsị mmepụta mgbe ahịrị N gachara",
-    .help_opt_tail = "  --tail N           Gosi naanị ahịrị N ikpeazụ (ọ ka mma izipu na tail -N)",
     .help_opt_only = "  --only PATH        Lekwasị anya n'otu subtree, na-emechi ndaka ụmụnne (a ga-emegharị ya)",
 
     // ── Ozi ịdọ aka na ntị (nnukwu mmepụta) ────────────────────
     .warn_large_output_prefix = "Ịdọ aka na ntị: mmepụta dị ihe dịka ~",
     .warn_large_output_mid = " ahịrị (oke: ",
     .warn_large_output_suffix = "). Tụlee: --depth N, --head N, ma ọ bụ ụkpụrụ --hide.",
-    .warn_truncated_head_prefix = "(Ebelatara mmepụta mgbe ahịrị ",
-    .warn_truncated_head_suffix = " gachara site na --head)",
 
     // ── Ozi njehie ─────────────────────────────────────────────
     .err_max_lines_requires_number = "Njehie: --max-lines chọrọ arụmụka ọnụọgụgụ (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Njehie: --head chọrọ arụmụka ọnụọgụgụ (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Njehie: --tail chọrọ arụmụka ọnụọgụgụ (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Njehie: --only chọrọ arụmụka ụzọ (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Njehie: --depth chọrọ arụmụka ọnụọgụgụ (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Njehie: --path chọrọ arụmụka ndaka (en: Error: --path requires a directory argument)",

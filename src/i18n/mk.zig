@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Текст за помош (нови знаменца) ─────────────────────────
     .help_opt_max_lines = "  --max-lines N      Постави праг за предупредување при голем излез (стандардно: 500)",
     .help_opt_override_warning = "  --override-warning Потисни го предупредувањето за голем излез",
-    .help_opt_head = "  --head N           Запри го излезот по N редови",
-    .help_opt_tail = "  --tail N           Прикажи ги само последните N редови (попожелно е препраќање кон tail -N)",
     .help_opt_only = "  --only PATH        Фокусирај се на поддрво, собирајќи ги соседните директориуми (повторливо)",
 
     // ── Предупредувања (голем излез) ───────────────────────────
     .warn_large_output_prefix = "Предупредување: излезот е ~",
     .warn_large_output_mid = " редови (праг: ",
     .warn_large_output_suffix = "). Размисли за: --depth N, --head N или --hide шаблони.",
-    .warn_truncated_head_prefix = "(Излезот е отсечен по ",
-    .warn_truncated_head_suffix = " редови преку --head)",
 
     // ── Пораки за грешки ───────────────────────────────────────
     .err_max_lines_requires_number = "Грешка: --max-lines бара нумерички аргумент (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Грешка: --head бара нумерички аргумент (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Грешка: --tail бара нумерички аргумент (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Грешка: --only бара аргумент за патека (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Грешка: --depth бара нумерички аргумент (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Грешка: --path бара аргумент за директориум (en: Error: --path requires a directory argument)",

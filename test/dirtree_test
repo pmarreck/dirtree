@@ -1113,8 +1113,6 @@ Options:
                      Available language codes: am, ar, az, bg, bn, bs, da, de, el, en, es, fa, fi, fil, fr, ha, he, hi, hr, hu, id, ig, is, it, ja, km, ko, mk, nb, nl, pa, pl, ps, pt_br, ro, ru, sl, sq, sr, sv, sw, ta, th, tr, uk, ur, vi, yo, zh_hans, zh_hant
   --max-lines N      Set large output warning threshold (default: 500)
   --override-warning Suppress the large output warning
-  --head N           Stop output after N lines
-  --tail N           Show only the last N lines (prefer piping to tail -N)
   --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)
   annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)
   orphaned-notes [DIR] List notes whose target paths no longer exist
@@ -3505,43 +3503,14 @@ EOF
 	fi
 }
 
-test_head_truncates_output() {
-	local workspace target stdout_pb="" stderr_pb="" rc=0
-	workspace=$(new_tmpdir)
-	target="$workspace/head-trunc"
-	mkdir -p "$target/aaa" "$target/bbb" "$target/ccc" "$target/ddd"
-	touch "$target/file1.txt" "$target/file2.txt" "$target/file3.txt"
-	# With --head 3, we get root header + 2 entries = 3 lines
-	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --head 3 "$target"; then
-		echo "capture helper failed for --head" >&2
-		return 1
-	fi
-	if [[ "$rc" -ne 0 ]]; then
-		echo "--head run failed with rc=$rc" >&2
-		return 1
-	fi
-	# Count lines in stdout (rg -c '' counts lines including the last without trailing newline)
-	local plain=""
-	decode_printable plain "$stdout_pb"
-	local line_count
-	line_count=$(printf '%s\n' "$plain" | rg -c '')
-	if [[ "$line_count" -ne 3 ]]; then
-		echo "Expected 3 lines but got $line_count" >&2
-		printf '%s' "$plain" >&2
-		return 1
-	fi
-	# Stderr should contain truncation message
-	if [[ -z "$stderr_pb" ]]; then
-		echo "Expected stderr with truncation notice" >&2
-		return 1
-	fi
-	local stderr_plain=""
-	decode_printable stderr_plain "$stderr_pb"
-	if [[ "$stderr_plain" != *"truncated after 3 lines"* ]]; then
-		echo "Expected truncation message in stderr" >&2
-		echo "Got: $stderr_plain" >&2
-		return 1
-	fi
+test_head_tail_removed() {
+	# --head/--tail were removed (duplicated unix head/tail); they must now be
+	# rejected as unknown options. Use `dirtree ... | head/tail -N` instead.
+	local t; t=$(new_tmpdir); touch "$t/f.txt"
+	"$DIRTREE_BIN" --head 3 "$t" >/dev/null 2>&1
+	if [ $? -eq 0 ]; then echo "--head should be an unknown option now" >&2; return 1; fi
+	"$DIRTREE_BIN" --tail 3 "$t" >/dev/null 2>&1
+	if [ $? -eq 0 ]; then echo "--tail should be an unknown option now" >&2; return 1; fi
 }
 
 test_max_lines_persists_to_state() {
@@ -3610,38 +3579,6 @@ test_override_warning_suppresses_warning() {
 			echo "Warning should have been suppressed but got: $stderr_plain" >&2
 			return 1
 		fi
-	fi
-}
-
-test_tail_shows_last_n_lines() {
-	local workspace target stdout_pb="" stderr_pb="" rc=0
-	workspace=$(new_tmpdir)
-	target="$workspace/tail-test"
-	mkdir -p "$target/aaa" "$target/bbb" "$target/ccc"
-	touch "$target/file1.txt" "$target/file2.txt" "$target/file3.txt"
-	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple --tail 2 "$target"; then
-		echo "capture helper failed for --tail" >&2
-		return 1
-	fi
-	if [[ "$rc" -ne 0 ]]; then
-		echo "--tail run failed with rc=$rc" >&2
-		return 1
-	fi
-	local plain=""
-	decode_printable plain "$stdout_pb"
-	# Should only have 2 lines (the last two entries)
-	local line_count
-	line_count=$(printf '%s\n' "$plain" | rg -c '')
-	if [[ "$line_count" -ne 2 ]]; then
-		echo "Expected 2 lines but got $line_count" >&2
-		printf '%s' "$plain" >&2
-		return 1
-	fi
-	# The last line should use the "last item" connector
-	if [[ "$plain" != *"└── "* ]]; then
-		echo "Expected last-item connector in tail output" >&2
-		printf '%s' "$plain" >&2
-		return 1
 	fi
 }
 
@@ -4935,16 +4872,14 @@ run_all_tests() {
 		test_handwritten_glob_in_state_file
 	run_test "mixed glob/regex/literal state file works" \
 		test_mixed_glob_regex_literal_state
-	run_test "--head truncates output" \
-		test_head_truncates_output
+	run_test "--head/--tail removed (rejected)" \
+		test_head_tail_removed
 	run_test "--max-lines persists to state" \
 		test_max_lines_persists_to_state
 	run_test "large output warning appears when piped" \
 		test_large_output_warning_appears
 	run_test "--override-warning suppresses warning" \
 		test_override_warning_suppresses_warning
-	run_test "--tail shows last N lines" \
-		test_tail_shows_last_n_lines
 	run_test "--only focuses subtree" \
 		test_only_focuses_subtree
 	run_test "--only deep path expands ancestors" \

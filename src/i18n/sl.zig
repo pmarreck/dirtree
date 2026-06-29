@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Besedilo pomoči (nove zastavice) ───────────────────────
     .help_opt_max_lines = "  --max-lines N      Nastavi prag opozorila za velik izpis (privzeto: 500)",
     .help_opt_override_warning = "  --override-warning Skrij opozorilo o velikem izpisu",
-    .help_opt_head = "  --head N           Ustavi izpis po N vrsticah",
-    .help_opt_tail = "  --tail N           Prikaži samo zadnjih N vrstic (raje preusmeri v tail -N)",
     .help_opt_only = "  --only PATH        Osredotoči se na poddrevo in strni sorojenske imenike (ponovljivo)",
 
     // ── Opozorilna sporočila (velik izpis) ─────────────────────
     .warn_large_output_prefix = "Opozorilo: izpis obsega ~",
     .warn_large_output_mid = " vrstic (prag: ",
     .warn_large_output_suffix = "). Razmisli o: --depth N, --head N ali vzorcih --hide.",
-    .warn_truncated_head_prefix = "(Izpis prekinjen po ",
-    .warn_truncated_head_suffix = " vrsticah z --head)",
 
     // ── Sporočila o napakah ────────────────────────────────────
     .err_max_lines_requires_number = "Napaka: --max-lines zahteva številčni argument (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Napaka: --head zahteva številčni argument (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Napaka: --tail zahteva številčni argument (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Napaka: --only zahteva argument poti (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Napaka: --depth zahteva številčni argument (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Napaka: --path zahteva argument imenika (en: Error: --path requires a directory argument)",

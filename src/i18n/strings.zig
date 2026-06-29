@@ -70,8 +70,6 @@ pub const Strings = struct {
     // ── Help text (new flags) ──────────────────────────────────
     help_opt_max_lines: [:0]const u8,
     help_opt_override_warning: [:0]const u8,
-    help_opt_head: [:0]const u8,
-    help_opt_tail: [:0]const u8,
     help_opt_only: [:0]const u8,
 
     // ── Warning messages (large output) ────────────────────────
@@ -82,13 +80,9 @@ pub const Strings = struct {
     warn_orphaned_suffix: [:0]const u8,
     warn_negation_intro: [:0]const u8,
     warn_negation_advice: [:0]const u8,
-    warn_truncated_head_prefix: [:0]const u8,
-    warn_truncated_head_suffix: [:0]const u8,
 
     // ── Error messages ─────────────────────────────────────────
     err_max_lines_requires_number: [:0]const u8,
-    err_head_requires_number: [:0]const u8,
-    err_tail_requires_number: [:0]const u8,
     err_only_requires_path: [:0]const u8,
     err_depth_requires_number: [:0]const u8,
     err_path_requires_arg: [:0]const u8,

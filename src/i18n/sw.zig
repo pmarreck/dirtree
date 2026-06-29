@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Maandishi ya msaada (bendera mpya) ─────────────────────
     .help_opt_max_lines = "  --max-lines N      Weka kizingiti cha onyo la matokeo makubwa (chaguo-msingi: 500)",
     .help_opt_override_warning = "  --override-warning Zuia onyo la matokeo makubwa",
-    .help_opt_head = "  --head N           Simamisha matokeo baada ya mistari N",
-    .help_opt_tail = "  --tail N           Onyesha mistari N ya mwisho pekee (afadhali pitisha kwa tail -N)",
     .help_opt_only = "  --only PATH        Zingatia mti mdogo, ukikunja saraka za ndugu (inarudiwa)",
 
     // ── Ujumbe wa onyo (matokeo makubwa) ───────────────────────
     .warn_large_output_prefix = "Onyo: matokeo ni takriban ",
     .warn_large_output_mid = " mistari (kizingiti: ",
     .warn_large_output_suffix = "). Zingatia: --depth N, --head N, au mifumo ya --hide.",
-    .warn_truncated_head_prefix = "(Matokeo yamekatwa baada ya ",
-    .warn_truncated_head_suffix = " mistari na --head)",
 
     // ── Ujumbe wa hitilafu ─────────────────────────────────────
     .err_max_lines_requires_number = "Hitilafu: --max-lines inahitaji hoja ya kinambari (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Hitilafu: --head inahitaji hoja ya kinambari (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Hitilafu: --tail inahitaji hoja ya kinambari (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Hitilafu: --only inahitaji hoja ya njia (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Hitilafu: --depth inahitaji hoja ya kinambari (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Hitilafu: --path inahitaji hoja ya saraka (en: Error: --path requires a directory argument)",
@@ -171,8 +165,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--muda", .arg = .temporary },
         .{ .name = "--mistari-juu", .arg = .max_lines },
         .{ .name = "--puuza-onyo", .arg = .override_warning },
-        .{ .name = "--kichwa", .arg = .head },
-        .{ .name = "--mkia", .arg = .tail },
         .{ .name = "--pekee", .arg = .only },
         .{ .name = "dokeza", .arg = .annotate },
         .{ .name = "madokezo-yatima", .arg = .orphaned_notes },

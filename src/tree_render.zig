@@ -103,8 +103,6 @@ pub const RenderConfig = struct {
 	show_hidden: bool = false,
 	sort_mode: dir_scan.SortMode = .modified,
 	sort_direction: dir_scan.SortDirection = .desc,
-	head_lines: ?u32 = null,
-	tail_lines: ?u32 = null,
 	only_paths: []const []const u8 = &.{},
 };
 
@@ -121,35 +119,12 @@ pub const TreeStats = struct {
 	shown_dirs: u32 = 0,
 	shown_files: u32 = 0,
 	total_lines: u32 = 0,
-	head_reached: bool = false,
 	scm_kept_dirs: u32 = 0,
 	scm_kept_files: u32 = 0,
 };
 
 /// Render a complete directory tree.
 /// Writer adapter that appends to an ArrayListUnmanaged(u8).
-const BufListWriter = struct {
-	buf: *std.ArrayListUnmanaged(u8),
-	allocator: std.mem.Allocator,
-
-	pub fn writeAll(self: *BufListWriter, data: []const u8) !void {
-		try self.buf.appendSlice(self.allocator, data);
-	}
-
-	pub fn print(self: *BufListWriter, comptime fmt: []const u8, args: anytype) !void {
-		var count_writer = std.io.countingWriter(self);
-		try std.fmt.format(&count_writer, fmt, args);
-	}
-
-	pub fn write(self: *BufListWriter, data: []const u8) !usize {
-		try self.buf.appendSlice(self.allocator, data);
-		return data.len;
-	}
-
-	pub fn flush(self: *BufListWriter) !void {
-		_ = self;
-	}
-};
 
 pub fn renderTree(
 	allocator: std.mem.Allocator,
@@ -161,54 +136,6 @@ pub fn renderTree(
 	priority_files: ?*const std.StringHashMapUnmanaged(void),
 	config: RenderConfig,
 ) !void {
-	// When --tail is set, render into a buffer then emit last N lines
-	if (config.tail_lines) |tail_n| {
-		var buf: std.ArrayListUnmanaged(u8) = .empty;
-		defer buf.deinit(allocator);
-
-		// Render into buffer using a writer adapter
-		var buf_writer = BufListWriter{ .buf = &buf, .allocator = allocator };
-
-		// Render root header to buffer
-		try renderRootHeader(allocator, &buf_writer, abs_dir, config, effective);
-
-		var stats = TreeStats{};
-		stats.total_lines = 1;
-
-		if (config.only_paths.len > 0) {
-			var focus = try buildFocusSet(allocator, config.only_paths);
-			defer focus.deinit();
-			try renderDirFocused(allocator, &buf_writer, abs_dir, "", config.max_depth, false, "", effective, priority_dirs, priority_files, config, &stats, &focus);
-		} else {
-			try renderDir(allocator, &buf_writer, abs_dir, "", config.max_depth, false, "", effective, priority_dirs, priority_files, config, &stats);
-		}
-
-		// Emit last N lines from buffer
-		const data = buf.items;
-		if (tail_n == 0 or data.len == 0) {
-			// Nothing to output
-		} else {
-			// Find the start position of the last N lines
-			var lines_found: u32 = 0;
-			var pos: usize = data.len;
-			// Skip trailing newline if present
-			if (pos > 0 and data[pos - 1] == '\n') pos -= 1;
-			while (pos > 0 and lines_found < tail_n) {
-				pos -= 1;
-				if (data[pos] == '\n') {
-					lines_found += 1;
-				}
-			}
-			const start = if (pos == 0 and lines_found < tail_n) 0 else if (pos == 0) 0 else pos + 1;
-			try stdout.writeAll(data[start..]);
-		}
-
-		// Stats go to stderr regardless
-		if (config.report_hidden) {
-			try ansi.writeStatsMessage(stderr, stats.shown_dirs, stats.shown_files, stats.total_lines, stats.hidden_dirs, stats.hidden_files, stats.scm_kept_dirs, stats.scm_kept_files, config.simple_mode);
-		}
-		return;
-	}
 
 	// Normal (non-tail) rendering path.
 	// Wrap stdout so we can track the display column for note alignment.
@@ -255,18 +182,6 @@ pub fn renderTree(
 			allocator, &col_tracker, abs_dir, "", config.max_depth, false, "",
 			effective, priority_dirs, priority_files, rcfg, &stats,
 		);
-	}
-
-	// Report head truncation on stderr
-	if (stats.head_reached) {
-		const s = i18n.tr();
-		try stderr.writeAll("\n");
-		if (!config.simple_mode) try stderr.writeAll("\x1b[2;3m");
-		try stderr.writeAll(s.warn_truncated_head_prefix);
-		try stderr.print("{}", .{config.head_lines.?});
-		try stderr.writeAll(s.warn_truncated_head_suffix);
-		if (!config.simple_mode) try stderr.writeAll("\x1b[0m");
-		try stderr.writeAll("\n");
 	}
 
 	// Report stats to stderr (only in decorated mode)
@@ -435,14 +350,6 @@ fn renderDir(
 
 	// Second pass: render visible entries
 	for (visible.items, 0..) |vis, idx| {
-		// Check --head limit before rendering each entry
-		if (config.head_lines) |hl| {
-			if (stats.total_lines >= hl) {
-				stats.head_reached = true;
-				return;
-			}
-		}
-
 		const is_last = idx == visible.items.len - 1;
 		const connector = if (is_last) LAST else BRANCH;
 		const next_prefix_ext = if (is_last) SPACE else VERT;
@@ -487,7 +394,6 @@ fn renderDir(
 					config,
 					stats,
 				);
-				if (stats.head_reached) return;
 			}
 		} else {
 			const is_executable = (vis.entry.mode & 0o111) != 0;
@@ -740,13 +646,6 @@ fn renderDirFocused(
 
 	// Second pass: render with focus awareness
 	for (visible.items, 0..) |vis, idx| {
-		if (config.head_lines) |hl| {
-			if (stats.total_lines >= hl) {
-				stats.head_reached = true;
-				return;
-			}
-		}
-
 		const is_last = idx == visible.items.len - 1;
 		const connector = if (is_last) LAST else BRANCH;
 		const next_prefix_ext = if (is_last) SPACE else VERT;
@@ -779,7 +678,6 @@ fn renderDirFocused(
 						effective, priority_dirs, priority_files,
 						config, stats,
 					);
-					if (stats.head_reached) return;
 				}
 			} else if (is_ancestor) {
 				// Ancestor dir: render and recurse with focus
@@ -792,7 +690,6 @@ fn renderDirFocused(
 						effective, priority_dirs, priority_files,
 						config, stats, focus,
 					);
-					if (stats.head_reached) return;
 				}
 			} else if (is_under) {
 				// Under a target: render via normal renderDir
@@ -814,7 +711,6 @@ fn renderDirFocused(
 						effective, priority_dirs, priority_files,
 						config, stats,
 					);
-					if (stats.head_reached) return;
 				}
 			} else {
 				// Sibling dir: collapsed (show as dir/* if non-empty, dir/ if empty)

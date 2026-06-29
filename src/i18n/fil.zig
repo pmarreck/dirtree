@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Teksto ng tulong (mga bagong flag) ─────────────────────
     .help_opt_max_lines = "  --max-lines N      Itakda ang threshold ng babala para sa malaking output (default: 500)",
     .help_opt_override_warning = "  --override-warning Pigilan ang babala para sa malaking output",
-    .help_opt_head = "  --head N           Itigil ang output pagkatapos ng N na linya",
-    .help_opt_tail = "  --tail N           Ipakita lamang ang huling N na linya (mas mainam na i-pipe sa tail -N)",
     .help_opt_only = "  --only PATH        Magpokus sa isang subtree, tinitiklop ang mga kapatid na directory (maaaring ulitin)",
 
     // ── Mga mensahe ng babala (malaking output) ────────────────
     .warn_large_output_prefix = "Babala: ang output ay humigit-kumulang ~",
     .warn_large_output_mid = " na linya (threshold: ",
     .warn_large_output_suffix = "). Isaalang-alang: --depth N, --head N, o --hide na mga pattern.",
-    .warn_truncated_head_prefix = "(Naputol ang output pagkatapos ng ",
-    .warn_truncated_head_suffix = " na linya dahil sa --head)",
 
     // ── Mga mensahe ng error ───────────────────────────────────
     .err_max_lines_requires_number = "Error: ang --max-lines ay nangangailangan ng numerong argumento (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Error: ang --head ay nangangailangan ng numerong argumento (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Error: ang --tail ay nangangailangan ng numerong argumento (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Error: ang --only ay nangangailangan ng argumentong path (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Error: ang --depth ay nangangailangan ng numerong argumento (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Error: ang --path ay nangangailangan ng argumentong directory (en: Error: --path requires a directory argument)",

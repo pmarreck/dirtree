@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Текст помоћи (нове заставице) ──────────────────────────
     .help_opt_max_lines = "  --max-lines N      Постави праг упозорења за велики испис (подразумевано: 500)",
     .help_opt_override_warning = "  --override-warning Потисни упозорење о великом испису",
-    .help_opt_head = "  --head N           Заустави испис након N линија",
-    .help_opt_tail = "  --tail N           Прикажи само последњих N линија (боље проследити у tail -N)",
     .help_opt_only = "  --only PATH        Фокусирај се на подстабло, скупљајући суседне директоријуме (понављиво)",
 
     // ── Упозорења (велики испис) ───────────────────────────────
     .warn_large_output_prefix = "Упозорење: испис је ~",
     .warn_large_output_mid = " линија (праг: ",
     .warn_large_output_suffix = "). Размотри: --depth N, --head N или --hide шаблоне.",
-    .warn_truncated_head_prefix = "(Испис скраћен након ",
-    .warn_truncated_head_suffix = " линија путем --head)",
 
     // ── Поруке о грешкама ──────────────────────────────────────
     .err_max_lines_requires_number = "Грешка: --max-lines захтева нумерички аргумент (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Грешка: --head захтева нумерички аргумент (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Грешка: --tail захтева нумерички аргумент (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Грешка: --only захтева аргумент путање (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Грешка: --depth захтева нумерички аргумент (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Грешка: --path захтева аргумент директоријума (en: Error: --path requires a directory argument)",

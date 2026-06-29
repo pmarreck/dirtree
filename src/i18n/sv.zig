@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Hjälptext (nya flaggor) ────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Ange tröskel för varning vid stor utdata (standard: 500)",
     .help_opt_override_warning = "  --override-warning Dölj varningen om stor utdata",
-    .help_opt_head = "  --head N           Avsluta utdata efter N rader",
-    .help_opt_tail = "  --tail N           Visa endast de sista N raderna (helst via pipe till tail -N)",
     .help_opt_only = "  --only PATH        Fokusera på ett underträd och fäll ihop syskonkataloger (upprepningsbar)",
 
     // ── Varningsmeddelanden (stor utdata) ──────────────────────
     .warn_large_output_prefix = "Varning: utdata är ~",
     .warn_large_output_mid = " rader (tröskel: ",
     .warn_large_output_suffix = "). Överväg: --depth N, --head N eller --hide-mönster.",
-    .warn_truncated_head_prefix = "(Utdata avkortad efter ",
-    .warn_truncated_head_suffix = " rader av --head)",
 
     // ── Felmeddelanden ─────────────────────────────────────────
     .err_max_lines_requires_number = "Fel: --max-lines kräver ett numeriskt argument (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Fel: --head kräver ett numeriskt argument (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Fel: --tail kräver ett numeriskt argument (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Fel: --only kräver ett sökvägsargument (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Fel: --depth kräver ett numeriskt argument (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Fel: --path kräver ett katalogargument (en: Error: --path requires a directory argument)",

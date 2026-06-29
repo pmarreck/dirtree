@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Hjálpartexti (ný flögg) ────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Stilla viðvörunarþröskuld fyrir stórt úttak (sjálfgefið: 500)",
     .help_opt_override_warning = "  --override-warning Bæla viðvörun um stórt úttak",
-    .help_opt_head = "  --head N           Stöðva úttak eftir N línur",
-    .help_opt_tail = "  --tail N           Sýna aðeins síðustu N línurnar (betra að pípa í tail -N)",
     .help_opt_only = "  --only PATH        Einbeita sér að undirtré, fella saman systkinamöppur (endurtekjanlegt)",
 
     // ── Viðvörunarskilaboð (stórt úttak) ───────────────────────
     .warn_large_output_prefix = "Viðvörun: úttak er ~",
     .warn_large_output_mid = " línur (þröskuldur: ",
     .warn_large_output_suffix = "). Íhugaðu: --depth N, --head N eða --hide-mynstur.",
-    .warn_truncated_head_prefix = "(Úttak stytt eftir ",
-    .warn_truncated_head_suffix = " línur með --head)",
 
     // ── Villuskilaboð ──────────────────────────────────────────
     .err_max_lines_requires_number = "Villa: --max-lines krefst tölulegrar viðfangstölu (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Villa: --head krefst tölulegrar viðfangstölu (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Villa: --tail krefst tölulegrar viðfangstölu (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Villa: --only krefst slóðarviðfangs (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Villa: --depth krefst tölulegrar viðfangstölu (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Villa: --path krefst möppuviðfangs (en: Error: --path requires a directory argument)",

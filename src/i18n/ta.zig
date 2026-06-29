@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Help text (new flags) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      பெரிய வெளியீட்டு எச்சரிக்கை வரம்பை அமை (இயல்பு: 500)",
     .help_opt_override_warning = "  --override-warning பெரிய வெளியீட்டு எச்சரிக்கையை அடக்கு",
-    .help_opt_head = "  --head N           N வரிகளுக்குப் பிறகு வெளியீட்டை நிறுத்து",
-    .help_opt_tail = "  --tail N           கடைசி N வரிகளை மட்டும் காட்டு (tail -N-க்கு குழாயிடுவது சிறந்தது)",
     .help_opt_only = "  --only PATH        ஒரு துணை மரத்தில் கவனம் செலுத்து, உடன் அடைவுகளை மடக்கு (மீண்டும் இடலாம்)",
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "எச்சரிக்கை: வெளியீடு ~",
     .warn_large_output_mid = " வரிகள் (வரம்பு: ",
     .warn_large_output_suffix = "). கருத்தில் கொள்ளுங்கள்: --depth N, --head N, அல்லது --hide வடிவங்கள்.",
-    .warn_truncated_head_prefix = "(வெளியீடு ",
-    .warn_truncated_head_suffix = " வரிகளுக்குப் பிறகு --head ஆல் துண்டிக்கப்பட்டது)",
 
     // ── Error messages ─────────────────────────────────────────
     .err_max_lines_requires_number = "பிழை: --max-lines-க்கு ஒரு எண் செயலுருபு தேவை (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "பிழை: --head-க்கு ஒரு எண் செயலுருபு தேவை (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "பிழை: --tail-க்கு ஒரு எண் செயலுருபு தேவை (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "பிழை: --only-க்கு ஒரு பாதை செயலுருபு தேவை (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "பிழை: --depth-க்கு ஒரு எண் செயலுருபு தேவை (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "பிழை: --path-க்கு ஒரு அடைவு செயலுருபு தேவை (en: Error: --path requires a directory argument)",
@@ -171,8 +165,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--tharkalika", .arg = .temporary },
         .{ .name = "--athigapatcha-varigal", .arg = .max_lines },
         .{ .name = "--echarikkai-meeru", .arg = .override_warning },
-        .{ .name = "--thalai", .arg = .head },
-        .{ .name = "--vaal", .arg = .tail },
         .{ .name = "--mattum", .arg = .only },
         .{ .name = "kurippidu", .arg = .annotate },
         .{ .name = "anaathai-kurippugal", .arg = .orphaned_notes },

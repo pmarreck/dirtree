@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── सहायता पाठ (नए फ़्लैग) ──────────────────────────────────
     .help_opt_max_lines = "  --max-lines N      बड़े आउटपुट की चेतावनी सीमा निर्धारित करें (डिफ़ॉल्ट: 500)",
     .help_opt_override_warning = "  --override-warning बड़े आउटपुट की चेतावनी को दबाएँ",
-    .help_opt_head = "  --head N           N पंक्तियों के बाद आउटपुट रोकें",
-    .help_opt_tail = "  --tail N           केवल अंतिम N पंक्तियाँ दिखाएँ (tail -N में पाइप करना बेहतर है)",
     .help_opt_only = "  --only PATH        किसी उपवृक्ष पर ध्यान केंद्रित करें, सहोदर निर्देशिकाओं को संकुचित करें (दोहराने योग्य)",
 
     // ── चेतावनी संदेश (बड़ा आउटपुट) ────────────────────────
     .warn_large_output_prefix = "चेतावनी: आउटपुट लगभग ~",
     .warn_large_output_mid = " पंक्तियाँ है (सीमा: ",
     .warn_large_output_suffix = ")। विचार करें: --depth N, --head N, या --hide पैटर्न।",
-    .warn_truncated_head_prefix = "(आउटपुट ",
-    .warn_truncated_head_suffix = " पंक्तियों के बाद --head द्वारा छाँटा गया)",
 
     // ── त्रुटि संदेश ─────────────────────────────────────────
     .err_max_lines_requires_number = "त्रुटि: --max-lines को एक संख्यात्मक तर्क चाहिए (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "त्रुटि: --head को एक संख्यात्मक तर्क चाहिए (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "त्रुटि: --tail को एक संख्यात्मक तर्क चाहिए (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "त्रुटि: --only को एक पथ तर्क चाहिए (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "त्रुटि: --depth को एक संख्यात्मक तर्क चाहिए (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "त्रुटि: --path को एक निर्देशिका तर्क चाहिए (en: Error: --path requires a directory argument)",
@@ -171,8 +165,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--asthayi", .arg = .temporary },
         .{ .name = "--adhiktam-panktiyan", .arg = .max_lines },
         .{ .name = "--chetavani-andekha", .arg = .override_warning },
-        .{ .name = "--shirsh", .arg = .head },
-        .{ .name = "--puchh", .arg = .tail },
         .{ .name = "--keval", .arg = .only },
         .{ .name = "tippani-jodein", .arg = .annotate },
         .{ .name = "anaath-tippaniyan", .arg = .orphaned_notes },

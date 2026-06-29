@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Помощен текст (нови флагове) ────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Задава прага за предупреждение при голям изход (по подразбиране: 500)",
     .help_opt_override_warning = "  --override-warning Потиска предупреждението при голям изход",
-    .help_opt_head = "  --head N           Спира изхода след N реда",
-    .help_opt_tail = "  --tail N           Показва само последните N реда (по-добре пренасочете към tail -N)",
     .help_opt_only = "  --only PATH        Съсредоточава върху поддърво, свивайки съседните директории (повторимо)",
 
     // ── Предупреждения (голям изход) ────────────────────────────
     .warn_large_output_prefix = "Предупреждение: изходът е ~",
     .warn_large_output_mid = " реда (праг: ",
     .warn_large_output_suffix = "). Обмислете: --depth N, --head N или --hide шаблони.",
-    .warn_truncated_head_prefix = "(Изходът е отрязан след ",
-    .warn_truncated_head_suffix = " реда от --head)",
 
     // ── Съобщения за грешки ─────────────────────────────────────
     .err_max_lines_requires_number = "Грешка: --max-lines изисква числов аргумент (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Грешка: --head изисква числов аргумент (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Грешка: --tail изисква числов аргумент (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Грешка: --only изисква аргумент път (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Грешка: --depth изисква числов аргумент (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Грешка: --path изисква аргумент директория (en: Error: --path requires a directory argument)",

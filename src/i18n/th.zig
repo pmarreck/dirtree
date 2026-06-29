@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── ข้อความช่วยเหลือ (แฟล็กใหม่) ─────────────────────────────
     .help_opt_max_lines = "  --max-lines N      ตั้งค่าเกณฑ์คำเตือนเอาต์พุตขนาดใหญ่ (ค่าเริ่มต้น: 500)",
     .help_opt_override_warning = "  --override-warning ระงับคำเตือนเอาต์พุตขนาดใหญ่",
-    .help_opt_head = "  --head N           หยุดเอาต์พุตหลังจาก N บรรทัด",
-    .help_opt_tail = "  --tail N           แสดงเฉพาะ N บรรทัดสุดท้าย (แนะนำให้ส่งผ่านไปป์ไปยัง tail -N)",
     .help_opt_only = "  --only PATH        โฟกัสที่ซับทรี โดยยุบไดเรกทอรีพี่น้อง (ใช้ซ้ำได้)",
 
     // ── ข้อความเตือน (เอาต์พุตขนาดใหญ่) ──────────────────────────
     .warn_large_output_prefix = "คำเตือน: เอาต์พุตประมาณ ~",
     .warn_large_output_mid = " บรรทัด (เกณฑ์: ",
     .warn_large_output_suffix = ") ลองพิจารณา: --depth N, --head N หรือรูปแบบ --hide",
-    .warn_truncated_head_prefix = "(เอาต์พุตถูกตัดหลังจาก ",
-    .warn_truncated_head_suffix = " บรรทัดโดย --head)",
 
     // ── ข้อความแสดงข้อผิดพลาด ───────────────────────────────────
     .err_max_lines_requires_number = "ข้อผิดพลาด: --max-lines ต้องการอาร์กิวเมนต์ที่เป็นตัวเลข (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "ข้อผิดพลาด: --head ต้องการอาร์กิวเมนต์ที่เป็นตัวเลข (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "ข้อผิดพลาด: --tail ต้องการอาร์กิวเมนต์ที่เป็นตัวเลข (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "ข้อผิดพลาด: --only ต้องการอาร์กิวเมนต์ที่เป็นพาธ (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "ข้อผิดพลาด: --depth ต้องการอาร์กิวเมนต์ที่เป็นตัวเลข (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "ข้อผิดพลาด: --path ต้องการอาร์กิวเมนต์ที่เป็นไดเรกทอรี (en: Error: --path requires a directory argument)",
@@ -171,8 +165,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--chuakhrao", .arg = .temporary },
         .{ .name = "--banthat-sungsut", .arg = .max_lines },
         .{ .name = "--khamtuean-yokloek", .arg = .override_warning },
-        .{ .name = "--hua", .arg = .head },
-        .{ .name = "--thai", .arg = .tail },
         .{ .name = "--chapho", .arg = .only },
         .{ .name = "khianbantuek", .arg = .annotate },
         .{ .name = "bantuek-raichaokhong", .arg = .orphaned_notes },

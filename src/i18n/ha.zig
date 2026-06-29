@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Rubutun taimako (sabbin tutoci) ────────────────────────
     .help_opt_max_lines = "  --max-lines N      Saita iyakar gargadin fitarwa mai yawa (tsoho: 500)",
     .help_opt_override_warning = "  --override-warning Danne gargadin fitarwa mai yawa",
-    .help_opt_head = "  --head N           Dakatar da fitarwa bayan layuka N",
-    .help_opt_tail = "  --tail N           Nuna layuka N na karshe kawai (fi son tura zuwa tail -N)",
     .help_opt_only = "  --only PATH        Mai da hankali kan reshe, nade manyan-fayil na 'yan'uwa (maimaitawa)",
 
     // ── Sakonnin gargadi (fitarwa mai yawa) ────────────────────
     .warn_large_output_prefix = "Gargadi: fitarwa kusan ~",
     .warn_large_output_mid = " layuka (iyaka: ",
     .warn_large_output_suffix = "). Yi la'akari da: --depth N, --head N, ko tsarin --hide.",
-    .warn_truncated_head_prefix = "(An yanke fitarwa bayan ",
-    .warn_truncated_head_suffix = " layuka ta --head)",
 
     // ── Sakonnin kuskure ───────────────────────────────────────
     .err_max_lines_requires_number = "Kuskure: --max-lines yana bukatar muhawara ta lambobi (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Kuskure: --head yana bukatar muhawara ta lambobi (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Kuskure: --tail yana bukatar muhawara ta lambobi (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Kuskure: --only yana bukatar muhawarar hanya (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Kuskure: --depth yana bukatar muhawara ta lambobi (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Kuskure: --path yana bukatar muhawarar babban-fayil (en: Error: --path requires a directory argument)",

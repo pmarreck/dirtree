@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Helptekst (nieuwe vlaggen) ─────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Drempel voor waarschuwing bij grote uitvoer instellen (standaard: 500)",
     .help_opt_override_warning = "  --override-warning Waarschuwing bij grote uitvoer onderdrukken",
-    .help_opt_head = "  --head N           Uitvoer na N regels stoppen",
-    .help_opt_tail = "  --tail N           Alleen de laatste N regels tonen (liever doorsluizen naar tail -N)",
     .help_opt_only = "  --only PATH        Focus op een subboom, broer-mappen inklappen (herhaalbaar)",
 
     // ── Waarschuwingen (grote uitvoer) ─────────────────────────
     .warn_large_output_prefix = "Waarschuwing: uitvoer is ~",
     .warn_large_output_mid = " regels (drempel: ",
     .warn_large_output_suffix = "). Overweeg: --depth N, --head N of --hide-patronen.",
-    .warn_truncated_head_prefix = "(Uitvoer afgekapt na ",
-    .warn_truncated_head_suffix = " regels door --head)",
 
     // ── Foutmeldingen ──────────────────────────────────────────
     .err_max_lines_requires_number = "Fout: --max-lines vereist een numeriek argument (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Fout: --head vereist een numeriek argument (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Fout: --tail vereist een numeriek argument (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Fout: --only vereist een padargument (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Fout: --depth vereist een numeriek argument (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Fout: --path vereist een mapargument (en: Error: --path requires a directory argument)",

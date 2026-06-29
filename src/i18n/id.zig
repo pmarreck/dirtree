@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Teks bantuan (flag baru) ───────────────────────────────
     .help_opt_max_lines = "  --max-lines N      Atur ambang peringatan keluaran besar (bawaan: 500)",
     .help_opt_override_warning = "  --override-warning Tekan peringatan keluaran besar",
-    .help_opt_head = "  --head N           Hentikan keluaran setelah N baris",
-    .help_opt_tail = "  --tail N           Tampilkan hanya N baris terakhir (lebih baik pipe ke tail -N)",
     .help_opt_only = "  --only PATH        Berfokus pada satu subpohon, menciutkan direktori saudara (dapat diulang)",
 
     // ── Pesan peringatan (keluaran besar) ──────────────────────
     .warn_large_output_prefix = "Peringatan: keluaran sekitar ~",
     .warn_large_output_mid = " baris (ambang: ",
     .warn_large_output_suffix = "). Pertimbangkan: --depth N, --head N, atau pola --hide.",
-    .warn_truncated_head_prefix = "(Keluaran dipotong setelah ",
-    .warn_truncated_head_suffix = " baris oleh --head)",
 
     // ── Pesan kesalahan ────────────────────────────────────────
     .err_max_lines_requires_number = "Kesalahan: --max-lines memerlukan argumen numerik (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Kesalahan: --head memerlukan argumen numerik (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Kesalahan: --tail memerlukan argumen numerik (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Kesalahan: --only memerlukan argumen jalur (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Kesalahan: --depth memerlukan argumen numerik (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Kesalahan: --path memerlukan argumen direktori (en: Error: --path requires a directory argument)",

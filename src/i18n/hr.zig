@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Tekst pomoći (nove zastavice) ──────────────────────────
     .help_opt_max_lines = "  --max-lines N      Postavi prag upozorenja za velik ispis (zadano: 500)",
     .help_opt_override_warning = "  --override-warning Potisni upozorenje za velik ispis",
-    .help_opt_head = "  --head N           Zaustavi ispis nakon N redaka",
-    .help_opt_tail = "  --tail N           Prikaži samo zadnjih N redaka (radije proslijedi na tail -N)",
     .help_opt_only = "  --only PATH        Usredotoči se na podstablo, sažimajući srodne direktorije (ponovljivo)",
 
     // ── Poruke upozorenja (velik ispis) ────────────────────────
     .warn_large_output_prefix = "Upozorenje: ispis je ~",
     .warn_large_output_mid = " redaka (prag: ",
     .warn_large_output_suffix = "). Razmotri: --depth N, --head N ili --hide uzorke.",
-    .warn_truncated_head_prefix = "(Ispis skraćen nakon ",
-    .warn_truncated_head_suffix = " redaka putem --head)",
 
     // ── Poruke o pogreškama ────────────────────────────────────
     .err_max_lines_requires_number = "Pogreška: --max-lines zahtijeva numerički argument (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Pogreška: --head zahtijeva numerički argument (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Pogreška: --tail zahtijeva numerički argument (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Pogreška: --only zahtijeva argument putanje (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Pogreška: --depth zahtijeva numerički argument (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Pogreška: --path zahtijeva argument direktorija (en: Error: --path requires a directory argument)",

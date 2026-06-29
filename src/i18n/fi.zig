@@ -74,21 +74,15 @@ pub const strings = Strings{
     // ── Ohjeteksti (uudet valitsimet) ──────────────────────────
     .help_opt_max_lines = "  --max-lines N      Aseta suuren tulosteen varoituskynnys (oletus: 500)",
     .help_opt_override_warning = "  --override-warning Vaienna suuren tulosteen varoitus",
-    .help_opt_head = "  --head N           Pysäytä tuloste N rivin jälkeen",
-    .help_opt_tail = "  --tail N           Näytä vain viimeiset N riviä (mieluummin putkita komentoon tail -N)",
     .help_opt_only = "  --only PATH        Keskity alipuuhun ja tiivistä sisarhakemistot (toistettava)",
 
     // ── Varoitusviestit (suuri tuloste) ────────────────────────
     .warn_large_output_prefix = "Varoitus: tuloste on noin ~",
     .warn_large_output_mid = " riviä (kynnys: ",
     .warn_large_output_suffix = "). Harkitse: --depth N, --head N tai --hide-kuvioita.",
-    .warn_truncated_head_prefix = "(Tuloste katkaistu ",
-    .warn_truncated_head_suffix = " rivin jälkeen valitsimella --head)",
 
     // ── Virheviestit ───────────────────────────────────────────
     .err_max_lines_requires_number = "Virhe: --max-lines vaatii numeerisen argumentin (en: Error: --max-lines requires a numeric argument)",
-    .err_head_requires_number = "Virhe: --head vaatii numeerisen argumentin (en: Error: --head requires a numeric argument)",
-    .err_tail_requires_number = "Virhe: --tail vaatii numeerisen argumentin (en: Error: --tail requires a numeric argument)",
     .err_only_requires_path = "Virhe: --only vaatii polkuargumentin (en: Error: --only requires a path argument)",
     .err_depth_requires_number = "Virhe: --depth vaatii numeerisen argumentin (en: Error: --depth requires a numeric argument)",
     .err_path_requires_arg = "Virhe: --path vaatii hakemistoargumentin (en: Error: --path requires a directory argument)",
