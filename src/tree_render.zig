@@ -295,6 +295,9 @@ fn renderDir(
 	// First pass: evaluate and filter entries
 	var visible = std.ArrayListUnmanaged(VisibleEntry).empty;
 	defer visible.deinit(allocator);
+	defer {
+		for (visible.items) |v| allocator.free(v.child_rel);
+	}
 
 	for (entries) |entry| {
 		// Skip . and ..
@@ -348,9 +351,6 @@ fn renderDir(
 			.is_closed = eval_result.is_closed,
 			.child_rel = try allocator.dupe(u8, child_rel),
 		});
-	}
-	defer {
-		for (visible.items) |v| allocator.free(v.child_rel);
 	}
 
 	// Second pass: render visible entries
@@ -596,6 +596,9 @@ fn renderDirFocused(
 	// First pass: evaluate and filter entries
 	var visible = std.ArrayListUnmanaged(VisibleEntry).empty;
 	defer visible.deinit(allocator);
+	defer {
+		for (visible.items) |v| allocator.free(v.child_rel);
+	}
 
 	for (entries) |entry| {
 		if (std.mem.eql(u8, entry.name, ".") or std.mem.eql(u8, entry.name, "..")) continue;
@@ -644,9 +647,6 @@ fn renderDirFocused(
 			.is_closed = eval_result.is_closed,
 			.child_rel = try allocator.dupe(u8, child_rel),
 		});
-	}
-	defer {
-		for (visible.items) |v| allocator.free(v.child_rel);
 	}
 
 	// Second pass: render with focus awareness
