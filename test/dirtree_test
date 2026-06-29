@@ -1520,6 +1520,77 @@ test_depth_parameter_validation() {
 	compare_printable "depth parameter validation" "$actual_pb" "$expected_pb"
 }
 
+# Numeric boundaries as a classifier over the set: negatives + u32 overflow are
+# rejected (rc!=0); -d 0 is root-only; u32-max depth is valid; --max-lines 0 disables
+# the warning while a small positive threshold fires it.
+test_numeric_boundaries() {
+	local workspace big stdout_pb="" stderr_pb="" rc=0 plain="" errplain=""
+	workspace=$(new_tmpdir)
+	mkdir -p "$workspace/boundarychild/sub"
+
+	# Error set: negative and overflow values must all be rejected.
+	local case flag val
+	for case in "-d|-1" "-d|99999999999999" "--max-lines|-5" "--max-lines|99999999999999"; do
+		flag="${case%%|*}"; val="${case#*|}"
+		if ! capture_command_printable stdout_pb stderr_pb rc "$DIRTREE_BIN" "$flag" "$val" "$workspace"; then
+			echo "capture helper failed for $flag $val" >&2; return 1
+		fi
+		if [[ "$rc" -eq 0 ]]; then
+			echo "expected non-zero rc for '$flag $val' (negatives/overflow must be rejected)" >&2
+			return 1
+		fi
+	done
+
+	# -d 0 => root header only, no children rendered.
+	if ! capture_command_printable stdout_pb stderr_pb rc "$DIRTREE_BIN" --simple -d 0 "$workspace"; then
+		echo "capture helper failed for -d 0" >&2; return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then echo "-d 0 should succeed (rc=$rc)" >&2; return 1; fi
+	decode_printable plain "$stdout_pb"
+	if [[ "$plain" == *"boundarychild"* ]]; then
+		echo "-d 0 must not render children; got: $plain" >&2; return 1
+	fi
+
+	# -d 4294967295 (u32 max) => valid, renders children.
+	if ! capture_command_printable stdout_pb stderr_pb rc "$DIRTREE_BIN" --simple -d 4294967295 "$workspace"; then
+		echo "capture helper failed for -d u32max" >&2; return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then echo "-d 4294967295 should succeed (rc=$rc)" >&2; return 1; fi
+	decode_printable plain "$stdout_pb"
+	if [[ "$plain" != *"boundarychild"* ]]; then
+		echo "-d 4294967295 should render children; got: $plain" >&2; return 1
+	fi
+
+	# --max-lines threshold semantics on a 30-entry tree:
+	#   large threshold => under limit, no warning;
+	#   small threshold (5) => exceeded, warns;
+	#   0 => threshold 0, always warns (NOTE: unlike FLAKE_LOCK_STALE_DAYS=0 which
+	#        silences — 0 here does NOT disable the advisory).
+	big=$(new_tmpdir)
+	local i; for i in $(seq 1 30); do touch "$big/f$i"; done
+
+	if ! capture_command_printable stdout_pb stderr_pb rc "$DIRTREE_BIN" --simple --max-lines 100000 "$big"; then
+		echo "capture helper failed for --max-lines 100000" >&2; return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then echo "--max-lines 100000 should succeed (rc=$rc)" >&2; return 1; fi
+	decode_printable errplain "$stderr_pb"
+	if [[ "$errplain" == *"Warning:"* ]]; then
+		echo "--max-lines 100000 (over threshold) must not warn; got: $errplain" >&2; return 1
+	fi
+
+	local ml
+	for ml in 5 0; do
+		if ! capture_command_printable stdout_pb stderr_pb rc "$DIRTREE_BIN" --simple --max-lines "$ml" "$big"; then
+			echo "capture helper failed for --max-lines $ml" >&2; return 1
+		fi
+		if [[ "$rc" -ne 0 ]]; then echo "--max-lines $ml should succeed (rc=$rc)" >&2; return 1; fi
+		decode_printable errplain "$stderr_pb"
+		if [[ "$errplain" != *"Warning:"* ]]; then
+			echo "--max-lines $ml should warn on a 30-entry tree; got: $errplain" >&2; return 1
+		fi
+	done
+}
+
 test_directory_validation() {
 	local workspace file stdout_pb stderr_pb rc=0 actual_pb expected_plain expected_pb
 	workspace=$(new_tmpdir)
@@ -4731,6 +4802,8 @@ run_all_tests() {
 		test_close_glob_applies_to_nested_matches
 	run_test "depth parameter validation" \
 		test_depth_parameter_validation
+	run_test "numeric boundaries (-d/--max-lines)" \
+		test_numeric_boundaries
 	run_test "directory validation" \
 		test_directory_validation
 	run_test "decorated mode honors default=closed" \
