@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Предупреждения (голям изход) ────────────────────────────
     .warn_large_output_prefix = "Предупреждение: изходът е ~",
     .warn_large_output_mid = " реда (праг: ",
-    .warn_large_output_suffix = "). Обмислете: --depth N, --head N или --hide шаблони.",
+    .warn_large_output_suffix = "). Обмислете: --depth N или --hide шаблони.",
 
     // ── Съобщения за грешки ─────────────────────────────────────
     .err_max_lines_requires_number = "Грешка: --max-lines изисква числов аргумент (en: Error: --max-lines requires a numeric argument)",

@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Advarsler (stor utdata) ────────────────────────────────
     .warn_large_output_prefix = "Advarsel: utdata er ~",
     .warn_large_output_mid = " linjer (terskel: ",
-    .warn_large_output_suffix = "). Vurder: --depth N, --head N eller --hide-mønstre.",
+    .warn_large_output_suffix = "). Vurder: --depth N eller --hide-mønstre.",
 
     // ── Feilmeldinger ──────────────────────────────────────────
     .err_max_lines_requires_number = "Feil: --max-lines krever et numerisk argument (en: Error: --max-lines requires a numeric argument)",

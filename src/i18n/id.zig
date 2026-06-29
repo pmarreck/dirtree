@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Pesan peringatan (keluaran besar) ──────────────────────
     .warn_large_output_prefix = "Peringatan: keluaran sekitar ~",
     .warn_large_output_mid = " baris (ambang: ",
-    .warn_large_output_suffix = "). Pertimbangkan: --depth N, --head N, atau pola --hide.",
+    .warn_large_output_suffix = "). Pertimbangkan: --depth N atau pola --hide.",
 
     // ── Pesan kesalahan ────────────────────────────────────────
     .err_max_lines_requires_number = "Kesalahan: --max-lines memerlukan argumen numerik (en: Error: --max-lines requires a numeric argument)",

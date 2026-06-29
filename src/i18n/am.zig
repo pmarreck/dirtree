@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── የማስጠንቀቂያ መልእክቶች (ትልቅ ውጤት) ───────────────────────────
     .warn_large_output_prefix = "ማስጠንቀቂያ: ውጤቱ ~",
     .warn_large_output_mid = " መስመሮች (ደጃፍ: ",
-    .warn_large_output_suffix = ") ነው። አስብ: --depth N, --head N, ወይም --hide ስርዓተ-ጥለቶች።",
+    .warn_large_output_suffix = ") ነው። አስብ: --depth N ወይም --hide ስርዓተ-ጥለቶች።",
 
     // ── የስህተት መልእክቶች ──────────────────────────────────────────
     .err_max_lines_requires_number = "ስህተት: --max-lines የቁጥር መከራከሪያ ይፈልጋል (en: Error: --max-lines requires a numeric argument)",

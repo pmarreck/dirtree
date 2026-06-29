@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "تنبیہ: آؤٹ پٹ تقریباً ~",
     .warn_large_output_mid = " سطریں ہیں (حد: ",
-    .warn_large_output_suffix = ")۔ غور کریں: --depth N، --head N، یا --hide پیٹرنز۔",
+    .warn_large_output_suffix = ")۔ غور کریں: --depth N یا --hide پیٹرنز۔",
 
     // ── Error messages ─────────────────────────────────────────
     .err_max_lines_requires_number = "خرابی: --max-lines کو ایک عددی دلیل درکار ہے (en: Error: --max-lines requires a numeric argument)",

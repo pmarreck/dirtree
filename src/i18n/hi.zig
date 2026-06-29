@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── चेतावनी संदेश (बड़ा आउटपुट) ────────────────────────
     .warn_large_output_prefix = "चेतावनी: आउटपुट लगभग ~",
     .warn_large_output_mid = " पंक्तियाँ है (सीमा: ",
-    .warn_large_output_suffix = ")। विचार करें: --depth N, --head N, या --hide पैटर्न।",
+    .warn_large_output_suffix = ")। विचार करें: --depth N या --hide पैटर्न।",
 
     // ── त्रुटि संदेश ─────────────────────────────────────────
     .err_max_lines_requires_number = "त्रुटि: --max-lines को एक संख्यात्मक तर्क चाहिए (en: Error: --max-lines requires a numeric argument)",

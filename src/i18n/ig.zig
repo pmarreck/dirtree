@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Ozi ịdọ aka na ntị (nnukwu mmepụta) ────────────────────
     .warn_large_output_prefix = "Ịdọ aka na ntị: mmepụta dị ihe dịka ~",
     .warn_large_output_mid = " ahịrị (oke: ",
-    .warn_large_output_suffix = "). Tụlee: --depth N, --head N, ma ọ bụ ụkpụrụ --hide.",
+    .warn_large_output_suffix = "). Tụlee: --depth N ma ọ bụ ụkpụrụ --hide.",
 
     // ── Ozi njehie ─────────────────────────────────────────────
     .err_max_lines_requires_number = "Njehie: --max-lines chọrọ arụmụka ọnụọgụgụ (en: Error: --max-lines requires a numeric argument)",

@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "Warning: output is ~",
     .warn_large_output_mid = " lines (threshold: ",
-    .warn_large_output_suffix = "). Consider: --depth N, --head N, or --hide patterns.",
+    .warn_large_output_suffix = "). Consider: --depth N or --hide patterns.",
 
     // ── Error messages ─────────────────────────────────────────
     .err_max_lines_requires_number = "Error: --max-lines requires a numeric argument",

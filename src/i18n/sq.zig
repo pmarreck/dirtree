@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Mesazhe paralajmërimi (dalje e madhe) ──────────────────
     .warn_large_output_prefix = "Paralajmërim: dalja është ~",
     .warn_large_output_mid = " rreshta (pragu: ",
-    .warn_large_output_suffix = "). Konsidero: --depth N, --head N, ose motivet --hide.",
+    .warn_large_output_suffix = "). Konsidero: --depth N ose motivet --hide.",
 
     // ── Mesazhe gabimi ─────────────────────────────────────────
     .err_max_lines_requires_number = "Gabim: --max-lines kërkon një argument numerik (en: Error: --max-lines requires a numeric argument)",

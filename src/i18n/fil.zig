@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Mga mensahe ng babala (malaking output) ────────────────
     .warn_large_output_prefix = "Babala: ang output ay humigit-kumulang ~",
     .warn_large_output_mid = " na linya (threshold: ",
-    .warn_large_output_suffix = "). Isaalang-alang: --depth N, --head N, o --hide na mga pattern.",
+    .warn_large_output_suffix = "). Isaalang-alang: --depth N o --hide na mga pattern.",
 
     // ── Mga mensahe ng error ───────────────────────────────────
     .err_max_lines_requires_number = "Error: ang --max-lines ay nangangailangan ng numerong argumento (en: Error: --max-lines requires a numeric argument)",

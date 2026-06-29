@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "எச்சரிக்கை: வெளியீடு ~",
     .warn_large_output_mid = " வரிகள் (வரம்பு: ",
-    .warn_large_output_suffix = "). கருத்தில் கொள்ளுங்கள்: --depth N, --head N, அல்லது --hide வடிவங்கள்.",
+    .warn_large_output_suffix = "). கருத்தில் கொள்ளுங்கள்: --depth N அல்லது --hide வடிவங்கள்.",
 
     // ── Error messages ─────────────────────────────────────────
     .err_max_lines_requires_number = "பிழை: --max-lines-க்கு ஒரு எண் செயலுருபு தேவை (en: Error: --max-lines requires a numeric argument)",

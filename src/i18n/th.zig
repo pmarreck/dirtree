@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── ข้อความเตือน (เอาต์พุตขนาดใหญ่) ──────────────────────────
     .warn_large_output_prefix = "คำเตือน: เอาต์พุตประมาณ ~",
     .warn_large_output_mid = " บรรทัด (เกณฑ์: ",
-    .warn_large_output_suffix = ") ลองพิจารณา: --depth N, --head N หรือรูปแบบ --hide",
+    .warn_large_output_suffix = ") ลองพิจารณา: --depth N หรือรูปแบบ --hide",
 
     // ── ข้อความแสดงข้อผิดพลาด ───────────────────────────────────
     .err_max_lines_requires_number = "ข้อผิดพลาด: --max-lines ต้องการอาร์กิวเมนต์ที่เป็นตัวเลข (en: Error: --max-lines requires a numeric argument)",

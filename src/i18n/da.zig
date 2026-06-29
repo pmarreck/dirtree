@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Advarsler (stor udskrift) ──────────────────────────────
     .warn_large_output_prefix = "Advarsel: udskriften er ~",
     .warn_large_output_mid = " linjer (tærskel: ",
-    .warn_large_output_suffix = "). Overvej: --depth N, --head N eller --hide-mønstre.",
+    .warn_large_output_suffix = "). Overvej: --depth N eller --hide-mønstre.",
 
     // ── Fejlmeddelelser ────────────────────────────────────────
     .err_max_lines_requires_number = "Fejl: --max-lines kræver et numerisk argument (en: Error: --max-lines requires a numeric argument)",

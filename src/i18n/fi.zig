@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Varoitusviestit (suuri tuloste) ────────────────────────
     .warn_large_output_prefix = "Varoitus: tuloste on noin ~",
     .warn_large_output_mid = " riviä (kynnys: ",
-    .warn_large_output_suffix = "). Harkitse: --depth N, --head N tai --hide-kuvioita.",
+    .warn_large_output_suffix = "). Harkitse: --depth N tai --hide-kuvioita.",
 
     // ── Virheviestit ───────────────────────────────────────────
     .err_max_lines_requires_number = "Virhe: --max-lines vaatii numeerisen argumentin (en: Error: --max-lines requires a numeric argument)",

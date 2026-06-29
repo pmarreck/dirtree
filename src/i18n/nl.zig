@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Waarschuwingen (grote uitvoer) ─────────────────────────
     .warn_large_output_prefix = "Waarschuwing: uitvoer is ~",
     .warn_large_output_mid = " regels (drempel: ",
-    .warn_large_output_suffix = "). Overweeg: --depth N, --head N of --hide-patronen.",
+    .warn_large_output_suffix = "). Overweeg: --depth N of --hide-patronen.",
 
     // ── Foutmeldingen ──────────────────────────────────────────
     .err_max_lines_requires_number = "Fout: --max-lines vereist een numeriek argument (en: Error: --max-lines requires a numeric argument)",

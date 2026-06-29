@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Poruke upozorenja (velik ispis) ────────────────────────
     .warn_large_output_prefix = "Upozorenje: ispis je ~",
     .warn_large_output_mid = " redaka (prag: ",
-    .warn_large_output_suffix = "). Razmotri: --depth N, --head N ili --hide uzorke.",
+    .warn_large_output_suffix = "). Razmotri: --depth N ili --hide uzorke.",
 
     // ── Poruke o pogreškama ────────────────────────────────────
     .err_max_lines_requires_number = "Pogreška: --max-lines zahtijeva numerički argument (en: Error: --max-lines requires a numeric argument)",

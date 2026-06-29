@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Sakonnin gargadi (fitarwa mai yawa) ────────────────────
     .warn_large_output_prefix = "Gargadi: fitarwa kusan ~",
     .warn_large_output_mid = " layuka (iyaka: ",
-    .warn_large_output_suffix = "). Yi la'akari da: --depth N, --head N, ko tsarin --hide.",
+    .warn_large_output_suffix = "). Yi la'akari da: --depth N ko tsarin --hide.",
 
     // ── Sakonnin kuskure ───────────────────────────────────────
     .err_max_lines_requires_number = "Kuskure: --max-lines yana bukatar muhawara ta lambobi (en: Error: --max-lines requires a numeric argument)",

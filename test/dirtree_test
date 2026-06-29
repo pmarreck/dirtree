@@ -3555,6 +3555,17 @@ test_large_output_warning_appears() {
 		echo "Got: $stderr_plain" >&2
 		return 1
 	fi
+	# Suggestion must point at surviving flags, never the removed --head/--tail.
+	if [[ "$stderr_plain" != *"--depth"* || "$stderr_plain" != *"--hide"* ]]; then
+		echo "Expected warning to suggest --depth and --hide" >&2
+		echo "Got: $stderr_plain" >&2
+		return 1
+	fi
+	if [[ "$stderr_plain" == *"--head"* || "$stderr_plain" == *"--tail"* ]]; then
+		echo "Warning must not reference removed --head/--tail flags" >&2
+		echo "Got: $stderr_plain" >&2
+		return 1
+	fi
 }
 
 test_override_warning_suppresses_warning() {

@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Ujumbe wa onyo (matokeo makubwa) ───────────────────────
     .warn_large_output_prefix = "Onyo: matokeo ni takriban ",
     .warn_large_output_mid = " mistari (kizingiti: ",
-    .warn_large_output_suffix = "). Zingatia: --depth N, --head N, au mifumo ya --hide.",
+    .warn_large_output_suffix = "). Zingatia: --depth N au mifumo ya --hide.",
 
     // ── Ujumbe wa hitilafu ─────────────────────────────────────
     .err_max_lines_requires_number = "Hitilafu: --max-lines inahitaji hoja ya kinambari (en: Error: --max-lines requires a numeric argument)",

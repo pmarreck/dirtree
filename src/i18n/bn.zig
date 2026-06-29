@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "সতর্কতা: আউটপুট প্রায় ~",
     .warn_large_output_mid = " লাইন (থ্রেশহোল্ড: ",
-    .warn_large_output_suffix = ")। বিবেচনা করুন: --depth N, --head N, অথবা --hide প্যাটার্ন।",
+    .warn_large_output_suffix = ")। বিবেচনা করুন: --depth N অথবা --hide প্যাটার্ন।",
 
     // ── Error messages ─────────────────────────────────────────
     .err_max_lines_requires_number = "ত্রুটি: --max-lines একটি সংখ্যাসূচক আর্গুমেন্ট প্রয়োজন (en: Error: --max-lines requires a numeric argument)",

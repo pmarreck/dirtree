@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── د خبرتیا پیغامونه (لوی وتلون) ──────────────────────────
     .warn_large_output_prefix = "خبرتیا: وتلون نږدې ~",
     .warn_large_output_mid = " کرښې دي (حد: ",
-    .warn_large_output_suffix = "). فکر وکړه: --depth N، --head N، یا --hide نمونې.",
+    .warn_large_output_suffix = "). فکر وکړه: --depth N یا --hide نمونې.",
 
     // ── د تېروتنې پیغامونه ──────────────────────────────────────
     .err_max_lines_requires_number = "تېروتنه: --max-lines یوه شمیریزه دلیل ته اړتیا لري (en: Error: --max-lines requires a numeric argument)",

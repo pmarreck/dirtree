@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── 警告訊息 (大量輸出) ────────────────────────────────────
     .warn_large_output_prefix = "警告: 輸出約 ~",
     .warn_large_output_mid = " 行 (閾值: ",
-    .warn_large_output_suffix = ")。請考慮: --depth N、--head N 或 --hide 模式。",
+    .warn_large_output_suffix = ")。請考慮: --depth N 或 --hide 模式。",
 
     // ── 錯誤訊息 ───────────────────────────────────────────────
     .err_max_lines_requires_number = "錯誤: --max-lines 需要一個數字參數 (en: Error: --max-lines requires a numeric argument)",

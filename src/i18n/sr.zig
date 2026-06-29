@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Упозорења (велики испис) ───────────────────────────────
     .warn_large_output_prefix = "Упозорење: испис је ~",
     .warn_large_output_mid = " линија (праг: ",
-    .warn_large_output_suffix = "). Размотри: --depth N, --head N или --hide шаблоне.",
+    .warn_large_output_suffix = "). Размотри: --depth N или --hide шаблоне.",
 
     // ── Поруке о грешкама ──────────────────────────────────────
     .err_max_lines_requires_number = "Грешка: --max-lines захтева нумерички аргумент (en: Error: --max-lines requires a numeric argument)",

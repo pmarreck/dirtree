@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── Viðvörunarskilaboð (stórt úttak) ───────────────────────
     .warn_large_output_prefix = "Viðvörun: úttak er ~",
     .warn_large_output_mid = " línur (þröskuldur: ",
-    .warn_large_output_suffix = "). Íhugaðu: --depth N, --head N eða --hide-mynstur.",
+    .warn_large_output_suffix = "). Íhugaðu: --depth N eða --hide-mynstur.",
 
     // ── Villuskilaboð ──────────────────────────────────────────
     .err_max_lines_requires_number = "Villa: --max-lines krefst tölulegrar viðfangstölu (en: Error: --max-lines requires a numeric argument)",

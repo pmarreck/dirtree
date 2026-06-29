@@ -79,7 +79,7 @@ pub const strings = Strings{
     // ── ਚੇਤਾਵਨੀ ਸੁਨੇਹੇ (ਵੱਡੀ ਆਉਟਪੁੱਟ) ──────────────────────────
     .warn_large_output_prefix = "ਚੇਤਾਵਨੀ: ਆਉਟਪੁੱਟ ਲਗਭਗ ~",
     .warn_large_output_mid = " ਲਾਈਨਾਂ ਹੈ (ਥ੍ਰੈਸ਼ਹੋਲਡ: ",
-    .warn_large_output_suffix = ")। ਵਿਚਾਰ ਕਰੋ: --depth N, --head N, ਜਾਂ --hide ਪੈਟਰਨ।",
+    .warn_large_output_suffix = ")। ਵਿਚਾਰ ਕਰੋ: --depth N ਜਾਂ --hide ਪੈਟਰਨ।",
 
     // ── ਗਲਤੀ ਸੁਨੇਹੇ ─────────────────────────────────────────────
     .err_max_lines_requires_number = "ਗਲਤੀ: --max-lines ਨੂੰ ਇੱਕ ਸੰਖਿਆਤਮਕ ਆਰਗੂਮੈਂਟ ਚਾਹੀਦਾ ਹੈ (en: Error: --max-lines requires a numeric argument)",
