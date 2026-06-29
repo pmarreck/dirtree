@@ -13,3 +13,26 @@ hide=[
 	.dirtree-state
 	.git
 ]
+
+annotate=[
+	MISTAKES.md = Errors-made log for future sessions (jj rebase ancestor-drop near-miss)
+	PLAN.md = Audit remediation checklist + Done log
+	PROJECT_OVERVIEW.md = Project goals, architecture map, terminology
+	RULES.md = Hard invariants that must never be violated without strong justification
+	src/ansi.zig = ANSI color constants, OSC8 hyperlinks, percent-encoding, stats message
+	src/dir_scan.zig = Directory listing, stat, sorting (alpha/modified, asc/desc)
+	src/i18n = 50 locale string tables (one .zig per locale) + registry/schema/aliases infra
+	src/i18n/cli_aliases.zig = Per-locale CLI/arg aliases (localized flag names, own-language only)
+	src/i18n/mod.zig = Locale registry: code()=@tagName, parseLocaleCode, available_codes, cli_alias_map
+	src/i18n/strings.zig = Strings schema (all user-facing fields) + CliArg enum; completeness enforced
+	src/icons.zig = Nerd Font icon map: extension + filename StaticStringMaps, getFileIcon precedence
+	src/main.zig = Entry point: CLI arg parsing, precedence resolution, orchestration
+	src/path_eval.zig = open/close/show/hide evaluation and same-type precedence rules
+	src/pcre2.zig = PCRE2 wrapper: compile/find/matches/partialMatch, DFA mode, UTF-8+UCP, OOM-propagating
+	src/regex.zig = Glob to regex conversion, escape-aware isGlobPattern, pattern-kind detection
+	src/runtime.zig = Zig 0.16 I/O threading bridge via process-global wrapper; io()/env() accessors
+	src/scm.zig = Git/jj SCM-changed priority paths (jj overrides Git); falls back git on jj failure
+	src/state.zig = .dirtree-state parse/serialize, inheritance chain, parseBool truthy parser
+	src/tree_render.zig = Tree connectors/markers, recursive render, render defaults (DEFAULT_*)
+	src/update_check.zig = Background newer-release check + cache; Windows cachePath fallbacks
+]
