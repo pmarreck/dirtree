@@ -41,7 +41,7 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 
 ## Phase 4 — Bigger refactors (each scoped; offer safe vs bold)
 
-- [ ] **4.1 ‼️ `parseArgs` table-drive**: comptime descriptor table for toggle flags; map short→`CliArg` pre-switch (dedup `-d/-o/-c/-p` vs long arms — the `-d2`/`-td2` bug seam); collapse 50 `config.deinit` via `errdefer`.
+- [x] **4.1 ‼️ `parseArgs` table-drive**: comptime descriptor table for toggle flags; map short→`CliArg` pre-switch (dedup `-d/-o/-c/-p` vs long arms — the `-d2`/`-td2` bug seam); collapse 50 `config.deinit` via `errdefer`.
 - [ ] **4.2 ‼️ `main()` `.config` arm**: extract `runTree()` + the 3 inline warning blocks; move precedence resolution (`cfg.X orelse effective.X orelse DEFAULT`) into a pure `resolveRenderConfig` in `path_eval` (unit-testable). Hexagonal compliance.
 - [x] **4.3 ‼️ `tree_render.zig`**: extract shared `collectVisible()` first pass (`renderDir`/`renderDirFocused` ~75 dup lines; divergence risk).
 - [x] **4.4 ⚠️ i18n bold**: single comptime registry → collapse `stringsFor`/`localeCliAliases` switches (the last 2 of the 6 hand-maintained lists).
@@ -87,3 +87,4 @@ Decisions (Peter, 2026-06-30):
 
 ## Phase 4 — remaining
 - [ ] 4.1 parseArgs table-drive · [ ] 4.2 main() extraction + resolveRenderConfig · [ ] 4.5 collapse render walks (build fresh row-buffer; --tail scaffolding is gone)
+- 2026-06-30 (4.1): **parseArgs cleanups.** (c) Collapsed 46 manual `config.deinit` error-cleanups into one guarded `defer if (config_owned) config.deinit` (errdefer N/A — ParseResult is value-returned, not an error union); the sole transfer sets `config_owned=false`. (b) Removed 4 literal `-d/-o/-c/-p` blocks that duplicated the `.depth/.open/.close/.path` switch arms: added `shortFlagToCliArg`, relaxed the long-flag guard to admit single-dash flags, so short flags resolve through the same switch (a unit test caught the guard subtlety). (a) **Declined — comptime toggle-flag table:** the `switch (cli_arg)` is exhaustive with no `else`, giving compile-time "every CliArg handled" enforcement; a table would force an `else =>` and forfeit that safety for marginal line savings. Explicit arms kept on purpose.
