@@ -188,6 +188,18 @@ fn shortFlagToken(c: u8) [:0]const u8 {
 	};
 }
 
+/// Map an argument-taking short flag to its CliArg so the same switch arm handles
+/// both `-d`/`--depth` etc. (en registers no `-d`-style aliases, so these would
+/// otherwise need duplicate literal blocks). No-arg short flags (-h/-a/-t) are
+/// handled separately up top.
+fn shortFlagToCliArg(arg: []const u8) ?i18n.CliArg {
+	if (std.mem.eql(u8, arg, "-p")) return .path;
+	if (std.mem.eql(u8, arg, "-d")) return .depth;
+	if (std.mem.eql(u8, arg, "-o")) return .open;
+	if (std.mem.eql(u8, arg, "-c")) return .close;
+	return null;
+}
+
 /// True if `tok` is an expandable getopt-style short-flag cluster: a single-dash
 /// token of >=2 letters where every letter is a known short flag and every
 /// letter EXCEPT the last is a no-argument flag (h/a/t). The last letter may be
@@ -409,9 +421,11 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			break;
 		}
 
-		// Long flags via i18n alias map
-		if (arg.len > 1 and arg[0] == '-' and arg[1] == '-') {
-			if (i18n.matchLongFlag(arg)) |cli_arg| {
+		// Flags via the i18n alias map (long forms) and shortFlagToCliArg (the
+		// argument-taking short forms -d/-o/-c/-p). Any single-dash token enters;
+		// an unrecognized one falls through to the "Unknown flag" check below.
+		if (arg.len > 1 and arg[0] == '-') {
+			if (i18n.matchLongFlag(arg) orelse shortFlagToCliArg(arg)) |cli_arg| {
 				switch (cli_arg) {
 					.annotate => {
 						// annotate is a positional subcommand, not a flag.
@@ -734,68 +748,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						}
 					},
 				}
-			}
-		}
-
-		// Short flags with value args (fixed, not localized)
-		if (std.mem.eql(u8, arg, "-p")) {
-			i += 1;
-			if (i >= args.len) {
-				return .{ .err = s.err_path_requires_arg };
-			}
-			config.dir = args[i];
-			dir_pending = false;
-			i += 1;
-			continue;
-		}
-		if (std.mem.eql(u8, arg, "-d")) {
-			i += 1;
-			if (i >= args.len) {
-				return .{ .err = s.err_depth_requires_number };
-			}
-			const depth_str = args[i];
-			const depth = std.fmt.parseInt(u32, depth_str, 10) catch {
-				return .{ .err = s.err_depth_requires_number };
-			};
-			config.depth = depth;
-			config.state_modified = true;
-			i += 1;
-			continue;
-		}
-
-		if (std.mem.eql(u8, arg, "-o")) {
-			i += 1;
-			const result = collectVariadicArgs(allocator, args[i..], &config.open_literals, &config.open_regexes, dir_pending, null, "open");
-			switch (result) {
-				.ok => |count| {
-					if (count == 0) {
-						return .{ .err = s.err_open_requires_dir };
-					}
-					i += count;
-					config.state_modified = true;
-					continue;
-				},
-				.err => |msg| {
-					return .{ .err = msg };
-				},
-			}
-		}
-
-		if (std.mem.eql(u8, arg, "-c")) {
-			i += 1;
-			const result = collectVariadicArgs(allocator, args[i..], &config.close_literals, &config.close_regexes, dir_pending, null, "close");
-			switch (result) {
-				.ok => |count| {
-					if (count == 0) {
-						return .{ .err = s.err_close_requires_dir };
-					}
-					i += count;
-					config.state_modified = true;
-					continue;
-				},
-				.err => |msg| {
-					return .{ .err = msg };
-				},
 			}
 		}
 
