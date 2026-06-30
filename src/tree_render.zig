@@ -358,6 +358,49 @@ fn renderDir(
 
 /// Lightweight pre-scan to estimate the number of visible lines without rendering.
 /// Used to warn when piped output may be too large for LLM context windows.
+/// Resolve the effective RenderConfig from CLI flags, persisted state, and the
+/// DEFAULT_* constants. Pure precedence: cfg (CLI) > effective (state file) > default.
+/// `cfg` is anytype (it's main.CliConfig) to avoid a main<->tree_render import cycle;
+/// this also makes the precedence rules directly unit-testable with a mock cfg.
+pub fn resolveRenderConfig(cfg: anytype, effective: *const path_eval.EffectiveState) RenderConfig {
+	const use_simple = cfg.simple_mode;
+	const use_color = !use_simple and !cfg.no_color and
+		(cfg.force_decorated or cfg.stdout_is_tty) and
+		(effective.color_preference orelse true);
+	const use_hyperlinks = !use_simple and !cfg.no_hyperlinks and
+		(cfg.force_decorated or cfg.stdout_is_tty) and
+		(effective.hyperlink_preference orelse true);
+	const use_icons = !cfg.no_icons;
+
+	const sort_mode: dir_scan.SortMode = blk: {
+		if (cfg.sort_mode) |sm| break :blk switch (sm) { .modified => .modified, .alpha => .alpha };
+		if (effective.sort_mode) |sm| break :blk switch (sm) { .modified => .modified, .alpha => .alpha };
+		break :blk .modified;
+	};
+	const sort_direction: dir_scan.SortDirection = blk: {
+		if (cfg.sort_direction) |sd| break :blk switch (sd) { .asc => .asc, .desc => .desc };
+		if (effective.sort_direction) |sd| break :blk switch (sd) { .asc => .asc, .desc => .desc };
+		break :blk .desc;
+	};
+
+	return RenderConfig{
+		.use_color = use_color,
+		.use_icons = use_icons,
+		.use_hyperlinks = use_hyperlinks,
+		.simple_mode = use_simple,
+		.report_hidden = !cfg.show_hidden,
+		.show_notes = cfg.cli_notes orelse true,
+		.note_align = !cfg.notes_inline,
+		.note_leader = cfg.note_leader,
+		.note_column = effective.note_column orelse DEFAULT_NOTE_COLUMN,
+		.max_depth = cfg.depth orelse effective.depth orelse DEFAULT_DEPTH,
+		.show_hidden = cfg.show_hidden,
+		.sort_mode = sort_mode,
+		.sort_direction = sort_direction,
+		.only_paths = cfg.only_paths.items,
+	};
+}
+
 pub fn countVisibleEntries(
 	allocator: std.mem.Allocator,
 	abs_dir: []const u8,
@@ -1099,4 +1142,61 @@ test "renderFileEntry: annotation has no ANSI when use_color=false" {
 	const output = fbs.buffered();
 	try std.testing.expect(std.mem.indexOf(u8, output, "\x1b[") == null);
 	try std.testing.expect(std.mem.indexOf(u8, output, " # Demo file") != null);
+}
+
+test "resolveRenderConfig: CLI > state-file > default precedence" {
+	const MockCfg = struct {
+		simple_mode: bool = false,
+		no_color: bool = false,
+		force_decorated: bool = true,
+		stdout_is_tty: bool = false,
+		no_hyperlinks: bool = false,
+		no_icons: bool = false,
+		sort_mode: ?dir_scan.SortMode = null,
+		sort_direction: ?dir_scan.SortDirection = null,
+		cli_notes: ?bool = null,
+		notes_inline: bool = false,
+		note_leader: bool = false,
+		show_hidden: bool = false,
+		depth: ?u32 = null,
+		only_paths: struct { items: []const []const u8 } = .{ .items = &.{} },
+	};
+	const A = std.testing.allocator;
+
+	// depth: CLI wins over state wins over default.
+	{
+		var eff = path_eval.EffectiveState{ .allocator = A };
+		eff.depth = 5;
+		try std.testing.expectEqual(@as(u32, 2), resolveRenderConfig(MockCfg{ .depth = 2 }, &eff).max_depth);
+		try std.testing.expectEqual(@as(u32, 5), resolveRenderConfig(MockCfg{}, &eff).max_depth);
+	}
+	{
+		var eff = path_eval.EffectiveState{ .allocator = A };
+		try std.testing.expectEqual(DEFAULT_DEPTH, resolveRenderConfig(MockCfg{}, &eff).max_depth);
+	}
+
+	// color: requires !simple AND (force_decorated|tty) AND color_preference(default true).
+	{
+		var eff = path_eval.EffectiveState{ .allocator = A };
+		try std.testing.expect(resolveRenderConfig(MockCfg{ .force_decorated = true }, &eff).use_color);
+		try std.testing.expect(!resolveRenderConfig(MockCfg{ .simple_mode = true, .force_decorated = true }, &eff).use_color);
+		try std.testing.expect(!resolveRenderConfig(MockCfg{ .force_decorated = false, .stdout_is_tty = false }, &eff).use_color);
+		eff.color_preference = false; // state can veto color
+		try std.testing.expect(!resolveRenderConfig(MockCfg{ .force_decorated = true }, &eff).use_color);
+	}
+
+	// sort: state used when CLI null; CLI overrides; default when both null.
+	{
+		var eff = path_eval.EffectiveState{ .allocator = A };
+		try std.testing.expectEqual(dir_scan.SortMode.modified, resolveRenderConfig(MockCfg{}, &eff).sort_mode);
+		eff.sort_mode = .alpha;
+		try std.testing.expectEqual(dir_scan.SortMode.alpha, resolveRenderConfig(MockCfg{}, &eff).sort_mode);
+		try std.testing.expectEqual(dir_scan.SortMode.modified, resolveRenderConfig(MockCfg{ .sort_mode = .modified }, &eff).sort_mode);
+	}
+
+	// note_column falls back to DEFAULT when state doesn't set it.
+	{
+		var eff = path_eval.EffectiveState{ .allocator = A };
+		try std.testing.expectEqual(DEFAULT_NOTE_COLUMN, resolveRenderConfig(MockCfg{}, &eff).note_column);
+	}
 }

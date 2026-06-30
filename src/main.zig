@@ -1414,59 +1414,11 @@ pub fn main(init: std.process.Init) !u8 {
 				return 1;
 			}
 
-			// Determine display mode
-			const use_simple = cfg.simple_mode;
-			const use_color = !use_simple and !cfg.no_color and
-				(cfg.force_decorated or cfg.stdout_is_tty) and
-				(effective.color_preference orelse true);
-			const use_hyperlinks = !use_simple and !cfg.no_hyperlinks and
-				(cfg.force_decorated or cfg.stdout_is_tty) and
-				(effective.hyperlink_preference orelse true);
-			const use_icons = !cfg.no_icons;
-
-			// Determine sort
-			const sort_mode: dir_scan.SortMode = blk: {
-				if (cfg.sort_mode) |sm| break :blk switch (sm) {
-					.modified => .modified,
-					.alpha => .alpha,
-				};
-				if (effective.sort_mode) |sm| break :blk switch (sm) {
-					.modified => .modified,
-					.alpha => .alpha,
-				};
-				break :blk .modified;
-			};
-			const sort_direction: dir_scan.SortDirection = blk: {
-				if (cfg.sort_direction) |sd| break :blk switch (sd) {
-					.asc => .asc,
-					.desc => .desc,
-				};
-				if (effective.sort_direction) |sd| break :blk switch (sd) {
-					.asc => .asc,
-					.desc => .desc,
-				};
-				break :blk .desc;
-			};
-
-			// Determine depth
-			const max_depth = cfg.depth orelse effective.depth orelse tree_render.DEFAULT_DEPTH;
-
-			const render_config = tree_render.RenderConfig{
-				.use_color = use_color,
-				.use_icons = use_icons,
-				.use_hyperlinks = use_hyperlinks,
-				.simple_mode = use_simple,
-				.report_hidden = !cfg.show_hidden,
-				.show_notes = cfg.cli_notes orelse true,
-				.note_align = !cfg.notes_inline,
-				.note_leader = cfg.note_leader,
-				.note_column = effective.note_column orelse tree_render.DEFAULT_NOTE_COLUMN,
-				.max_depth = max_depth,
-				.show_hidden = cfg.show_hidden,
-				.sort_mode = sort_mode,
-				.sort_direction = sort_direction,
-				.only_paths = cfg.only_paths.items,
-			};
+			// Resolve CLI > state-file > default precedence into the render config
+			// (pure, unit-tested in tree_render.resolveRenderConfig).
+			const render_config = tree_render.resolveRenderConfig(&cfg, &effective);
+			const use_simple = render_config.simple_mode;
+			const max_depth = render_config.max_depth;
 
 			// Persist state if modified
 			if (!cfg.temporary and (cfg.state_modified or effective.needs_migration or cfg.rewrite_settings)) {
