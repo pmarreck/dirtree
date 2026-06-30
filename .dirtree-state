@@ -33,6 +33,7 @@ annotate=[
 	src/runtime.zig = Zig 0.16 I/O threading bridge via process-global wrapper; io()/env() accessors
 	src/scm.zig = Git/jj SCM-changed priority paths (jj overrides Git); falls back git on jj failure
 	src/state.zig = .dirtree-state parse/serialize, inheritance chain, parseBool truthy parser
+	src/threshold_writer.zig = Streaming Writer that buffers to a line threshold then warns+flushes+streams (single-walk large-output warning)
 	src/tree_render.zig = Tree connectors/markers, recursive render, render defaults (DEFAULT_*)
 	src/update_check.zig = Background newer-release check + cache; Windows cachePath fallbacks
 ]
