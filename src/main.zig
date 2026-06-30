@@ -10,6 +10,7 @@ const ansi_mod = @import("ansi.zig");
 const i18n = @import("i18n/mod.zig");
 const runtime = @import("runtime.zig");
 const update_check = @import("update_check.zig");
+const threshold_writer = @import("threshold_writer.zig");
 
 pub const SortMode = enum {
 	modified,
@@ -1418,7 +1419,6 @@ pub fn main(init: std.process.Init) !u8 {
 			// (pure, unit-tested in tree_render.resolveRenderConfig).
 			const render_config = tree_render.resolveRenderConfig(&cfg, &effective);
 			const use_simple = render_config.simple_mode;
-			const max_depth = render_config.max_depth;
 
 			// Persist state if modified
 			if (!cfg.temporary and (cfg.state_modified or effective.needs_migration or cfg.rewrite_settings)) {
@@ -1428,49 +1428,68 @@ pub fn main(init: std.process.Init) !u8 {
 				};
 			}
 
-			// Pre-scan warning for large output when piped
+			// Render the tree. When piped (not a TTY) with the large-output warning
+			// enabled, route through a ThresholdStreamWriter: a SINGLE render walk
+			// buffers up to `max_lines` lines, and if that's exceeded it emits the
+			// warning to stderr, flushes the buffer, then streams the rest — bounded
+			// memory, no second directory scan, streaming preserved past the limit.
 			if (!cfg.stdout_is_tty and !cfg.override_warning) {
 				const threshold = effective.max_lines orelse tree_render.DEFAULT_MAX_LINES;
-				const estimated = tree_render.countVisibleEntries(
+				const ws = i18n.tr();
+				// Precompute the warning. The shown count is a lower bound (`threshold+1`
+				// with a `+`) because we stop counting once the limit is crossed.
+				var warn_buf: [512]u8 = undefined;
+				var wfx = std.Io.Writer.fixed(&warn_buf);
+				wfx.writeAll("\n") catch return 1;
+				if (!use_simple) wfx.writeAll(ansi_mod.bold_yellow) catch return 1;
+				wfx.writeAll(ws.warn_large_output_prefix) catch return 1;
+				wfx.print("{}+", .{threshold + 1}) catch return 1;
+				wfx.writeAll(ws.warn_large_output_mid) catch return 1;
+				wfx.print("{}", .{threshold}) catch return 1;
+				wfx.writeAll(ws.warn_large_output_suffix) catch return 1;
+				if (!use_simple) wfx.writeAll(ansi_mod.reset) catch return 1;
+				wfx.writeAll("\n") catch return 1;
+				const warning = wfx.buffered();
+
+				var tbuf: [4096]u8 = undefined;
+				var tw = threshold_writer.ThresholdStreamWriter.init(allocator, &tbuf, stdout, stderr, warning, threshold);
+				defer tw.deinit();
+				tree_render.renderTree(
 					allocator,
+					&tw.writer,
+					stderr,
 					abs_dir,
-					"",
-					max_depth,
-					false,
 					&effective,
 					if (priority.enabled) &priority.dirs else null,
 					if (priority.enabled) &priority.files else null,
-					cfg.show_hidden,
-				);
-				if (estimated + 1 > threshold) { // +1 for root header line
-					const ws = i18n.tr();
-					try stderr.writeAll("\n");
-					if (!use_simple) try stderr.writeAll(ansi_mod.bold_yellow);
-					try stderr.writeAll(ws.warn_large_output_prefix);
-					try stderr.print("{}", .{estimated + 1});
-					try stderr.writeAll(ws.warn_large_output_mid);
-					try stderr.print("{}", .{threshold});
-					try stderr.writeAll(ws.warn_large_output_suffix);
-					if (!use_simple) try stderr.writeAll(ansi_mod.reset);
-					try stderr.writeAll("\n");
-				}
+					render_config,
+				) catch |err| {
+					try stderr.print("Error rendering tree: {}\n", .{err});
+					try stderr.flush();
+					return 1;
+				};
+				tw.finish() catch |err| {
+					try stderr.print("Error rendering tree: {}\n", .{err});
+					try stderr.flush();
+					return 1;
+				};
+			} else {
+				// TTY or warning overridden: stream directly (no pre-scan, no warning).
+				tree_render.renderTree(
+					allocator,
+					stdout,
+					stderr,
+					abs_dir,
+					&effective,
+					if (priority.enabled) &priority.dirs else null,
+					if (priority.enabled) &priority.files else null,
+					render_config,
+				) catch |err| {
+					try stderr.print("Error rendering tree: {}\n", .{err});
+					try stderr.flush();
+					return 1;
+				};
 			}
-
-			// Render the tree
-			tree_render.renderTree(
-				allocator,
-				stdout,
-				stderr,
-				abs_dir,
-				&effective,
-				if (priority.enabled) &priority.dirs else null,
-				if (priority.enabled) &priority.files else null,
-				render_config,
-			) catch |err| {
-				try stderr.print("Error rendering tree: {}\n", .{err});
-				try stderr.flush();
-				return 1;
-			};
 
 			// Warn about orphaned annotations: notes in THIS directory's state file
 			// that point at paths which no longer exist. Best-effort, current-dir scope.
@@ -2380,5 +2399,6 @@ test {
 	_ = @import("path_eval.zig");
 	_ = @import("scm.zig");
 	_ = @import("tree_render.zig");
+	_ = @import("threshold_writer.zig");
 	_ = @import("i18n/mod.zig");
 }

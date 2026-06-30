@@ -356,8 +356,6 @@ fn renderDir(
 	}
 }
 
-/// Lightweight pre-scan to estimate the number of visible lines without rendering.
-/// Used to warn when piped output may be too large for LLM context windows.
 /// Resolve the effective RenderConfig from CLI flags, persisted state, and the
 /// DEFAULT_* constants. Pure precedence: cfg (CLI) > effective (state file) > default.
 /// `cfg` is anytype (it's main.CliConfig) to avoid a main<->tree_render import cycle;
@@ -399,70 +397,6 @@ pub fn resolveRenderConfig(cfg: anytype, effective: *const path_eval.EffectiveSt
 		.sort_direction = sort_direction,
 		.only_paths = cfg.only_paths.items,
 	};
-}
-
-pub fn countVisibleEntries(
-	allocator: std.mem.Allocator,
-	abs_dir: []const u8,
-	rel_dir: []const u8,
-	depth_left: u32,
-	parent_closed: bool,
-	effective: *path_eval.EffectiveState,
-	priority_dirs: ?*const std.StringHashMapUnmanaged(void),
-	priority_files: ?*const std.StringHashMapUnmanaged(void),
-	show_hidden: bool,
-) u32 {
-	if (depth_left == 0) return 0;
-
-	const scan_path = if (rel_dir.len == 0)
-		abs_dir
-	else blk: {
-		const p = std.fs.path.join(allocator, &.{ abs_dir, rel_dir }) catch return 0;
-		break :blk p;
-	};
-	defer if (rel_dir.len > 0) allocator.free(scan_path);
-
-	const entries = dir_scan.scanDir(allocator, scan_path, .alpha, .asc) catch return 0;
-	defer dir_scan.freeEntries(allocator, entries);
-
-	var count: u32 = 0;
-	for (entries) |entry| {
-		if (std.mem.eql(u8, entry.name, ".") or std.mem.eql(u8, entry.name, "..")) continue;
-
-		const child_rel = if (rel_dir.len == 0)
-			allocator.dupe(u8, entry.name) catch return count
-		else
-			std.fs.path.join(allocator, &.{ rel_dir, entry.name }) catch return count;
-		defer allocator.free(child_rel);
-
-		const eval_result = effective.evaluatePath(
-			child_rel,
-			parent_closed,
-			show_hidden,
-			entry.kind == .directory,
-			priority_dirs,
-			priority_files,
-		);
-
-		if (eval_result.is_hidden) continue;
-
-		count += 1;
-
-		if (entry.kind == .directory and !eval_result.is_closed and depth_left > 1) {
-			count += countVisibleEntries(
-				allocator,
-				abs_dir,
-				child_rel,
-				depth_left - 1,
-				eval_result.is_closed,
-				effective,
-				priority_dirs,
-				priority_files,
-				show_hidden,
-			);
-		}
-	}
-	return count;
 }
 
 /// Focus set for --only mode. Tracks which relative paths are ancestors of targets,

@@ -3643,6 +3643,28 @@ test_large_output_warning_appears() {
 		echo "Got: $stderr_plain" >&2
 		return 1
 	fi
+	# Completeness across the buffer->stream transition: all 8 entries (5 dirs + 3
+	# files) must stream through exactly once, even though the warning fired mid-way.
+	local stdout_plain="" entry_lines
+	decode_printable stdout_plain "$stdout_pb"
+	entry_lines=$(printf '%s\n' "$stdout_plain" | grep -cF '── ')
+	if [[ "$entry_lines" -ne 8 ]]; then
+		echo "expected 8 streamed entry lines (buffer+stream complete), got $entry_lines" >&2
+		echo "Got: $stdout_plain" >&2
+		return 1
+	fi
+	# f1/f3 land PAST the 5-line buffer limit, proving streaming continued after the flush.
+	if [[ "$stdout_plain" != *"f1"* || "$stdout_plain" != *"f3"* ]]; then
+		echo "expected post-threshold entries f1/f3 in streamed output" >&2
+		echo "Got: $stdout_plain" >&2
+		return 1
+	fi
+	# Approved lower-bound marker: the count is shown as "N+".
+	if [[ "$stderr_plain" != *"+"* ]]; then
+		echo "Expected lower-bound '+' marker in the warning count" >&2
+		echo "Got: $stderr_plain" >&2
+		return 1
+	fi
 }
 
 test_override_warning_suppresses_warning() {
