@@ -71,6 +71,7 @@ pub const Strings = struct {
     help_opt_max_lines: [:0]const u8,
     help_opt_override_warning: [:0]const u8,
     help_opt_only: [:0]const u8,
+    help_opt_html: [:0]const u8,
 
     // ── Warning messages (large output) ────────────────────────
     warn_large_output_prefix: [:0]const u8,

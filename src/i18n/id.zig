@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Atur ambang peringatan keluaran besar (bawaan: 500)",
     .help_opt_override_warning = "  --override-warning Tekan peringatan keluaran besar",
     .help_opt_only = "  --only PATH        Berfokus pada satu subpohon, menciutkan direktori saudara (dapat diulang)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Pesan peringatan (keluaran besar) ──────────────────────
     .warn_large_output_prefix = "Peringatan: keluaran sekitar ~",

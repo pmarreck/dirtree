@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Постави праг упозорења за велики испис (подразумевано: 500)",
     .help_opt_override_warning = "  --override-warning Потисни упозорење о великом испису",
     .help_opt_only = "  --only PATH        Фокусирај се на подстабло, скупљајући суседне директоријуме (понављиво)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Упозорења (велики испис) ───────────────────────────────
     .warn_large_output_prefix = "Упозорење: испис је ~",

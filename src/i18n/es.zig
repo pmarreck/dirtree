@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Establecer el umbral de aviso de salida grande (predeterminado: 500)",
     .help_opt_override_warning = "  --override-warning Suprimir el aviso de salida grande",
     .help_opt_only = "  --only PATH        Enfocar un subárbol, colapsando los directorios hermanos (repetible)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "Aviso: la salida es ~",
     .warn_large_output_mid = " líneas (umbral: ",
     .warn_large_output_suffix = "). Considera: --depth N o patrones --hide.",

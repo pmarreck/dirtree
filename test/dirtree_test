@@ -1120,6 +1120,7 @@ Options:
   --max-lines N      Set large output warning threshold (default: 500)
   --override-warning Suppress the large output warning
   --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)
+  --html             Output a self-contained HTML tree (alias: --format html)
   annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)
   orphaned-notes [DIR] List notes whose target paths no longer exist
   purge-orphaned-notes [DIR] Remove notes whose target paths no longer exist
@@ -3976,6 +3977,50 @@ test_notes_shown_by_default() {
 	if [[ "$out" != *"hello note"* ]]; then echo "note should show by default; got: $out" >&2; return 1; fi
 }
 
+test_html_flag_emits_document() {
+	local workspace out=""
+	workspace=$(new_tmpdir); mkdir -p "$workspace/src"; touch "$workspace/src/a.txt" "$workspace/top.txt"
+	out=$("$DIRTREE_BIN" --html "$workspace" 2>/dev/null)
+	[[ "$out" == "<!DOCTYPE html>"* ]] || { echo "missing doctype; head: ${out:0:40}" >&2; return 1; }
+	[[ "$out" == *"</html>"* ]] || { echo "missing </html>" >&2; return 1; }
+	[[ "$out" == *"top.txt"* ]] || { echo "entry missing from html" >&2; return 1; }
+	[[ "$out" == *"<details"* ]] || { echo "directory <details> missing" >&2; return 1; }
+}
+
+test_html_format_alias_matches() {
+	local workspace out=""
+	workspace=$(new_tmpdir); touch "$workspace/a.txt"
+	out=$("$DIRTREE_BIN" --format html "$workspace" 2>/dev/null)
+	[[ "$out" == "<!DOCTYPE html>"* ]] || { echo "--format html should emit HTML" >&2; return 1; }
+}
+
+test_html_escapes_entry_names() {
+	local workspace out=""
+	workspace=$(new_tmpdir); touch "$workspace/a<b>&c.txt"
+	out=$("$DIRTREE_BIN" --html "$workspace" 2>/dev/null)
+	[[ "$out" == *"a&lt;b&gt;&amp;c.txt"* ]] || { echo "name not HTML-escaped" >&2; return 1; }
+	if [[ "$out" == *"a<b>"* ]]; then echo "raw unescaped name leaked into HTML" >&2; return 1; fi
+}
+
+test_html_hidden_stays_hidden() {
+	local workspace out=""
+	workspace=$(new_tmpdir); touch "$workspace/keep.txt" "$workspace/secret.log"
+	(cd "$workspace" && "$DIRTREE_BIN" --hide 'secret*' >/dev/null 2>&1)
+	out=$("$DIRTREE_BIN" --html "$workspace" 2>/dev/null)
+	[[ "$out" == *"keep.txt"* ]] || { echo "visible entry missing" >&2; return 1; }
+	if [[ "$out" == *"secret.log"* ]]; then echo "hide-rule entry leaked into HTML view" >&2; return 1; fi
+}
+
+test_html_closed_dir_collapsible() {
+	local workspace out=""
+	workspace=$(new_tmpdir); mkdir -p "$workspace/sub"; touch "$workspace/sub/inner.txt"
+	(cd "$workspace" && "$DIRTREE_BIN" --close sub >/dev/null 2>&1)
+	out=$("$DIRTREE_BIN" --html "$workspace" 2>/dev/null)
+	# Closed dir -> collapsed <details> (not open) but child still present/expandable.
+	[[ "$out" == *"inner.txt"* ]] || { echo "closed dir should still contain its child in HTML" >&2; return 1; }
+	if [[ "$out" == *"<details open>"* ]]; then echo "closed dir must not be <details open>" >&2; return 1; fi
+}
+
 test_no_notes_flag_hides_notes() {
 	local workspace target out=""
 	workspace=$(new_tmpdir); target="$workspace/notes-off"; mkdir -p "$target"; touch "$target/f.txt"
@@ -5092,6 +5137,16 @@ run_all_tests() {
 		test_german_nur_alias_for_only
 	run_test "German --zeig aliases --show" \
 		test_german_zeig_alias_for_show
+	run_test "--html emits a self-contained document" \
+		test_html_flag_emits_document
+	run_test "--format html aliases --html" \
+		test_html_format_alias_matches
+	run_test "--html escapes entry names" \
+		test_html_escapes_entry_names
+	run_test "--html keeps hidden entries hidden" \
+		test_html_hidden_stays_hidden
+	run_test "--html renders closed dirs as collapsible" \
+		test_html_closed_dir_collapsible
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \

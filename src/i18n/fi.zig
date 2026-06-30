@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Aseta suuren tulosteen varoituskynnys (oletus: 500)",
     .help_opt_override_warning = "  --override-warning Vaienna suuren tulosteen varoitus",
     .help_opt_only = "  --only PATH        Keskity alipuuhun ja tiivistä sisarhakemistot (toistettava)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Varoitusviestit (suuri tuloste) ────────────────────────
     .warn_large_output_prefix = "Varoitus: tuloste on noin ~",

@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Setează pragul de avertizare pentru ieșire mare (implicit: 500)",
     .help_opt_override_warning = "  --override-warning Suprimă avertismentul pentru ieșire mare",
     .help_opt_only = "  --only PATH        Concentrează-te pe un subarbore, restrângând directoarele frați (repetabil)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "Avertisment: ieșirea are ~",
     .warn_large_output_mid = " linii (prag: ",
     .warn_large_output_suffix = "). Ia în calcul: --depth N sau modele --hide.",

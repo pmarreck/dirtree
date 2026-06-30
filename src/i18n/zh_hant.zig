@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      設定大量輸出警告閾值 (預設: 500)",
     .help_opt_override_warning = "  --override-warning 抑制大量輸出警告",
     .help_opt_only = "  --only PATH        聚焦某個子樹，折疊同層目錄 (可重複)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── 警告訊息 (大量輸出) ────────────────────────────────────
     .warn_large_output_prefix = "警告: 輸出約 ~",

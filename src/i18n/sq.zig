@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Cakto pragun e paralajmërimit për dalje të madhe (parazgjedhja: 500)",
     .help_opt_override_warning = "  --override-warning Shtyp paralajmërimin për dalje të madhe",
     .help_opt_only = "  --only PATH        Fokusohu te një nënpemë, duke palosur drejtoritë motra (i përsëritshëm)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Mesazhe paralajmërimi (dalje e madhe) ──────────────────
     .warn_large_output_prefix = "Paralajmërim: dalja është ~",

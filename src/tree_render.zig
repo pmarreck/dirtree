@@ -5,6 +5,7 @@ const dir_scan = @import("dir_scan.zig");
 const path_eval = @import("path_eval.zig");
 const i18n = @import("i18n/mod.zig");
 const runtime = @import("runtime.zig");
+const html_render = @import("html_render.zig");
 
 /// Configuration for the tree renderer.
 /// Tracks the current display column while forwarding bytes to an inner writer
@@ -695,6 +696,75 @@ const VisibleEntry = struct {
 	child_rel: []const u8,
 };
 
+/// Build the pure `html_render.HtmlNode` tree for the HTML adapter by walking the
+/// filesystem and reusing the SAME path-evaluation (`collectVisible` →
+/// `evaluatePath`) as the terminal renderer — so hidden/shown/SCM rules and
+/// sorting are identical across faces. Unlike the terminal path, CLOSED
+/// directories ARE recursed (their children render collapsed/expandable inside
+/// `<details>`), still bounded by `depth_left`. All node memory is allocated
+/// from `arena`; the caller frees the whole tree at once by dropping the arena.
+pub fn buildHtmlTree(
+	arena: std.mem.Allocator,
+	abs_dir: []const u8,
+	rel_dir: []const u8,
+	depth_left: u32,
+	parent_closed: bool,
+	effective: *path_eval.EffectiveState,
+	priority_dirs: ?*const std.StringHashMapUnmanaged(void),
+	priority_files: ?*const std.StringHashMapUnmanaged(void),
+	config: RenderConfig,
+) error{OutOfMemory}![]html_render.HtmlNode {
+	if (depth_left == 0) return &.{};
+
+	const scan_path = if (rel_dir.len == 0)
+		abs_dir
+	else
+		try std.fs.path.join(arena, &.{ abs_dir, rel_dir });
+
+	// scanDir may legitimately fail (permissions, races); treat as empty subtree.
+	const entries = dir_scan.scanDir(arena, scan_path, config.sort_mode, config.sort_direction) catch return &.{};
+
+	var stats = TreeStats{};
+	const visible = try collectVisible(arena, entries, rel_dir, parent_closed, effective, priority_dirs, priority_files, config, &stats);
+
+	const nodes = try arena.alloc(html_render.HtmlNode, visible.items.len);
+	for (visible.items, 0..) |vis, i| {
+		const is_dir = vis.entry.kind == .directory;
+		const is_symlink = vis.entry.kind == .symlink;
+		const kind: html_render.NodeKind = if (is_dir) .dir else if (is_symlink) .symlink else .file;
+
+		var href: ?[]const u8 = null;
+		if (config.use_hyperlinks) {
+			const abs_path = try std.fs.path.join(arena, &.{ abs_dir, vis.child_rel });
+			href = ansi.buildFileUrl(arena, abs_path) catch null;
+		}
+
+		const target: ?[]const u8 = if (is_symlink)
+			readSymlinkTarget(arena, abs_dir, vis.child_rel)
+		else
+			null;
+
+		// Recurse into ANY directory (open or closed) up to the depth limit;
+		// closed dirs render collapsed but expandable.
+		const children: []const html_render.HtmlNode = if (is_dir and depth_left > 1)
+			try buildHtmlTree(arena, abs_dir, vis.child_rel, depth_left - 1, vis.is_closed, effective, priority_dirs, priority_files, config)
+		else
+			&.{};
+
+		nodes[i] = .{
+			.name = vis.entry.name,
+			.kind = kind,
+			.is_open = is_dir and !vis.is_closed,
+			.is_exec = !is_dir and (vis.entry.mode & 0o111) != 0,
+			.note = if (config.show_notes) effective.annotations.get(vis.child_rel) else null,
+			.href = href,
+			.symlink_target = target,
+			.children = children,
+		};
+	}
+	return nodes;
+}
+
 /// Render a directory entry line.
 fn renderDirEntry(
 	allocator: std.mem.Allocator,
@@ -1133,4 +1203,48 @@ test "resolveRenderConfig: CLI > state-file > default precedence" {
 		var eff = path_eval.EffectiveState{ .allocator = A };
 		try std.testing.expectEqual(DEFAULT_NOTE_COLUMN, resolveRenderConfig(MockCfg{}, &eff).note_column);
 	}
+}
+
+test "buildHtmlTree: hide-rule entries stay hidden; closed dirs recurse (collapsed)" {
+	const allocator = std.testing.allocator;
+	var tmp = std.testing.tmpDir(.{});
+	defer tmp.cleanup();
+	const io = runtime.io();
+
+	// Tree: two siblings hidden by a hide rule, a visible file, and a CLOSED
+	// subdir with a child. Mirrors the terminal's hidden semantics (dirtree does
+	// NOT auto-hide dotfiles — hiding is driven by hide rules / state).
+	try tmp.dir.writeFile(io, .{ .sub_path = "visible.txt", .data = "x" });
+	try tmp.dir.writeFile(io, .{ .sub_path = ".hidden_file", .data = "x" });
+	try tmp.dir.createDirPath(io, ".hidden_dir");
+	try tmp.dir.createDirPath(io, "sub");
+	try tmp.dir.writeFile(io, .{ .sub_path = "sub/inner.txt", .data = "x" });
+	try tmp.dir.writeFile(io, .{ .sub_path = ".dirtree-state", .data = "ver=1.2\nclose=[\n\tsub\n]\nhide=[\n\t.hidden*\n]" });
+
+	const abs_dir = try tmp.dir.realPathFileAlloc(io, ".", allocator);
+	defer allocator.free(abs_dir);
+
+	var eff = try path_eval.buildEffectiveState(allocator, abs_dir);
+	defer eff.deinit();
+
+	var arena_state = std.heap.ArenaAllocator.init(allocator);
+	defer arena_state.deinit();
+	const arena = arena_state.allocator();
+
+	const cfg = RenderConfig{ .show_hidden = false, .use_hyperlinks = false };
+	const nodes = try buildHtmlTree(arena, abs_dir, "", 4, false, &eff, null, null, cfg);
+
+	var buf: [8192]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	for (nodes) |n| try html_render.renderNode(&fbs, n, .{ .use_hyperlinks = false });
+	const out = fbs.buffered();
+
+	// Visible entry present; NONE of the hide-rule entries leak into the HTML.
+	try std.testing.expect(std.mem.indexOf(u8, out, "visible.txt") != null);
+	try std.testing.expect(std.mem.indexOf(u8, out, ".hidden_file") == null);
+	try std.testing.expect(std.mem.indexOf(u8, out, ".hidden_dir") == null);
+	// 'sub' is CLOSED (rendered <details>, not <details open>) yet its child is
+	// still emitted — the HTML view recurses closed dirs as collapsed/expandable.
+	try std.testing.expect(std.mem.indexOf(u8, out, "<details open>") == null);
+	try std.testing.expect(std.mem.indexOf(u8, out, "inner.txt") != null);
 }

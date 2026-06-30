@@ -34,6 +34,8 @@ pub const CliArg = enum {
     max_lines,
     override_warning,
     only,
+    html,
+    format,
     annotate,
     orphaned_notes,
     purge_orphaned_notes,

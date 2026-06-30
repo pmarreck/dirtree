@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Ustaw próg ostrzeżenia o dużym wyjściu (domyślnie: 500)",
     .help_opt_override_warning = "  --override-warning Wycisz ostrzeżenie o dużym wyjściu",
     .help_opt_only = "  --only PATH        Skup się na poddrzewie, zwijając katalogi rodzeństwa (powtarzalne)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "Ostrzeżenie: wyjście to ~",
     .warn_large_output_mid = " wierszy (próg: ",
     .warn_large_output_suffix = "). Rozważ: --depth N lub wzorce --hide.",

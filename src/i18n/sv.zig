@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Ange tröskel för varning vid stor utdata (standard: 500)",
     .help_opt_override_warning = "  --override-warning Dölj varningen om stor utdata",
     .help_opt_only = "  --only PATH        Fokusera på ett underträd och fäll ihop syskonkataloger (upprepningsbar)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Varningsmeddelanden (stor utdata) ──────────────────────
     .warn_large_output_prefix = "Varning: utdata är ~",

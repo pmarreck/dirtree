@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      பெரிய வெளியீட்டு எச்சரிக்கை வரம்பை அமை (இயல்பு: 500)",
     .help_opt_override_warning = "  --override-warning பெரிய வெளியீட்டு எச்சரிக்கையை அடக்கு",
     .help_opt_only = "  --only PATH        ஒரு துணை மரத்தில் கவனம் செலுத்து, உடன் அடைவுகளை மடக்கு (மீண்டும் இடலாம்)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "எச்சரிக்கை: வெளியீடு ~",

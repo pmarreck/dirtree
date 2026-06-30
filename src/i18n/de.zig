@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Schwellenwert für die Warnung bei großer Ausgabe festlegen (Standard: 500)",
     .help_opt_override_warning = "  --override-warning Die Warnung bei großer Ausgabe unterdrücken",
     .help_opt_only = "  --only PATH        Auf einen Teilbaum fokussieren, Geschwisterverzeichnisse einklappen (wiederholbar)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "Warnung: Ausgabe umfasst ~",
     .warn_large_output_mid = " Zeilen (Schwellenwert: ",
     .warn_large_output_suffix = "). Erwäge: --depth N oder --hide-Muster.",

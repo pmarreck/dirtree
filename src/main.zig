@@ -11,6 +11,8 @@ const i18n = @import("i18n/mod.zig");
 const runtime = @import("runtime.zig");
 const update_check = @import("update_check.zig");
 const threshold_writer = @import("threshold_writer.zig");
+const html_render = @import("html_render.zig");
+const html_font = @import("html_font.zig");
 
 pub const SortMode = enum {
 	modified,
@@ -85,6 +87,9 @@ pub const CliConfig = struct {
 	// Output control
 	max_lines: ?u32 = null,
 	override_warning: bool = false,
+
+	// HTML output mode (--html / --format html). Display-only; not persisted.
+	html_output: bool = false,
 
 	// Focus mode
 	only_paths: std.ArrayListUnmanaged([]const u8) = .empty,
@@ -634,6 +639,29 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						i += 1;
 						continue;
 					},
+					.html => {
+						config.html_output = true;
+						i += 1;
+						continue;
+					},
+					.format => {
+						// --format html selects HTML; --format text/tree is the
+						// default (no-op). Any other value is an unknown option.
+						i += 1;
+						if (i >= args.len) {
+							return .{ .err = s.err_unknown_option };
+						}
+						const fmt = args[i];
+						if (std.ascii.eqlIgnoreCase(fmt, "html")) {
+							config.html_output = true;
+						} else if (std.ascii.eqlIgnoreCase(fmt, "text") or std.ascii.eqlIgnoreCase(fmt, "tree")) {
+							config.html_output = false;
+						} else {
+							return .{ .err = s.err_unknown_option };
+						}
+						i += 1;
+						continue;
+					},
 					.asc => {
 						config.sort_direction = .asc;
 						config.state_modified = true;
@@ -1063,6 +1091,7 @@ fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
 		.{ .flag = "--max-lines N", .text = s.help_opt_max_lines, .args = &[_]i18n.CliArg{.max_lines} },
 		.{ .flag = "--override-warning", .text = s.help_opt_override_warning, .args = &[_]i18n.CliArg{.override_warning} },
 		.{ .flag = "--only PATH", .text = s.help_opt_only, .args = &[_]i18n.CliArg{.only} },
+		.{ .flag = "--html", .text = s.help_opt_html, .args = &[_]i18n.CliArg{ .html, .format } },
 		.{ .flag = "annotate PATH DESC", .text = s.help_opt_annotate, .args = &[_]i18n.CliArg{.annotate}, .subcmd = true },
 		.{ .flag = "orphaned-notes [DIR]", .text = s.help_opt_orphaned_notes, .args = &[_]i18n.CliArg{.orphaned_notes}, .subcmd = true },
 		.{ .flag = "purge-orphaned-notes [DIR]", .text = s.help_opt_purge_orphaned_notes, .args = &[_]i18n.CliArg{.purge_orphaned_notes}, .subcmd = true },
@@ -1426,6 +1455,48 @@ pub fn main(init: std.process.Init) !u8 {
 					try stderr.print("Warning: could not persist state: {}\n", .{err});
 					try stderr.flush();
 				};
+			}
+
+			// HTML output: build the pure node tree (reusing the shared visibility
+			// engine) and emit a single self-contained .html document to stdout.
+			if (cfg.html_output) {
+				var html_arena_state = std.heap.ArenaAllocator.init(allocator);
+				defer html_arena_state.deinit();
+				const html_arena = html_arena_state.allocator();
+				// HTML is an inherently rich (browser) format, so icons/links are
+				// independent of the terminal's TTY/color gating — enable them unless
+				// the user explicitly opted out (--no-icons / --no-hyperlinks).
+				const html_links = !cfg.no_hyperlinks and (effective.hyperlink_preference orelse true);
+				var html_build_config = render_config;
+				html_build_config.use_hyperlinks = html_links;
+				const nodes = tree_render.buildHtmlTree(
+					html_arena,
+					abs_dir,
+					"",
+					render_config.max_depth,
+					false,
+					&effective,
+					if (priority.enabled) &priority.dirs else null,
+					if (priority.enabled) &priority.files else null,
+					html_build_config,
+				) catch |err| {
+					try stderr.print("Error building HTML tree: {}\n", .{err});
+					try stderr.flush();
+					return 1;
+				};
+				const hcfg = html_render.HtmlConfig{
+					.use_icons = render_config.use_icons,
+					.show_notes = render_config.show_notes,
+					.use_hyperlinks = html_links,
+					.font_data_uri = html_font.data_uri,
+				};
+				html_render.htmlRender(stdout, abs_dir, nodes, hcfg) catch |err| {
+					try stderr.print("Error rendering HTML: {}\n", .{err});
+					try stderr.flush();
+					return 1;
+				};
+				try stdout.flush();
+				return 0;
 			}
 
 			// Render the tree. When piped (not a TTY) with the large-output warning
@@ -2184,6 +2255,43 @@ test "parseArgs: simple mode" {
 	}
 }
 
+test "parseArgs: --html sets html_output" {
+	const args = &[_][:0]const u8{ "dirtree", "--html" };
+	var result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.config => |*cfg| {
+			defer cfg.deinit(std.testing.allocator);
+			try std.testing.expect(cfg.html_output);
+		},
+		else => return error.TestExpectedConfig,
+	}
+}
+
+test "parseArgs: --format html sets html_output; --format text does not" {
+	{
+		const args = &[_][:0]const u8{ "dirtree", "--format", "html" };
+		var result = parseArgs(std.testing.allocator, args);
+		switch (result) {
+			.config => |*cfg| {
+				defer cfg.deinit(std.testing.allocator);
+				try std.testing.expect(cfg.html_output);
+			},
+			else => return error.TestExpectedConfig,
+		}
+	}
+	{
+		const args = &[_][:0]const u8{ "dirtree", "--format", "text" };
+		var result = parseArgs(std.testing.allocator, args);
+		switch (result) {
+			.config => |*cfg| {
+				defer cfg.deinit(std.testing.allocator);
+				try std.testing.expect(!cfg.html_output);
+			},
+			else => return error.TestExpectedConfig,
+		}
+	}
+}
+
 test "parseArgs: sort flags" {
 	const args = &[_][:0]const u8{ "dirtree", "--sort", "alpha", "--asc" };
 	var result = parseArgs(std.testing.allocator, args);
@@ -2400,5 +2508,7 @@ test {
 	_ = @import("scm.zig");
 	_ = @import("tree_render.zig");
 	_ = @import("threshold_writer.zig");
+	_ = @import("html_render.zig");
+	_ = @import("html_font.zig");
 	_ = @import("i18n/mod.zig");
 }

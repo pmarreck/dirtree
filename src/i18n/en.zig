@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Set large output warning threshold (default: 500)",
     .help_opt_override_warning = "  --override-warning Suppress the large output warning",
     .help_opt_only = "  --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "Warning: output is ~",
@@ -167,6 +168,8 @@ pub const aliases = LocaleAliases{
         .{ .name = "--max-lines", .arg = .max_lines },
         .{ .name = "--override-warning", .arg = .override_warning },
         .{ .name = "--only", .arg = .only },
+        .{ .name = "--html", .arg = .html },
+        .{ .name = "--format", .arg = .format },
         .{ .name = "annotate", .arg = .annotate },
         .{ .name = "orphaned-notes", .arg = .orphaned_notes },
         .{ .name = "purge-orphaned-notes", .arg = .purge_orphaned_notes },

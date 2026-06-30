@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      ለትልቅ ውጤት ማስጠንቀቂያ ደጃፍ አስቀምጥ (ነባሪ: 500)",
     .help_opt_override_warning = "  --override-warning የትልቅ ውጤት ማስጠንቀቂያን አፍን",
     .help_opt_only = "  --only PATH        በንዑስ-ዛፍ ላይ አተኩር፣ የእኩዮች ማውጫዎችን አጥፋ (ሊደገም ይችላል)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── የማስጠንቀቂያ መልእክቶች (ትልቅ ውጤት) ───────────────────────────
     .warn_large_output_prefix = "ማስጠንቀቂያ: ውጤቱ ~",

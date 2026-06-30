@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Ορισμός ορίου προειδοποίησης για μεγάλη έξοδο (προεπιλογή: 500)",
     .help_opt_override_warning = "  --override-warning Απόκρυψη της προειδοποίησης για μεγάλη έξοδο",
     .help_opt_only = "  --only PATH        Εστίαση σε ένα υποδέντρο, σύμπτυξη των αδελφικών καταλόγων (επαναλαμβανόμενο)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "Προειδοποίηση: η έξοδος είναι ~",
     .warn_large_output_mid = " γραμμές (όριο: ",
     .warn_large_output_suffix = "). Σκεφτείτε: --depth N ή μοτίβα --hide.",

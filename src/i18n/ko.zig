@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      큰 출력 경고 임계값 설정 (기본값: 500)",
     .help_opt_override_warning = "  --override-warning 큰 출력 경고 숨기기",
     .help_opt_only = "  --only PATH        하위 트리에 집중하고 형제 디렉터리를 접기 (반복 가능)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "경고: 출력이 약 ~",
     .warn_large_output_mid = "줄 (임계값: ",
     .warn_large_output_suffix = "). 고려하세요: --depth N 또는 --hide 패턴.",

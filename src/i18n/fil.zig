@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Itakda ang threshold ng babala para sa malaking output (default: 500)",
     .help_opt_override_warning = "  --override-warning Pigilan ang babala para sa malaking output",
     .help_opt_only = "  --only PATH        Magpokus sa isang subtree, tinitiklop ang mga kapatid na directory (maaaring ulitin)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Mga mensahe ng babala (malaking output) ────────────────
     .warn_large_output_prefix = "Babala: ang output ay humigit-kumulang ~",

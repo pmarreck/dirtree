@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      بڑی آؤٹ پٹ کی تنبیہ کی حد مقرر کریں (طے شدہ: 500)",
     .help_opt_override_warning = "  --override-warning بڑی آؤٹ پٹ کی تنبیہ کو دبائیں",
     .help_opt_only = "  --only PATH        ایک ذیلی ٹری پر توجہ مرکوز کریں، ہم پلہ ڈائریکٹریاں سمیٹیں (دہرایا جا سکتا ہے)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "تنبیہ: آؤٹ پٹ تقریباً ~",

@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Задать порог предупреждения о большом выводе (по умолчанию: 500)",
     .help_opt_override_warning = "  --override-warning Подавить предупреждение о большом выводе",
     .help_opt_only = "  --only PATH        Сфокусироваться на поддереве, сворачивая соседние каталоги (повторяемо)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "Предупреждение: вывод ~",
     .warn_large_output_mid = " строк (порог: ",
     .warn_large_output_suffix = "). Рассмотрите: --depth N или шаблоны --hide.",

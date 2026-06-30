@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Stilla viðvörunarþröskuld fyrir stórt úttak (sjálfgefið: 500)",
     .help_opt_override_warning = "  --override-warning Bæla viðvörun um stórt úttak",
     .help_opt_only = "  --only PATH        Einbeita sér að undirtré, fella saman systkinamöppur (endurtekjanlegt)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Viðvörunarskilaboð (stórt úttak) ───────────────────────
     .warn_large_output_prefix = "Viðvörun: úttak er ~",

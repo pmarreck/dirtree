@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      বড় আউটপুট সতর্কতার থ্রেশহোল্ড নির্ধারণ করুন (ডিফল্ট: 500)",
     .help_opt_override_warning = "  --override-warning বড় আউটপুট সতর্কতা দমন করুন",
     .help_opt_only = "  --only PATH        একটি সাবট্রিতে মনোনিবেশ করুন, সহোদর ডিরেক্টরি ভাঁজ করে (পুনরাবৃত্তিযোগ্য)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "সতর্কতা: আউটপুট প্রায় ~",

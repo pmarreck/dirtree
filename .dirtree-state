@@ -21,6 +21,8 @@ annotate=[
 	RULES.md = Hard invariants that must never be violated without strong justification
 	src/ansi.zig = ANSI color constants, OSC8 hyperlinks, percent-encoding, stats message
 	src/dir_scan.zig = Directory listing, stat, sorting (alpha/modified, asc/desc)
+	src/html_font.zig = Embedded Nerd Font data-URI for HTML icons (@font-face src); currently null pending font embed + license verification
+	src/html_render.zig = Pure HTML output adapter: HtmlNode tree -> self-contained dark-theme HTML (<details> tree, escaping, classes, links, notes, icons); no I/O
 	src/i18n = 50 locale string tables (one .zig per locale) + registry/schema/aliases infra
 	src/i18n/cli_aliases.zig = Per-locale CLI/arg aliases (localized flag names, own-language only)
 	src/i18n/mod.zig = Locale registry: code()=@tagName, parseLocaleCode, available_codes, cli_alias_map
@@ -34,6 +36,6 @@ annotate=[
 	src/scm.zig = Git/jj SCM-changed priority paths (jj overrides Git); falls back git on jj failure
 	src/state.zig = .dirtree-state parse/serialize, inheritance chain, parseBool truthy parser
 	src/threshold_writer.zig = Streaming Writer that buffers to a line threshold then warns+flushes+streams (single-walk large-output warning)
-	src/tree_render.zig = Tree connectors/markers, recursive render, render defaults (DEFAULT_*)
+	src/tree_render.zig = Terminal tree renderer + buildHtmlTree (FS->HtmlNode builder reusing collectVisible; recurses closed dirs for HTML)
 	src/update_check.zig = Background newer-release check + cache; Windows cachePath fallbacks
 ]

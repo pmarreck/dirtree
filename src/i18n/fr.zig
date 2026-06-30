@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Définir le seuil d'avertissement de sortie volumineuse (défaut : 500)",
     .help_opt_override_warning = "  --override-warning Supprimer l'avertissement de sortie volumineuse",
     .help_opt_only = "  --only PATH        Cibler un sous-arbre, en repliant les répertoires frères (répétable)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "Avertissement : la sortie fait ~",
     .warn_large_output_mid = " lignes (seuil : ",
     .warn_large_output_suffix = "). Envisagez : --depth N ou des motifs --hide.",

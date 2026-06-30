@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      تعيين عتبة تحذير المخرجات الكبيرة (الافتراضي: 500)",
     .help_opt_override_warning = "  --override-warning إخفاء تحذير المخرجات الكبيرة",
     .help_opt_only = "  --only PATH        التركيز على شجرة فرعية مع طي الأدلة الشقيقة (قابل للتكرار)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "تحذير: المخرجات نحو ~",
     .warn_large_output_mid = " سطر (العتبة: ",
     .warn_large_output_suffix = "). فكّر في: --depth N أو أنماط --hide.",

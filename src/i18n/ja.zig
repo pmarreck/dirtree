@@ -77,6 +77,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      大きな出力の警告しきい値を設定 (デフォルト: 500)",
     .help_opt_override_warning = "  --override-warning 大きな出力の警告を抑制",
     .help_opt_only = "  --only PATH        サブツリーに集中し、兄弟ディレクトリを折りたたむ (繰り返し可)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
     .warn_large_output_prefix = "警告: 出力は約 ~",
     .warn_large_output_mid = " 行 (しきい値: ",
     .warn_large_output_suffix = ")。検討してください: --depth N、または --hide パターン。",

@@ -75,6 +75,7 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Drempel voor waarschuwing bij grote uitvoer instellen (standaard: 500)",
     .help_opt_override_warning = "  --override-warning Waarschuwing bij grote uitvoer onderdrukken",
     .help_opt_only = "  --only PATH        Focus op een subboom, broer-mappen inklappen (herhaalbaar)",
+    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
 
     // ── Waarschuwingen (grote uitvoer) ─────────────────────────
     .warn_large_output_prefix = "Waarschuwing: uitvoer is ~",
