@@ -68,3 +68,18 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 - 2026-06-29 (4.6): **state.zig enum value dispatch via std.meta.stringToEnum.** Replaced the `sort`/`sort_direction` if/else-if eql chains with `stringToEnum(SortMode/SortDirection, value)` — exhaustive (a new enum variant auto-parses) and matches the serializer (field names == serialized strings). `default` left as-is (it has lenient open/close aliases + migration flag that stringToEnum can't express). Round-trip test (3.11) covers it; suite green.
 - 2026-06-29 (4.3): **Extracted shared collectVisible() first pass.** renderDir and renderDirFocused had ~75 identical lines (entry eval + filter + child_rel dupe + hidden/shown/scm tallying). Hoisted into `collectVisible(...) !ArrayListUnmanaged(VisibleEntry)`; both call sites collapse to one call + the caller-owns cleanup defer. The 3.5 OOM-cleanup is now consolidated in collectVisible's errdefer (single source). Pure extraction — tree output byte-identical (full integration suite green). Removes the divergence risk between the two render paths' first passes.
 - 2026-06-29 (4.4): **i18n single comptime registry — last hand-lists gone.** Replaced the two 50-arm switches (`stringsFor`, `localeCliAliases`) with comptime tables derived from `all_locales`: `arr[@intFromEnum(loc)] = &@field(@This(), name).strings` (name = `tr_locale` for `.tr`, else `@tagName`). Removes the final 2 of the original 6 hand-maintained 50-entry lists; adding a locale now needs only its enum entry + `all_locales` + import. Validated by the 1734-assertion alias-resolution test + distinctness + round-trip (all green).
+
+---
+
+## Phase 5 — HTML output (new feature, approved 2026-06-30; build AFTER Phase 4)
+
+Decisions (Peter, 2026-06-30):
+- **Interactivity:** native `<details>`/`<summary>` only — **no JS**. `<details open>` ↔ opened dirs, `<details>` ↔ closed dirs (maps to existing open/closed state).
+- **Icons:** **Nerd Font via `@font-face`** (match the terminal exactly). Single-file ⇒ embed the font as a base64 data-URI; verify the chosen Nerd Font's license permits embedding (OFL/MIT). Note size cost.
+- **Packaging:** **single self-contained `.html`** (inline CSS + embedded font) to stdout/`-o`. Flag: `--html` (alias `--format html`). Honors `-`/`@stdout`.
+- **Architecture:** new `src/html_render.zig` adapter, **pure function** (state + scanned entries → HTML string, no I/O), reusing `collectVisible`/`path_eval`/`state`/`ansi` color logic. Hexagonal — parallel to `tree_render.zig`.
+- **v1 scope:** colorful nested `<details>` tree, Nerd Font glyphs, ANSI→CSS color mapping, annotations as a dim inline column, `file://` links on names (reuse `ansi.buildFileUrl`). Test: pure-function output assertions + **show Peter rendered HTML in a browser before locking assertions** (visual-output discipline).
+- **Defer:** search/expand-all (would need JS), dark/light toggle, theming.
+
+## Phase 4 — remaining
+- [ ] 4.1 parseArgs table-drive · [ ] 4.2 main() extraction + resolveRenderConfig · [ ] 4.5 collapse render walks (build fresh row-buffer; --tail scaffolding is gone)
