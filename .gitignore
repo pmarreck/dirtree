@@ -11,3 +11,6 @@ ZIG_RECENT_API_CHANGES_2025.md
 result
 AGENTS*.md
 CLAUDE*.md
+
+# session handoff docs (skill: handoff)
+HANDOFF*
