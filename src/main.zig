@@ -290,6 +290,10 @@ fn expandShortFlagClusters(allocator: std.mem.Allocator, argv: []const [:0]const
 
 pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) ParseResult {
 	var config = CliConfig{};
+	var config_owned = true;
+	// Single cleanup point: config is freed on every return except the one
+	// success path that transfers ownership into ParseResult.config below.
+	defer if (config_owned) config.deinit(allocator);
 
 	// First pass: set locale from --lang or environment
 	applyLangArg(raw_args);
@@ -315,7 +319,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			if (std.mem.eql(u8, args[li], "--lang") or i18n.isFlag(args[li], .lang)) {
 				const bad: []const u8 = if (li + 1 < args.len) args[li + 1] else "";
 				if (li + 1 >= args.len or i18n.parseLocaleCode(bad) == null) {
-					config.deinit(allocator);
 					var err_buf: [256]u8 = undefined;
 					const msg = i18n.fmtRuntime(&err_buf, s.err_unknown_lang, &.{ bad, i18n.available_codes });
 					@memcpy(lang_err_buf[0..msg.len], msg);
@@ -333,20 +336,16 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		if (i18n.matchLongFlag(args[0])) |maybe_arg| {
 			if (maybe_arg == .annotate) {
 				if (args.len < 2) {
-					config.deinit(allocator);
 					return .{ .err = s.err_annotate_requires_path };
 				}
 				if (args.len < 3) {
-					config.deinit(allocator);
 					return .{ .err = s.err_annotate_requires_description };
 				}
 				if (args.len > 3) {
-					config.deinit(allocator);
 					return .{ .err = s.err_annotate_too_many_args };
 				}
 				const desc = args[2];
 				if (std.mem.indexOfScalar(u8, desc, '\n') != null) {
-					config.deinit(allocator);
 					return .{ .err = s.err_annotate_multiline };
 				}
 				// Normalize path: strip leading ./ and /, strip trailing /
@@ -355,7 +354,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 				while (p.len > 0 and p[0] == '/') p = p[1..];
 				while (p.len > 0 and p[p.len - 1] == '/') p = p[0 .. p.len - 1];
 				if (p.len == 0) p = ".";
-				config.deinit(allocator);
 				return .{ .annotate = .{ .path = p, .description = desc } };
 			}
 		}
@@ -369,7 +367,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 				.orphaned_notes, .purge_orphaned_notes => {
 					const dir: []const u8 = if (args.len >= 2) args[1] else ".";
 					const oa = OrphanArgs{ .dir = dir };
-					config.deinit(allocator);
 					return if (maybe_arg == .orphaned_notes)
 						ParseResult{ .orphaned_notes = oa }
 					else
@@ -388,11 +385,9 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 
 		// Short flags (fixed, not localized)
 		if (std.mem.eql(u8, arg, "-h")) {
-			config.deinit(allocator);
 			return .help;
 		}
 		if (std.mem.eql(u8, arg, "-a")) {
-			config.deinit(allocator);
 			return .about;
 		}
 		if (std.mem.eql(u8, arg, "-t")) {
@@ -422,33 +417,26 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						// annotate is a positional subcommand, not a flag.
 						// It is dispatched before this loop runs. If it appears
 						// here (e.g., as --annotate), treat as unknown option.
-						config.deinit(allocator);
 						return .{ .err = s.err_unknown_option };
 					},
 					.orphaned_notes, .purge_orphaned_notes => {
 						// Positional subcommands, dispatched before this loop; if they
 						// appear here as a flag, treat as an unknown option.
-						config.deinit(allocator);
 						return .{ .err = s.err_unknown_option };
 					},
 					.help => {
-						config.deinit(allocator);
 						return .help;
 					},
 					.about => {
-						config.deinit(allocator);
 						return .about;
 					},
 					.@"test" => {
-						config.deinit(allocator);
 						return .test_mode;
 					},
 					.version => {
-						config.deinit(allocator);
 						return .version;
 					},
 					.version_check => {
-						config.deinit(allocator);
 						return .version_check;
 					},
 					.lang => {
@@ -457,7 +445,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						if (i < args.len) {
 							// Validate the lang code in second pass for error reporting
 							if (i18n.parseLocaleCode(args[i]) == null) {
-								config.deinit(allocator);
 								var err_buf: [256]u8 = undefined;
 								const msg = i18n.fmtRuntime(&err_buf, s.err_unknown_lang, &.{ args[i], i18n.available_codes });
 								// Copy to static buffer since err_buf is stack-local
@@ -474,7 +461,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						// 'annotate', or even '--path' itself).
 						i += 1;
 						if (i >= args.len) {
-							config.deinit(allocator);
 							return .{ .err = s.err_path_requires_arg };
 						}
 						config.dir = args[i];
@@ -485,12 +471,10 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.depth => {
 						i += 1;
 						if (i >= args.len) {
-							config.deinit(allocator);
 							return .{ .err = s.err_depth_requires_number };
 						}
 						const depth_str = args[i];
 						const depth = std.fmt.parseInt(u32, depth_str, 10) catch {
-							config.deinit(allocator);
 							return .{ .err = s.err_depth_requires_number };
 						};
 						config.depth = depth;
@@ -544,7 +528,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.notes => {
 						i += 1;
 						if (i >= args.len) {
-							config.deinit(allocator);
 							return .{ .err = s.err_notes_requires_mode };
 						}
 						const mode = args[i];
@@ -553,7 +536,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						} else if (std.mem.eql(u8, mode, "aligned")) {
 							config.notes_inline = false;
 						} else {
-							config.deinit(allocator);
 							return .{ .err = s.err_notes_requires_mode };
 						}
 						i += 1;
@@ -599,12 +581,10 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.max_lines => {
 						i += 1;
 						if (i >= args.len) {
-							config.deinit(allocator);
 							return .{ .err = s.err_max_lines_requires_number };
 						}
 						const ml_str = args[i];
 						const ml = std.fmt.parseInt(u32, ml_str, 10) catch {
-							config.deinit(allocator);
 							return .{ .err = s.err_max_lines_requires_number };
 						};
 						config.max_lines = ml;
@@ -620,7 +600,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.only => {
 						i += 1;
 						if (i >= args.len) {
-							config.deinit(allocator);
 							return .{ .err = s.err_only_requires_path };
 						}
 						var only_path: []const u8 = args[i];
@@ -634,7 +613,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						}
 						if (only_path.len > 0) {
 							config.only_paths.append(allocator, only_path) catch {
-								config.deinit(allocator);
 								return .{ .err = s.err_only_requires_path };
 							};
 						}
@@ -656,7 +634,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.sort => {
 						i += 1;
 						if (i >= args.len) {
-							config.deinit(allocator);
 							return .{ .err = s.err_sort_requires_mode };
 						}
 						const mode_str = args[i];
@@ -665,7 +642,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						} else if (std.mem.eql(u8, mode_str, "alpha")) {
 							config.sort_mode = .alpha;
 						} else {
-							config.deinit(allocator);
 							return .{ .err = s.err_sort_requires_mode };
 						}
 						config.state_modified = true;
@@ -678,7 +654,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						switch (result) {
 							.ok => |count| {
 								if (count == 0) {
-									config.deinit(allocator);
 									return .{ .err = s.err_default_requires_value };
 								}
 								i += count;
@@ -686,7 +661,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								continue;
 							},
 							.err => |msg| {
-								config.deinit(allocator);
 								return .{ .err = msg };
 							},
 						}
@@ -697,7 +671,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						switch (result) {
 							.ok => |count| {
 								if (count == 0) {
-									config.deinit(allocator);
 									return .{ .err = s.err_open_requires_dir };
 								}
 								i += count;
@@ -705,7 +678,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								continue;
 							},
 							.err => |msg| {
-								config.deinit(allocator);
 								return .{ .err = msg };
 							},
 						}
@@ -716,7 +688,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						switch (result) {
 							.ok => |count| {
 								if (count == 0) {
-									config.deinit(allocator);
 									return .{ .err = s.err_close_requires_dir };
 								}
 								i += count;
@@ -724,7 +695,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								continue;
 							},
 							.err => |msg| {
-								config.deinit(allocator);
 								return .{ .err = msg };
 							},
 						}
@@ -735,7 +705,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						switch (result) {
 							.ok => |count| {
 								if (count == 0) {
-									config.deinit(allocator);
 									return .{ .err = s.err_show_requires_path };
 								}
 								i += count;
@@ -743,7 +712,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								continue;
 							},
 							.err => |msg| {
-								config.deinit(allocator);
 								return .{ .err = msg };
 							},
 						}
@@ -754,7 +722,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						switch (result) {
 							.ok => |count| {
 								if (count == 0) {
-									config.deinit(allocator);
 									return .{ .err = s.err_hide_requires_path };
 								}
 								i += count;
@@ -762,7 +729,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								continue;
 							},
 							.err => |msg| {
-								config.deinit(allocator);
 								return .{ .err = msg };
 							},
 						}
@@ -775,7 +741,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		if (std.mem.eql(u8, arg, "-p")) {
 			i += 1;
 			if (i >= args.len) {
-				config.deinit(allocator);
 				return .{ .err = s.err_path_requires_arg };
 			}
 			config.dir = args[i];
@@ -786,12 +751,10 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		if (std.mem.eql(u8, arg, "-d")) {
 			i += 1;
 			if (i >= args.len) {
-				config.deinit(allocator);
 				return .{ .err = s.err_depth_requires_number };
 			}
 			const depth_str = args[i];
 			const depth = std.fmt.parseInt(u32, depth_str, 10) catch {
-				config.deinit(allocator);
 				return .{ .err = s.err_depth_requires_number };
 			};
 			config.depth = depth;
@@ -806,7 +769,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			switch (result) {
 				.ok => |count| {
 					if (count == 0) {
-						config.deinit(allocator);
 						return .{ .err = s.err_open_requires_dir };
 					}
 					i += count;
@@ -814,7 +776,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					continue;
 				},
 				.err => |msg| {
-					config.deinit(allocator);
 					return .{ .err = msg };
 				},
 			}
@@ -826,7 +787,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			switch (result) {
 				.ok => |count| {
 					if (count == 0) {
-						config.deinit(allocator);
 						return .{ .err = s.err_close_requires_dir };
 					}
 					i += count;
@@ -834,7 +794,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					continue;
 				},
 				.err => |msg| {
-					config.deinit(allocator);
 					return .{ .err = msg };
 				},
 			}
@@ -842,7 +801,6 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 
 		// Unknown flag
 		if (arg.len > 0 and arg[0] == '-') {
-			config.deinit(allocator);
 			return .{ .err = s.err_unknown_option };
 		}
 
@@ -853,6 +811,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		break;
 	}
 
+	config_owned = false;
 	return .{ .config = config };
 }
 

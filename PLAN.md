@@ -79,7 +79,11 @@ Decisions (Peter, 2026-06-30):
 - **Packaging:** **single self-contained `.html`** (inline CSS + embedded font) to stdout/`-o`. Flag: `--html` (alias `--format html`). Honors `-`/`@stdout`.
 - **Architecture:** new `src/html_render.zig` adapter, **pure function** (state + scanned entries → HTML string, no I/O), reusing `collectVisible`/`path_eval`/`state`/`ansi` color logic. Hexagonal — parallel to `tree_render.zig`.
 - **v1 scope:** colorful nested `<details>` tree, Nerd Font glyphs, ANSI→CSS color mapping, annotations as a dim inline column, `file://` links on names (reuse `ansi.buildFileUrl`). Test: pure-function output assertions + **show Peter rendered HTML in a browser before locking assertions** (visual-output discipline).
-- **Defer:** search/expand-all (would need JS), dark/light toggle, theming.
+- **Styling (Peter, 2026-06-30):** output must be styleable. v1 ships a default **dark** theme,
+  but the **CSS class names are overridable** (stable, documented class hooks like `.dt-dir`/
+  `.dt-file`/`.dt-note`/`.dt-link`; allow overriding via a `--html-class-prefix` or an injectable
+  stylesheet hook) so users can restyle without patching the generator.
+- **Defer:** search/expand-all (would need JS); light theme + theme toggle (dark is the v1 default).
 
 ## Phase 4 — remaining
 - [ ] 4.1 parseArgs table-drive · [ ] 4.2 main() extraction + resolveRenderConfig · [ ] 4.5 collapse render walks (build fresh row-buffer; --tail scaffolding is gone)
