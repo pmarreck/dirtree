@@ -1,6 +1,7 @@
 # Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree
 ver=1.2
 depth=2
+hyperlink=false
 
 close=[
 	.git
@@ -19,6 +20,7 @@ annotate=[
 	PLAN.md = Audit remediation checklist + Done log
 	PROJECT_OVERVIEW.md = Project goals, architecture map, terminology
 	RULES.md = Hard invariants that must never be violated without strong justification
+	docs/example.html = Committed styled HTML example (src/ tree; regenerate: dirtree --html docs/example.html --no-hyperlinks src)
 	scripts/gen_html_font_subset.sh = Regenerate the HTML icon-font subset from icons.zig codepoints (hb-subset+woff2 via nix); writes src/assets/*.woff2
 	src/ansi.zig = ANSI color constants, OSC8 hyperlinks, percent-encoding, stats message
 	src/assets/NOTICE-nerd-font.md = MIT license/attribution for the embedded Nerd Font subset

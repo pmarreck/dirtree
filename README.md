@@ -81,8 +81,51 @@ Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prer
   - Number of hidden directories/files logged to stderr so you know what's filtered out.
   - Conflicting rules (e.g., same regex in open/close) surface as errors.
   - Unknown lines in the state file are preserved on rewrite.
+- **HTML output** (`--html`)
+  - Render the tree as a single self-contained `.html` file: a dark-themed, collapsible `<details>` tree (no JS) with embedded Nerd Font icons, `file://` links, and inline notes. Bare `--html` opens it in your browser when interactive and streams to stdout when piped. See [HTML output](#html-output).
 - **Cross-platform**
   - Native Zig binary with zero runtime dependencies. Cross-compiles to macOS, Linux, and Windows from any host.
+
+## HTML output
+
+`dirtree --html` renders the same stateful tree as a **single, self-contained `.html` file** — a dark-themed, collapsible tree built on native `<details>`/`<summary>` (no JavaScript), with embedded Nerd Font icons (an MIT-licensed subset, so no external font is required), `file://` links on names, and inline notes. Opened directories render expanded; closed ones render collapsed-but-expandable.
+
+| Command | Output |
+| --- | --- |
+| `dirtree --html` (in a terminal) | writes a temp file and opens it in your browser (`$BROWSER`, else `open`/`xdg-open`) |
+| `dirtree --html` (piped/redirected) | streams the HTML to stdout, e.g. `dirtree --html > tree.html` |
+| `dirtree --html -` | HTML to stdout (explicit) |
+| `dirtree --html tree.html` | writes to `tree.html` (the target directory stays the trailing positional) |
+| `dirtree --format html …` | alias for `--html`, accepting the same optional target |
+
+Add `--no-icons` (drop the Nerd Font glyphs) and/or `--no-hyperlinks` (drop the `file://` links) for portable output you can embed elsewhere.
+
+### Interactive preview
+
+Because the output is native `<details>`/`<summary>`, it renders **right here on GitHub**. The tree below is real `dirtree --html --no-icons --no-hyperlinks --no-notes` output of this repo's `src/` folder — click a folder to fold/unfold it:
+
+<details open>
+<summary>📂 <code>dirtree/src</code> — a live, foldable tree (GitHub renders it natively; click any folder)</summary>
+<div class="dt-file">main.zig</div>
+<details><summary class="dt-dir">i18n</summary><div class="dt-file">yo.zig</div><div class="dt-file">bs.zig</div><div class="dt-file">bn.zig</div><div class="dt-file">bg.zig</div><div class="dt-file">es.zig</div><div class="dt-file">el.zig</div><div class="dt-file">en.zig</div><div class="dt-file">ja.zig</div><div class="dt-file">fil.zig</div><div class="dt-file">th.zig</div><div class="dt-file">ta.zig</div><div class="dt-file">tr.zig</div><div class="dt-file">ro.zig</div><div class="dt-file">ru.zig</div><div class="dt-file">zh_hans.zig</div><div class="dt-file">zh_hant.zig</div><div class="dt-file">hi.zig</div><div class="dt-file">ha.zig</div><div class="dt-file">he.zig</div><div class="dt-file">hr.zig</div><div class="dt-file">hu.zig</div><div class="dt-file">mk.zig</div><div class="dt-file">ko.zig</div><div class="dt-file">km.zig</div><div class="dt-file">pa.zig</div><div class="dt-file">pl.zig</div><div class="dt-file">ps.zig</div><div class="dt-file">uk.zig</div><div class="dt-file">ur.zig</div><div class="dt-file">sr.zig</div><div class="dt-file">sq.zig</div><div class="dt-file">sw.zig</div><div class="dt-file">sv.zig</div><div class="dt-file">pt_br.zig</div><div class="dt-file">sl.zig</div><div class="dt-file">am.zig</div><div class="dt-file">ar.zig</div><div class="dt-file">az.zig</div><div class="dt-file">fa.zig</div><div class="dt-file">fi.zig</div><div class="dt-file">fr.zig</div><div class="dt-file">de.zig</div><div class="dt-file">da.zig</div><div class="dt-file">it.zig</div><div class="dt-file">is.zig</div><div class="dt-file">id.zig</div><div class="dt-file">ig.zig</div><div class="dt-file">nl.zig</div><div class="dt-file">nb.zig</div><div class="dt-file">vi.zig</div><div class="dt-file">strings.zig</div><div class="dt-file">cli_aliases.zig</div><div class="dt-file">mod.zig</div></details>
+<details><summary class="dt-dir">assets</summary><div class="dt-file">NOTICE-nerd-font.md</div><div class="dt-file">symbols-nerd-font-subset.woff2</div></details>
+<div class="dt-file">html_font.zig</div>
+<div class="dt-file">html_render.zig</div>
+<div class="dt-file">tree_render.zig</div>
+<div class="dt-file">threshold_writer.zig</div>
+<div class="dt-file">state.zig</div>
+<div class="dt-file">ansi.zig</div>
+<div class="dt-file">dir_scan.zig</div>
+<div class="dt-file">update_check.zig</div>
+<div class="dt-file">scm.zig</div>
+<div class="dt-file">regex.zig</div>
+<div class="dt-file">pcre2.zig</div>
+<div class="dt-file">path_eval.zig</div>
+<div class="dt-file">icons.zig</div>
+<div class="dt-file">runtime.zig</div>
+</details>
+
+> The preview above is intentionally plain — GitHub strips CSS, fonts, and `class` attributes from README HTML, so only the collapsible structure survives. For the full experience (dark theme, Nerd Font icons, colors, and inline notes) [**download `docs/example.html`**](docs/example.html) and open it in a browser, view it [**rendered live via htmlpreview**](https://htmlpreview.github.io/?https://github.com/pmarreck/dirtree/blob/yolo/docs/example.html), or just run `dirtree --html`.
 
 ## Dependencies
 
