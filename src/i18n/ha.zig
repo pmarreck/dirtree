@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Saita iyakar gargadin fitarwa mai yawa (tsoho: 500)",
     .help_opt_override_warning = "  --override-warning Danne gargadin fitarwa mai yawa",
     .help_opt_only = "  --only PATH        Mai da hankali kan reshe, nade manyan-fayil na 'yan'uwa (maimaitawa)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Rubuta itacen HTML mai zaman kansa zuwa FILE (- = stdout; bar = buɗe a mai bincike)",
+
 
     // ── Sakonnin gargadi (fitarwa mai yawa) ────────────────────
     .warn_large_output_prefix = "Gargadi: fitarwa kusan ~",

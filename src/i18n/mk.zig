@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Постави праг за предупредување при голем излез (стандардно: 500)",
     .help_opt_override_warning = "  --override-warning Потисни го предупредувањето за голем излез",
     .help_opt_only = "  --only PATH        Фокусирај се на поддрво, собирајќи ги соседните директориуми (повторливо)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Запиши самостојно HTML стебло во FILE (- = stdout; изостави = отвори во прелистувач)",
+
 
     // ── Предупредувања (голем излез) ───────────────────────────
     .warn_large_output_prefix = "Предупредување: излезот е ~",

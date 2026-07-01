@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Встановити поріг попередження про великий вивід (за замовчуванням: 500)",
     .help_opt_override_warning = "  --override-warning Придушити попередження про великий вивід",
     .help_opt_only = "  --only PATH        Зосередитися на піддереві, згортаючи сусідні каталоги (повторюване)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Записати автономне HTML-дерево у FILE (- = stdout; без нього = відкрити у браузері)",
+
     .warn_large_output_prefix = "Попередження: вивід ~",
     .warn_large_output_mid = " рядків (поріг: ",
     .warn_large_output_suffix = "). Розгляньте: --depth N або шаблони --hide.",

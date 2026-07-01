@@ -1120,7 +1120,7 @@ Options:
   --max-lines N      Set large output warning threshold (default: 500)
   --override-warning Suppress the large output warning
   --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)
-  --html             Output a self-contained HTML tree (alias: --format html)
+  --html [FILE]      Write a self-contained HTML tree to FILE (- = stdout; omit = open in browser)
   annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)
   orphaned-notes [DIR] List notes whose target paths no longer exist
   purge-orphaned-notes [DIR] Remove notes whose target paths no longer exist
@@ -3980,7 +3980,7 @@ test_notes_shown_by_default() {
 test_html_flag_emits_document() {
 	local workspace out=""
 	workspace=$(new_tmpdir); mkdir -p "$workspace/src"; touch "$workspace/src/a.txt" "$workspace/top.txt"
-	out=$("$DIRTREE_BIN" --html "$workspace" 2>/dev/null)
+	out=$("$DIRTREE_BIN" --html - "$workspace" 2>/dev/null)
 	[[ "$out" == "<!DOCTYPE html>"* ]] || { echo "missing doctype; head: ${out:0:40}" >&2; return 1; }
 	[[ "$out" == *"</html>"* ]] || { echo "missing </html>" >&2; return 1; }
 	[[ "$out" == *"top.txt"* ]] || { echo "entry missing from html" >&2; return 1; }
@@ -3990,14 +3990,14 @@ test_html_flag_emits_document() {
 test_html_format_alias_matches() {
 	local workspace out=""
 	workspace=$(new_tmpdir); touch "$workspace/a.txt"
-	out=$("$DIRTREE_BIN" --format html "$workspace" 2>/dev/null)
+	out=$("$DIRTREE_BIN" --format html - "$workspace" 2>/dev/null)
 	[[ "$out" == "<!DOCTYPE html>"* ]] || { echo "--format html should emit HTML" >&2; return 1; }
 }
 
 test_html_escapes_entry_names() {
 	local workspace out=""
 	workspace=$(new_tmpdir); touch "$workspace/a<b>&c.txt"
-	out=$("$DIRTREE_BIN" --html "$workspace" 2>/dev/null)
+	out=$("$DIRTREE_BIN" --html - "$workspace" 2>/dev/null)
 	[[ "$out" == *"a&lt;b&gt;&amp;c.txt"* ]] || { echo "name not HTML-escaped" >&2; return 1; }
 	if [[ "$out" == *"a<b>"* ]]; then echo "raw unescaped name leaked into HTML" >&2; return 1; fi
 }
@@ -4006,7 +4006,7 @@ test_html_hidden_stays_hidden() {
 	local workspace out=""
 	workspace=$(new_tmpdir); touch "$workspace/keep.txt" "$workspace/secret.log"
 	(cd "$workspace" && "$DIRTREE_BIN" --hide 'secret*' >/dev/null 2>&1)
-	out=$("$DIRTREE_BIN" --html "$workspace" 2>/dev/null)
+	out=$("$DIRTREE_BIN" --html - "$workspace" 2>/dev/null)
 	[[ "$out" == *"keep.txt"* ]] || { echo "visible entry missing" >&2; return 1; }
 	if [[ "$out" == *"secret.log"* ]]; then echo "hide-rule entry leaked into HTML view" >&2; return 1; fi
 }
@@ -4015,10 +4015,35 @@ test_html_closed_dir_collapsible() {
 	local workspace out=""
 	workspace=$(new_tmpdir); mkdir -p "$workspace/sub"; touch "$workspace/sub/inner.txt"
 	(cd "$workspace" && "$DIRTREE_BIN" --close sub >/dev/null 2>&1)
-	out=$("$DIRTREE_BIN" --html "$workspace" 2>/dev/null)
+	out=$("$DIRTREE_BIN" --html - "$workspace" 2>/dev/null)
 	# Closed dir -> collapsed <details> (not open) but child still present/expandable.
 	[[ "$out" == *"inner.txt"* ]] || { echo "closed dir should still contain its child in HTML" >&2; return 1; }
 	if [[ "$out" == *"<details open>"* ]]; then echo "closed dir must not be <details open>" >&2; return 1; fi
+}
+
+test_html_output_to_file() {
+	local workspace out_file="" body=""
+	workspace=$(new_tmpdir); touch "$workspace/a.txt"
+	out_file="$workspace/tree.html"
+	# --html FILE writes to FILE; the target dir is the trailing positional.
+	"$DIRTREE_BIN" --html "$out_file" "$workspace" >/dev/null 2>&1
+	[[ -f "$out_file" ]] || { echo "--html FILE should create FILE" >&2; return 1; }
+	body=$(cat "$out_file")
+	[[ "$body" == "<!DOCTYPE html>"* ]] || { echo "file should contain an HTML doc" >&2; return 1; }
+	[[ "$body" == *"a.txt"* ]] || { echo "file should contain the entry" >&2; return 1; }
+}
+
+test_html_bare_opens_browser() {
+	local workspace stderr_out="" opened_path=""
+	workspace=$(new_tmpdir); touch "$workspace/a.txt"
+	# Bare --html (no target token) => temp file + open in $BROWSER. Use a no-op
+	# BROWSER (true) so nothing launches; assert the temp file was written.
+	stderr_out=$(cd "$workspace" && BROWSER=true "$DIRTREE_BIN" --html 2>&1 >/dev/null)
+	[[ "$stderr_out" == *"Opened HTML in browser:"* ]] || { echo "bare --html should open a browser; got: $stderr_out" >&2; return 1; }
+	opened_path="${stderr_out##*Opened HTML in browser: }"
+	opened_path="${opened_path%%$'\n'*}"
+	[[ -f "$opened_path" ]] || { echo "temp HTML file '$opened_path' should exist" >&2; return 1; }
+	[[ "$(head -c 15 "$opened_path")" == "<!DOCTYPE html>" ]] || { echo "temp file should be an HTML doc" >&2; return 1; }
 }
 
 test_no_notes_flag_hides_notes() {
@@ -5147,6 +5172,10 @@ run_all_tests() {
 		test_html_hidden_stays_hidden
 	run_test "--html renders closed dirs as collapsible" \
 		test_html_closed_dir_collapsible
+	run_test "--html FILE writes to a file" \
+		test_html_output_to_file
+	run_test "bare --html writes a temp file and opens the browser" \
+		test_html_bare_opens_browser
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \

@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      ตั้งค่าเกณฑ์คำเตือนเอาต์พุตขนาดใหญ่ (ค่าเริ่มต้น: 500)",
     .help_opt_override_warning = "  --override-warning ระงับคำเตือนเอาต์พุตขนาดใหญ่",
     .help_opt_only = "  --only PATH        โฟกัสที่ซับทรี โดยยุบไดเรกทอรีพี่น้อง (ใช้ซ้ำได้)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      เขียนต้นไม้ HTML แบบครบในตัวไปยัง FILE (- = stdout; ละไว้ = เปิดในเบราว์เซอร์)",
+
 
     // ── ข้อความเตือน (เอาต์พุตขนาดใหญ่) ──────────────────────────
     .warn_large_output_prefix = "คำเตือน: เอาต์พุตประมาณ ~",

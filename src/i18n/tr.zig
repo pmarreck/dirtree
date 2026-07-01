@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Büyük çıktı uyarısı eşiğini ayarla (varsayılan: 500)",
     .help_opt_override_warning = "  --override-warning Büyük çıktı uyarısını gizle",
     .help_opt_only = "  --only PATH        Bir alt ağaca odaklan, kardeş dizinleri daralt (tekrarlanabilir)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Bağımsız bir HTML ağacını FILE dosyasına yaz (- = stdout; belirtme = tarayıcıda aç)",
+
     .warn_large_output_prefix = "Uyarı: çıktı yaklaşık ~",
     .warn_large_output_mid = " satır (eşik: ",
     .warn_large_output_suffix = "). Şunları düşünün: --depth N veya --hide desenleri.",

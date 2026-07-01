@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      הגדרת סף האזהרה לפלט גדול (ברירת מחדל: 500)",
     .help_opt_override_warning = "  --override-warning הסתרת האזהרה לפלט גדול",
     .help_opt_only = "  --only PATH        התמקדות בתת-עץ, צמצום ספריות אחאי (ניתן לחזרה)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      כתוב עץ HTML עצמאי אל FILE (- = stdout; השמטה = פתח בדפדפן)",
+
     .warn_large_output_prefix = "אזהרה: הפלט הוא כ-~",
     .warn_large_output_mid = " שורות (סף: ",
     .warn_large_output_suffix = "). שקול: --depth N או תבניות --hide.",

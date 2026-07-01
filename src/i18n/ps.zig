@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      د لوی وتلون خبرتیا حد وټاکه (تلواله: 500)",
     .help_opt_override_warning = "  --override-warning د لوی وتلون خبرتیا بنده کړه",
     .help_opt_only = "  --only PATH        په یوه فرعي ونه تمرکز وکړه، خویندوسره لارښودونه راجمع کړه (تکراریدونکی)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      خپلواک HTML ونه FILE ته ولیکئ (- = stdout؛ پرېښودل = په براوزر کې پرانیستل)",
+
 
     // ── د خبرتیا پیغامونه (لوی وتلون) ──────────────────────────
     .warn_large_output_prefix = "خبرتیا: وتلون نږدې ~",

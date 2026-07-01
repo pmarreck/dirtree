@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Set large output warning threshold (default: 500)",
     .help_opt_override_warning = "  --override-warning Suppress the large output warning",
     .help_opt_only = "  --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Write a self-contained HTML tree to FILE (- = stdout; omit = open in browser)",
+
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "Warning: output is ~",

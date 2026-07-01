@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      កំណត់កម្រិតការព្រមានសម្រាប់លទ្ធផលធំ (លំនាំដើម៖ 500)",
     .help_opt_override_warning = "  --override-warning បិទការព្រមានសម្រាប់លទ្ធផលធំ",
     .help_opt_only = "  --only PATH        ផ្តោតលើដើមរង បត់ថតបងប្អូន (អាចធ្វើម្តងទៀត)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      សរសេរមែកធាង HTML ឯករាជ្យទៅ FILE (- = stdout; លុប = បើកក្នុងកម្មវិធីរុករក)",
+
     .warn_large_output_prefix = "ការព្រមាន៖ លទ្ធផលប្រហែល ~",
     .warn_large_output_mid = " បន្ទាត់ (កម្រិត៖ ",
     .warn_large_output_suffix = ")។ ពិចារណា៖ --depth N ឬលំនាំ --hide។",

@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Đặt ngưỡng cảnh báo đầu ra lớn (mặc định: 500)",
     .help_opt_override_warning = "  --override-warning Ẩn cảnh báo đầu ra lớn",
     .help_opt_only = "  --only PATH        Tập trung vào một cây con, thu gọn các thư mục cùng cấp (lặp lại được)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Ghi cây HTML độc lập vào FILE (- = stdout; bỏ trống = mở trong trình duyệt)",
+
     .warn_large_output_prefix = "Cảnh báo: đầu ra khoảng ~",
     .warn_large_output_mid = " dòng (ngưỡng: ",
     .warn_large_output_suffix = "). Cân nhắc: --depth N hoặc mẫu --hide.",

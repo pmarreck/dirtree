@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      ਵੱਡੀ ਆਉਟਪੁੱਟ ਚੇਤਾਵਨੀ ਥ੍ਰੈਸ਼ਹੋਲਡ ਸੈੱਟ ਕਰੋ (ਮੂਲ: 500)",
     .help_opt_override_warning = "  --override-warning ਵੱਡੀ ਆਉਟਪੁੱਟ ਚੇਤਾਵਨੀ ਨੂੰ ਦਬਾਓ",
     .help_opt_only = "  --only PATH        ਇੱਕ ਉਪ-ਰੁੱਖ 'ਤੇ ਧਿਆਨ ਕੇਂਦਰਿਤ ਕਰੋ, ਭੈਣ-ਭਰਾ ਡਾਇਰੈਕਟਰੀਆਂ ਨੂੰ ਸਮੇਟੋ (ਦੁਹਰਾਉਣਯੋਗ)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      ਸਵੈ-ਨਿਰਭਰ HTML ਟ੍ਰੀ ਨੂੰ FILE ਵਿੱਚ ਲਿਖੋ (- = stdout; ਛੱਡੋ = ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਖੋਲ੍ਹੋ)",
+
 
     // ── ਚੇਤਾਵਨੀ ਸੁਨੇਹੇ (ਵੱਡੀ ਆਉਟਪੁੱਟ) ──────────────────────────
     .warn_large_output_prefix = "ਚੇਤਾਵਨੀ: ਆਉਟਪੁੱਟ ਲਗਭਗ ~",

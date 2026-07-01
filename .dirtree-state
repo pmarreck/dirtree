@@ -31,7 +31,7 @@ annotate=[
 	src/i18n/mod.zig = Locale registry: code()=@tagName, parseLocaleCode, available_codes, cli_alias_map
 	src/i18n/strings.zig = Strings schema (all user-facing fields) + CliArg enum; completeness enforced
 	src/icons.zig = Nerd Font icon map: extension + filename StaticStringMaps, getFileIcon precedence
-	src/main.zig = Entry point: CLI arg parsing, precedence resolution, orchestration
+	src/main.zig = CLI entry/parse/orchestration; --html [FILE] optional output target (stdout/file/browser via $BROWSER), parseHtmlTarget/writeHtmlFile/htmlTempPath/openInBrowser
 	src/path_eval.zig = open/close/show/hide evaluation and same-type precedence rules
 	src/pcre2.zig = PCRE2 wrapper: compile/find/matches/partialMatch, DFA mode, UTF-8+UCP, OOM-propagating
 	src/regex.zig = Glob to regex conversion, escape-aware isGlobPattern, pattern-kind detection

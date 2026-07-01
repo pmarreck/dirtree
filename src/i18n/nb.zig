@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Angi terskel for advarsel om stor utdata (standard: 500)",
     .help_opt_override_warning = "  --override-warning Undertrykk advarselen om stor utdata",
     .help_opt_only = "  --only PATH        Fokuser på et undertre, klapp sammen søskenkataloger (gjentakbar)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Skriv et frittstående HTML-tre til FILE (- = stdout; utelat = åpne i nettleser)",
+
 
     // ── Advarsler (stor utdata) ────────────────────────────────
     .warn_large_output_prefix = "Advarsel: utdata er ~",

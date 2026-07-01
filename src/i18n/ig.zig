@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Tọọ oke ịdọ aka na ntị maka nnukwu mmepụta (ndabara: 500)",
     .help_opt_override_warning = "  --override-warning Kwụsị ịdọ aka na ntị maka nnukwu mmepụta",
     .help_opt_only = "  --only PATH        Lekwasị anya n'otu subtree, na-emechi ndaka ụmụnne (a ga-emegharị ya)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Dee osisi HTML kwụ onwe ya na FILE (- = stdout; hapụ = mepee na ihe nchọgharị)",
+
 
     // ── Ozi ịdọ aka na ntị (nnukwu mmepụta) ────────────────────
     .warn_large_output_prefix = "Ịdọ aka na ntị: mmepụta dị ihe dịka ~",

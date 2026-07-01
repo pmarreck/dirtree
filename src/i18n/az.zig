@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Böyük çıxış xəbərdarlığı həddini təyin et (standart: 500)",
     .help_opt_override_warning = "  --override-warning Böyük çıxış xəbərdarlığını gizlət",
     .help_opt_only = "  --only PATH        Bir alt ağaca fokuslan, qardaş qovluqları yığ (təkrarlana bilən)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Müstəqil HTML ağacını FILE faylına yaz (- = stdout; buraxsanız = brauzerdə aç)",
+
     .warn_large_output_prefix = "Xəbərdarlıq: çıxış təxminən ~",
     .warn_large_output_mid = " sətir (hədd: ",
     .warn_large_output_suffix = "). Nəzərdən keçirin: --depth N və ya --hide şablonları.",

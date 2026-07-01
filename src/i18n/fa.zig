@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      تنظیم آستانه هشدار خروجی بزرگ (پیش‌فرض: 500)",
     .help_opt_override_warning = "  --override-warning پنهان کردن هشدار خروجی بزرگ",
     .help_opt_only = "  --only PATH        تمرکز روی یک زیردرخت، جمع کردن دایرکتوری‌های هم‌سطح (قابل تکرار)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      نوشتن درخت HTML مستقل در FILE (- = stdout؛ حذف = باز کردن در مرورگر)",
+
     .warn_large_output_prefix = "هشدار: خروجی حدود ~",
     .warn_large_output_mid = " خط (آستانه: ",
     .warn_large_output_suffix = "). در نظر بگیرید: --depth N یا الگوهای --hide.",

@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Angiv tærskel for advarsel om stor udskrift (standard: 500)",
     .help_opt_override_warning = "  --override-warning Undertryk advarslen om stor udskrift",
     .help_opt_only = "  --only PATH        Fokusér på et undertræ og klap søskendemapper sammen (gentagelig)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Skriv et selvstændigt HTML-træ til FILE (- = stdout; udelad = åbn i browser)",
+
 
     // ── Advarsler (stor udskrift) ──────────────────────────────
     .warn_large_output_prefix = "Advarsel: udskriften er ~",

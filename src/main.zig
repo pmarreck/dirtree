@@ -36,6 +36,10 @@ pub const ArgEntry = struct {
 	owned: bool = false, // true if value was allocated and needs to be freed
 };
 
+/// Destination for `--html` output: stdout, a named file, or a temp file that
+/// is then opened in the user's browser.
+pub const HtmlSink = enum { stdout, browser, file };
+
 /// All CLI configuration parsed from arguments and environment.
 pub const CliConfig = struct {
 	// Display modes
@@ -90,6 +94,10 @@ pub const CliConfig = struct {
 
 	// HTML output mode (--html / --format html). Display-only; not persisted.
 	html_output: bool = false,
+	// Where the HTML goes: stdout (`--html -`), a file (`--html FILE`), or a
+	// temp file opened in a browser (bare `--html`). Default browser.
+	html_sink: HtmlSink = .browser,
+	html_path: []const u8 = "",
 
 	// Focus mode
 	only_paths: std.ArrayListUnmanaged([]const u8) = .empty,
@@ -304,6 +312,31 @@ fn expandShortFlagClusters(allocator: std.mem.Allocator, argv: []const [:0]const
 		try out.append(allocator, tok);
 	}
 	return out.toOwnedSlice(allocator);
+}
+
+/// Consume the optional output target that follows `--html` (or the `html`
+/// value of `--format html`). `flag_idx` points at that token; the target is the
+/// NEXT token. `-`/`@stdout` => stdout; a non-switch token => file path;
+/// absent-or-a-switch => browser (temp file + open). Sets `html_output` and
+/// returns the index to continue parsing from.
+fn parseHtmlTarget(config: *CliConfig, args: []const [:0]const u8, flag_idx: usize) usize {
+	config.html_output = true;
+	if (flag_idx + 1 < args.len) {
+		const nxt = args[flag_idx + 1];
+		if (std.mem.eql(u8, nxt, "-") or std.mem.eql(u8, nxt, "@stdout")) {
+			config.html_sink = .stdout;
+			return flag_idx + 2;
+		} else if (nxt.len > 0 and nxt[0] == '-') {
+			config.html_sink = .browser;
+			return flag_idx + 1;
+		} else {
+			config.html_sink = .file;
+			config.html_path = nxt;
+			return flag_idx + 2;
+		}
+	}
+	config.html_sink = .browser;
+	return flag_idx + 1;
 }
 
 pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) ParseResult {
@@ -640,26 +673,28 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						continue;
 					},
 					.html => {
-						config.html_output = true;
-						i += 1;
+						// `i` points at "--html"; consume the optional output target.
+						i = parseHtmlTarget(&config, args, i);
 						continue;
 					},
 					.format => {
-						// --format html selects HTML; --format text/tree is the
-						// default (no-op). Any other value is an unknown option.
+						// --format html selects HTML (with the same optional output
+						// target as --html); --format text/tree is the default (no-op).
+						// Any other value is an unknown option.
 						i += 1;
 						if (i >= args.len) {
 							return .{ .err = s.err_unknown_option };
 						}
 						const fmt = args[i];
 						if (std.ascii.eqlIgnoreCase(fmt, "html")) {
-							config.html_output = true;
+							// `i` points at "html"; consume an optional target after it.
+							i = parseHtmlTarget(&config, args, i);
 						} else if (std.ascii.eqlIgnoreCase(fmt, "text") or std.ascii.eqlIgnoreCase(fmt, "tree")) {
 							config.html_output = false;
+							i += 1;
 						} else {
 							return .{ .err = s.err_unknown_option };
 						}
-						i += 1;
 						continue;
 					},
 					.asc => {
@@ -1195,6 +1230,50 @@ pub fn printHelp(writer: anytype) !void {
 	}
 }
 
+/// Write `bytes` to `path` (create/truncate). Works for absolute or relative
+/// paths via the cwd handle.
+fn writeHtmlFile(io: std.Io, path: []const u8, bytes: []const u8) !void {
+	try std.Io.Dir.cwd().writeFile(io, .{ .sub_path = path, .data = bytes });
+}
+
+/// Temp-file path for browser preview: `$TMPDIR/dirtree-<basename>.html` with
+/// the basename sanitized to `[A-Za-z0-9_-]`. Falls back to `/tmp` if unset.
+fn htmlTempPath(allocator: std.mem.Allocator, abs_dir: []const u8) ![]const u8 {
+	const tmpdir = runtime.getEnv("TMPDIR") orelse "/tmp";
+	const base = std.fs.path.basename(abs_dir);
+	var name_buf: std.ArrayListUnmanaged(u8) = .empty;
+	defer name_buf.deinit(allocator);
+	try name_buf.appendSlice(allocator, "dirtree-");
+	if (base.len == 0) {
+		try name_buf.appendSlice(allocator, "root");
+	} else {
+		for (base) |c| {
+			const ok = std.ascii.isAlphanumeric(c) or c == '_' or c == '-';
+			try name_buf.append(allocator, if (ok) c else '_');
+		}
+	}
+	try name_buf.appendSlice(allocator, ".html");
+	return std.fs.path.join(allocator, &.{ tmpdir, name_buf.items });
+}
+
+/// Open `path` in the user's browser. Honors `$BROWSER` (a browser command or
+/// path) when set; otherwise the platform opener (`open` on macOS, `xdg-open`
+/// elsewhere). Fire-and-forget — does not wait for the browser to close.
+fn openInBrowser(io: std.Io, path: []const u8) !void {
+	const opener = runtime.getEnv("BROWSER") orelse switch (@import("builtin").os.tag) {
+		.macos => "open",
+		else => "xdg-open",
+	};
+	const argv = [_][]const u8{ opener, path };
+	// Fire-and-forget: don't wait (a foreground $BROWSER would otherwise hang
+	// the CLI). The process is already launched; the OS reaps it once we exit.
+	_ = try std.process.spawn(io, .{
+		.argv = &argv,
+		.stdout = .ignore,
+		.stderr = .ignore,
+	});
+}
+
 pub fn main(init: std.process.Init) !u8 {
 	// Initialize process-wide runtime context (io + env) for all modules.
 	runtime.init(init.io, init.environ_map);
@@ -1490,12 +1569,49 @@ pub fn main(init: std.process.Init) !u8 {
 					.use_hyperlinks = html_links,
 					.font_data_uri = html_font.data_uri,
 				};
-				html_render.htmlRender(stdout, abs_dir, nodes, hcfg) catch |err| {
+				// Render into memory once, then route to the chosen sink.
+				var html_aw = std.Io.Writer.Allocating.init(html_arena);
+				html_render.htmlRender(&html_aw.writer, abs_dir, nodes, hcfg) catch |err| {
 					try stderr.print("Error rendering HTML: {}\n", .{err});
 					try stderr.flush();
 					return 1;
 				};
-				try stdout.flush();
+				const html_bytes = html_aw.written();
+
+				switch (cfg.html_sink) {
+					.stdout => {
+						stdout.writeAll(html_bytes) catch return 1;
+						try stdout.flush();
+					},
+					.file => {
+						writeHtmlFile(io, cfg.html_path, html_bytes) catch |err| {
+							try stderr.print("Error writing HTML to '{s}': {}\n", .{ cfg.html_path, err });
+							try stderr.flush();
+							return 1;
+						};
+						if (!use_simple) {
+							try stderr.print("Wrote HTML to {s}\n", .{cfg.html_path});
+							try stderr.flush();
+						}
+					},
+					.browser => {
+						const tmp_path = htmlTempPath(html_arena, abs_dir) catch return 1;
+						writeHtmlFile(io, tmp_path, html_bytes) catch |err| {
+							try stderr.print("Error writing HTML to '{s}': {}\n", .{ tmp_path, err });
+							try stderr.flush();
+							return 1;
+						};
+						openInBrowser(io, tmp_path) catch |err| {
+							try stderr.print("Wrote HTML to {s} (could not launch browser: {})\n", .{ tmp_path, err });
+							try stderr.flush();
+							return 0;
+						};
+						if (!use_simple) {
+							try stderr.print("Opened HTML in browser: {s}\n", .{tmp_path});
+							try stderr.flush();
+						}
+					},
+				}
 				return 0;
 			}
 
@@ -2264,6 +2380,61 @@ test "parseArgs: --html sets html_output" {
 			try std.testing.expect(cfg.html_output);
 		},
 		else => return error.TestExpectedConfig,
+	}
+}
+
+test "parseArgs: --html output-target parsing (file / stdout / browser)" {
+	const A = std.testing.allocator;
+	// --html FILE -> write to FILE
+	{
+		const args = &[_][:0]const u8{ "dirtree", "--html", "out.html" };
+		var r = parseArgs(A, args);
+		switch (r) {
+			.config => |*cfg| {
+				defer cfg.deinit(A);
+				try std.testing.expect(cfg.html_output);
+				try std.testing.expectEqual(HtmlSink.file, cfg.html_sink);
+				try std.testing.expectEqualStrings("out.html", cfg.html_path);
+			},
+			else => return error.TestExpectedConfig,
+		}
+	}
+	// --html - -> stdout
+	{
+		const args = &[_][:0]const u8{ "dirtree", "--html", "-" };
+		var r = parseArgs(A, args);
+		switch (r) {
+			.config => |*cfg| {
+				defer cfg.deinit(A);
+				try std.testing.expectEqual(HtmlSink.stdout, cfg.html_sink);
+			},
+			else => return error.TestExpectedConfig,
+		}
+	}
+	// --html followed by a switch -> browser (switch still parsed)
+	{
+		const args = &[_][:0]const u8{ "dirtree", "--html", "--simple" };
+		var r = parseArgs(A, args);
+		switch (r) {
+			.config => |*cfg| {
+				defer cfg.deinit(A);
+				try std.testing.expectEqual(HtmlSink.browser, cfg.html_sink);
+				try std.testing.expect(cfg.simple_mode);
+			},
+			else => return error.TestExpectedConfig,
+		}
+	}
+	// bare --html at end of args -> browser
+	{
+		const args = &[_][:0]const u8{ "dirtree", "--html" };
+		var r = parseArgs(A, args);
+		switch (r) {
+			.config => |*cfg| {
+				defer cfg.deinit(A);
+				try std.testing.expectEqual(HtmlSink.browser, cfg.html_sink);
+			},
+			else => return error.TestExpectedConfig,
+		}
 	}
 }
 

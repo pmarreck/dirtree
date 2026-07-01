@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Imposta la soglia di avviso per output ampio (predefinito: 500)",
     .help_opt_override_warning = "  --override-warning Sopprimi l'avviso di output ampio",
     .help_opt_only = "  --only PATH        Concentrati su un sottoalbero, comprimendo le directory di pari livello (ripetibile)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Scrivi un albero HTML autonomo in FILE (- = stdout; ometti = apri nel browser)",
+
     .warn_large_output_prefix = "Avviso: l'output è di ~",
     .warn_large_output_mid = " righe (soglia: ",
     .warn_large_output_suffix = "). Valuta: --depth N o pattern --hide.",

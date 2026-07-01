@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      A nagy kimenet figyelmeztetési küszöbének beállítása (alapértelmezett: 500)",
     .help_opt_override_warning = "  --override-warning A nagy kimenet figyelmeztetésének elnémítása",
     .help_opt_only = "  --only PATH        Egy részfára fókuszálás, a testvérkönyvtárak összecsukása (ismételhető)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Önálló HTML-fa írása FILE-ba (- = stdout; elhagyva = megnyitás böngészőben)",
+
     .warn_large_output_prefix = "Figyelmeztetés: a kimenet kb. ~",
     .warn_large_output_mid = " sor (küszöb: ",
     .warn_large_output_suffix = "). Fontold meg: --depth N vagy --hide minták.",

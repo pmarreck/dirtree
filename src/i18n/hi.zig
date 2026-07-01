@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      बड़े आउटपुट की चेतावनी सीमा निर्धारित करें (डिफ़ॉल्ट: 500)",
     .help_opt_override_warning = "  --override-warning बड़े आउटपुट की चेतावनी को दबाएँ",
     .help_opt_only = "  --only PATH        किसी उपवृक्ष पर ध्यान केंद्रित करें, सहोदर निर्देशिकाओं को संकुचित करें (दोहराने योग्य)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      स्वतंत्र HTML ट्री को FILE में लिखें (- = stdout; छोड़ें = ब्राउज़र में खोलें)",
+
 
     // ── चेतावनी संदेश (बड़ा आउटपुट) ────────────────────────
     .warn_large_output_prefix = "चेतावनी: आउटपुट लगभग ~",

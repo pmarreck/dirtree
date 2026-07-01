@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Nastavi prag opozorila za velik izpis (privzeto: 500)",
     .help_opt_override_warning = "  --override-warning Skrij opozorilo o velikem izpisu",
     .help_opt_only = "  --only PATH        Osredotoči se na poddrevo in strni sorojenske imenike (ponovljivo)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Zapiši samostojno drevo HTML v FILE (- = stdout; izpusti = odpri v brskalniku)",
+
 
     // ── Opozorilna sporočila (velik izpis) ─────────────────────
     .warn_large_output_prefix = "Opozorilo: izpis obsega ~",

@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Definir o limite de aviso de saída grande (padrão: 500)",
     .help_opt_override_warning = "  --override-warning Suprimir o aviso de saída grande",
     .help_opt_only = "  --only PATH        Focar em uma subárvore, recolhendo os diretórios irmãos (repetível)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Gravar uma árvore HTML autônoma em FILE (- = stdout; omitir = abrir no navegador)",
+
     .warn_large_output_prefix = "Aviso: a saída tem ~",
     .warn_large_output_mid = " linhas (limite: ",
     .warn_large_output_suffix = "). Considere: --depth N ou padrões --hide.",

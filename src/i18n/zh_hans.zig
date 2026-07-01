@@ -77,7 +77,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      设置大输出警告阈值 (默认: 500)",
     .help_opt_override_warning = "  --override-warning 禁止大输出警告",
     .help_opt_only = "  --only PATH        聚焦某个子树，折叠同级目录 (可重复)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      将独立的 HTML 树写入 FILE (- = stdout；省略 = 在浏览器中打开)",
+
     .warn_large_output_prefix = "警告: 输出约 ~",
     .warn_large_output_mid = " 行 (阈值: ",
     .warn_large_output_suffix = ")。请考虑: --depth N 或 --hide 模式。",

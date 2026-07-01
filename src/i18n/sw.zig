@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Weka kizingiti cha onyo la matokeo makubwa (chaguo-msingi: 500)",
     .help_opt_override_warning = "  --override-warning Zuia onyo la matokeo makubwa",
     .help_opt_only = "  --only PATH        Zingatia mti mdogo, ukikunja saraka za ndugu (inarudiwa)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Andika mti wa HTML unaojitegemea kwenye FILE (- = stdout; acha = fungua kwenye kivinjari)",
+
 
     // ── Ujumbe wa onyo (matokeo makubwa) ───────────────────────
     .warn_large_output_prefix = "Onyo: matokeo ni takriban ",

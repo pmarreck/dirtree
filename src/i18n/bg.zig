@@ -75,7 +75,8 @@ pub const strings = Strings{
     .help_opt_max_lines = "  --max-lines N      Задава прага за предупреждение при голям изход (по подразбиране: 500)",
     .help_opt_override_warning = "  --override-warning Потиска предупреждението при голям изход",
     .help_opt_only = "  --only PATH        Съсредоточава върху поддърво, свивайки съседните директории (повторимо)",
-    .help_opt_html = "  --html             Output a self-contained HTML tree (alias: --format html)",
+    .help_opt_html = "  --html [FILE]      Запиши самостоятелно HTML дърво във FILE (- = stdout; пропускане = отваряне в браузър)",
+
 
     // ── Предупреждения (голям изход) ────────────────────────────
     .warn_large_output_prefix = "Предупреждение: изходът е ~",
