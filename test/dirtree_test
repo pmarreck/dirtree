@@ -4038,12 +4038,22 @@ test_html_bare_opens_browser() {
 	workspace=$(new_tmpdir); touch "$workspace/a.txt"
 	# Bare --html (no target token) => temp file + open in $BROWSER. Use a no-op
 	# BROWSER (true) so nothing launches; assert the temp file was written.
-	stderr_out=$(cd "$workspace" && BROWSER=true "$DIRTREE_BIN" --html 2>&1 >/dev/null)
+	stderr_out=$(cd "$workspace" && PIPED_STDOUT=false BROWSER=true "$DIRTREE_BIN" --html 2>&1 >/dev/null)
 	[[ "$stderr_out" == *"Opened HTML in browser:"* ]] || { echo "bare --html should open a browser; got: $stderr_out" >&2; return 1; }
 	opened_path="${stderr_out##*Opened HTML in browser: }"
 	opened_path="${opened_path%%$'\n'*}"
 	[[ -f "$opened_path" ]] || { echo "temp HTML file '$opened_path' should exist" >&2; return 1; }
 	[[ "$(head -c 15 "$opened_path")" == "<!DOCTYPE html>" ]] || { echo "temp file should be an HTML doc" >&2; return 1; }
+}
+
+test_html_bare_piped_to_stdout() {
+	local workspace out=""
+	workspace=$(new_tmpdir); touch "$workspace/a.txt"
+	# Bare --html with stdout piped (not a TTY) streams HTML to stdout instead of
+	# launching a browser. PIPED_STDOUT=1 forces the piped/non-TTY decision.
+	out=$(cd "$workspace" && PIPED_STDOUT=1 BROWSER=false "$DIRTREE_BIN" --html 2>/dev/null)
+	[[ "$out" == "<!DOCTYPE html>"* ]] || { echo "piped bare --html should emit HTML to stdout; head: ${out:0:30}" >&2; return 1; }
+	[[ "$out" == *"a.txt"* ]] || { echo "piped stdout HTML should contain the entry" >&2; return 1; }
 }
 
 test_no_notes_flag_hides_notes() {
@@ -5176,6 +5186,8 @@ run_all_tests() {
 		test_html_output_to_file
 	run_test "bare --html writes a temp file and opens the browser" \
 		test_html_bare_opens_browser
+	run_test "bare --html piped to stdout streams HTML (no browser)" \
+		test_html_bare_piped_to_stdout
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \

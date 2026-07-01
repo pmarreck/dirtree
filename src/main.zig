@@ -36,9 +36,10 @@ pub const ArgEntry = struct {
 	owned: bool = false, // true if value was allocated and needs to be freed
 };
 
-/// Destination for `--html` output: stdout, a named file, or a temp file that
-/// is then opened in the user's browser.
-pub const HtmlSink = enum { stdout, browser, file };
+/// Destination for `--html` output. `.auto` (bare `--html`) resolves at render
+/// time to a browser (interactive stdout) or stdout (piped) — so
+/// `dirtree --html | foo` streams HTML instead of launching a browser.
+pub const HtmlSink = enum { stdout, file, auto };
 
 /// All CLI configuration parsed from arguments and environment.
 pub const CliConfig = struct {
@@ -94,9 +95,9 @@ pub const CliConfig = struct {
 
 	// HTML output mode (--html / --format html). Display-only; not persisted.
 	html_output: bool = false,
-	// Where the HTML goes: stdout (`--html -`), a file (`--html FILE`), or a
-	// temp file opened in a browser (bare `--html`). Default browser.
-	html_sink: HtmlSink = .browser,
+	// Where the HTML goes: stdout (`--html -`), a file (`--html FILE`), or auto
+	// (bare `--html` => browser when interactive, stdout when piped).
+	html_sink: HtmlSink = .auto,
 	html_path: []const u8 = "",
 
 	// Focus mode
@@ -327,7 +328,7 @@ fn parseHtmlTarget(config: *CliConfig, args: []const [:0]const u8, flag_idx: usi
 			config.html_sink = .stdout;
 			return flag_idx + 2;
 		} else if (nxt.len > 0 and nxt[0] == '-') {
-			config.html_sink = .browser;
+			config.html_sink = .auto;
 			return flag_idx + 1;
 		} else {
 			config.html_sink = .file;
@@ -335,7 +336,7 @@ fn parseHtmlTarget(config: *CliConfig, args: []const [:0]const u8, flag_idx: usi
 			return flag_idx + 2;
 		}
 	}
-	config.html_sink = .browser;
+	config.html_sink = .auto;
 	return flag_idx + 1;
 }
 
@@ -1594,21 +1595,28 @@ pub fn main(init: std.process.Init) !u8 {
 							try stderr.flush();
 						}
 					},
-					.browser => {
-						const tmp_path = htmlTempPath(html_arena, abs_dir) catch return 1;
-						writeHtmlFile(io, tmp_path, html_bytes) catch |err| {
-							try stderr.print("Error writing HTML to '{s}': {}\n", .{ tmp_path, err });
-							try stderr.flush();
-							return 1;
-						};
-						openInBrowser(io, tmp_path) catch |err| {
-							try stderr.print("Wrote HTML to {s} (could not launch browser: {})\n", .{ tmp_path, err });
-							try stderr.flush();
-							return 0;
-						};
-						if (!use_simple) {
-							try stderr.print("Opened HTML in browser: {s}\n", .{tmp_path});
-							try stderr.flush();
+					.auto => {
+						if (!cfg.stdout_is_tty) {
+							// Piped/redirected: stream HTML to stdout, no browser.
+							stdout.writeAll(html_bytes) catch return 1;
+							try stdout.flush();
+						} else {
+							// Interactive terminal: temp file + open in the browser.
+							const tmp_path = htmlTempPath(html_arena, abs_dir) catch return 1;
+							writeHtmlFile(io, tmp_path, html_bytes) catch |err| {
+								try stderr.print("Error writing HTML to '{s}': {}\n", .{ tmp_path, err });
+								try stderr.flush();
+								return 1;
+							};
+							openInBrowser(io, tmp_path) catch |err| {
+								try stderr.print("Wrote HTML to {s} (could not launch browser: {})\n", .{ tmp_path, err });
+								try stderr.flush();
+								return 0;
+							};
+							if (!use_simple) {
+								try stderr.print("Opened HTML in browser: {s}\n", .{tmp_path});
+								try stderr.flush();
+							}
 						}
 					},
 				}
@@ -2418,7 +2426,7 @@ test "parseArgs: --html output-target parsing (file / stdout / browser)" {
 		switch (r) {
 			.config => |*cfg| {
 				defer cfg.deinit(A);
-				try std.testing.expectEqual(HtmlSink.browser, cfg.html_sink);
+				try std.testing.expectEqual(HtmlSink.auto, cfg.html_sink);
 				try std.testing.expect(cfg.simple_mode);
 			},
 			else => return error.TestExpectedConfig,
@@ -2431,7 +2439,7 @@ test "parseArgs: --html output-target parsing (file / stdout / browser)" {
 		switch (r) {
 			.config => |*cfg| {
 				defer cfg.deinit(A);
-				try std.testing.expectEqual(HtmlSink.browser, cfg.html_sink);
+				try std.testing.expectEqual(HtmlSink.auto, cfg.html_sink);
 			},
 			else => return error.TestExpectedConfig,
 		}
