@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Shtyp paralajmërimin për dalje të madhe",
     .help_opt_only = "  --only PATH        Fokusohu te një nënpemë, duke palosur drejtoritë motra (i përsëritshëm)",
     .help_opt_html = "  --html [FILE]      Shkruaj një pemë HTML të pavarur në FILE (- = stdout; hiq = hap në shfletues)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Fshih objektivat e lidhjeve simbolike; --no-targets heq edhe hiperlidhjet (dalje e transportueshme)",
 
 
     // ── Mesazhe paralajmërimi (dalje e madhe) ──────────────────

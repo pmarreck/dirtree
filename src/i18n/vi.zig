@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Ẩn cảnh báo đầu ra lớn",
     .help_opt_only = "  --only PATH        Tập trung vào một cây con, thu gọn các thư mục cùng cấp (lặp lại được)",
     .help_opt_html = "  --html [FILE]      Ghi cây HTML độc lập vào FILE (- = stdout; bỏ trống = mở trong trình duyệt)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Ẩn đích của liên kết tượng trưng; --no-targets cũng bỏ siêu liên kết (đầu ra di động)",
 
     .warn_large_output_prefix = "Cảnh báo: đầu ra khoảng ~",
     .warn_large_output_mid = " dòng (ngưỡng: ",

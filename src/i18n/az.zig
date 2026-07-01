@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Böyük çıxış xəbərdarlığını gizlət",
     .help_opt_only = "  --only PATH        Bir alt ağaca fokuslan, qardaş qovluqları yığ (təkrarlana bilən)",
     .help_opt_html = "  --html [FILE]      Müstəqil HTML ağacını FILE faylına yaz (- = stdout; buraxsanız = brauzerdə aç)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Simvolik keçid hədəflərini gizlət; --no-targets hiperkeçidləri də silir (daşınan çıxış)",
 
     .warn_large_output_prefix = "Xəbərdarlıq: çıxış təxminən ~",
     .warn_large_output_mid = " sətir (hədd: ",

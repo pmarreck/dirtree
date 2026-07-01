@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning 大きな出力の警告を抑制",
     .help_opt_only = "  --only PATH        サブツリーに集中し、兄弟ディレクトリを折りたたむ (繰り返し可)",
     .help_opt_html = "  --html [FILE]      自己完結型の HTML ツリーを FILE に書き出す (- = stdout、省略 = ブラウザーで開く)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  シンボリックリンクのターゲットを隠す。--no-targets はハイパーリンクも除去（ポータブル出力）",
 
     .warn_large_output_prefix = "警告: 出力は約 ~",
     .warn_large_output_mid = " 行 (しきい値: ",

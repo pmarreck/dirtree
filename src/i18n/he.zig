@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning הסתרת האזהרה לפלט גדול",
     .help_opt_only = "  --only PATH        התמקדות בתת-עץ, צמצום ספריות אחאי (ניתן לחזרה)",
     .help_opt_html = "  --html [FILE]      כתוב עץ HTML עצמאי אל FILE (- = stdout; השמטה = פתח בדפדפן)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  הסתר יעדי קישורים סימבוליים; ‏--no-targets מסיר גם היפר-קישורים (פלט נייד)",
 
     .warn_large_output_prefix = "אזהרה: הפלט הוא כ-~",
     .warn_large_output_mid = " שורות (סף: ",

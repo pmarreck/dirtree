@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Tẹ́ ìkìlọ̀ ìjáde ńlá mọ́lẹ̀",
     .help_opt_only = "  --only PATH        Dojúkọ igi-abẹ́ kan, ká àwọn ìwé-ìpamọ́ ẹgbẹ́ jọ (a lè tún ṣe)",
     .help_opt_html = "  --html [FILE]      Kọ igi HTML alára-ẹni sí FILE (- = stdout; fọ́ = ṣí nínú aṣàwákiri)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Fi àwọn àfojúsùn symlink pamọ́; --no-targets tún yọ àwọn hyperlink kúrò (ìtújáde tí a lè gbé)",
 
 
     // ── Àwọn ìkìlọ̀ (ìjáde ńlá) ──────────────────────────────────

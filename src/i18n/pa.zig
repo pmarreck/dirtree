@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning ਵੱਡੀ ਆਉਟਪੁੱਟ ਚੇਤਾਵਨੀ ਨੂੰ ਦਬਾਓ",
     .help_opt_only = "  --only PATH        ਇੱਕ ਉਪ-ਰੁੱਖ 'ਤੇ ਧਿਆਨ ਕੇਂਦਰਿਤ ਕਰੋ, ਭੈਣ-ਭਰਾ ਡਾਇਰੈਕਟਰੀਆਂ ਨੂੰ ਸਮੇਟੋ (ਦੁਹਰਾਉਣਯੋਗ)",
     .help_opt_html = "  --html [FILE]      ਸਵੈ-ਨਿਰਭਰ HTML ਟ੍ਰੀ ਨੂੰ FILE ਵਿੱਚ ਲਿਖੋ (- = stdout; ਛੱਡੋ = ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਖੋਲ੍ਹੋ)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  ਸਿਮਲਿੰਕ ਟੀਚੇ ਲੁਕਾਓ; --no-targets ਹਾਈਪਰਲਿੰਕ ਵੀ ਹਟਾਉਂਦਾ ਹੈ (ਪੋਰਟੇਬਲ ਆਉਟਪੁੱਟ)",
 
 
     // ── ਚੇਤਾਵਨੀ ਸੁਨੇਹੇ (ਵੱਡੀ ਆਉਟਪੁੱਟ) ──────────────────────────

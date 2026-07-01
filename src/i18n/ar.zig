@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning إخفاء تحذير المخرجات الكبيرة",
     .help_opt_only = "  --only PATH        التركيز على شجرة فرعية مع طي الأدلة الشقيقة (قابل للتكرار)",
     .help_opt_html = "  --html [FILE]      اكتب شجرة HTML مستقلة إلى FILE (- = stdout؛ الحذف = فتح في المتصفح)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  إخفاء أهداف الروابط الرمزية؛ كما يزيل --no-targets الروابط التشعبية (مخرجات قابلة للنقل)",
 
     .warn_large_output_prefix = "تحذير: المخرجات نحو ~",
     .warn_large_output_mid = " سطر (العتبة: ",

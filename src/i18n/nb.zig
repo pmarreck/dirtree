@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Undertrykk advarselen om stor utdata",
     .help_opt_only = "  --only PATH        Fokuser på et undertre, klapp sammen søskenkataloger (gjentakbar)",
     .help_opt_html = "  --html [FILE]      Skriv et frittstående HTML-tre til FILE (- = stdout; utelat = åpne i nettleser)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Skjul symlenke-mål; --no-targets fjerner også hyperlenker (portabel utdata)",
 
 
     // ── Advarsler (stor utdata) ────────────────────────────────

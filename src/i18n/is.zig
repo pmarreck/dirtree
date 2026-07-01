@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Bæla viðvörun um stórt úttak",
     .help_opt_only = "  --only PATH        Einbeita sér að undirtré, fella saman systkinamöppur (endurtekjanlegt)",
     .help_opt_html = "  --html [FILE]      Skrifa sjálfstætt HTML-tré í FILE (- = stdout; sleppa = opna í vafra)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Fela tákntengimarkmið; --no-targets fjarlægir einnig tengla (færanlegt úttak)",
 
 
     // ── Viðvörunarskilaboð (stórt úttak) ───────────────────────

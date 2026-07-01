@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Pigilan ang babala para sa malaking output",
     .help_opt_only = "  --only PATH        Magpokus sa isang subtree, tinitiklop ang mga kapatid na directory (maaaring ulitin)",
     .help_opt_html = "  --html [FILE]      Isulat ang standalone na HTML tree sa FILE (- = stdout; laktawan = buksan sa browser)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Itago ang mga target ng symlink; --no-targets nag-aalis din ng hyperlink (portable na output)",
 
 
     // ── Mga mensahe ng babala (malaking output) ────────────────

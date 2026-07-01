@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning বড় আউটপুট সতর্কতা দমন করুন",
     .help_opt_only = "  --only PATH        একটি সাবট্রিতে মনোনিবেশ করুন, সহোদর ডিরেক্টরি ভাঁজ করে (পুনরাবৃত্তিযোগ্য)",
     .help_opt_html = "  --html [FILE]      স্বয়ংসম্পূর্ণ HTML ট্রি FILE-এ লিখুন (- = stdout; বাদ দিলে = ব্রাউজারে খুলুন)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  সিমলিংক টার্গেট লুকান; --no-targets হাইপারলিংকও সরায় (পোর্টেবল আউটপুট)",
 
 
     // ── Warning messages (large output) ────────────────────────

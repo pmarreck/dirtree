@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning பெரிய வெளியீட்டு எச்சரிக்கையை அடக்கு",
     .help_opt_only = "  --only PATH        ஒரு துணை மரத்தில் கவனம் செலுத்து, உடன் அடைவுகளை மடக்கு (மீண்டும் இடலாம்)",
     .help_opt_html = "  --html [FILE]      தன்னிறைவான HTML மரத்தை FILE இல் எழுதவும் (- = stdout; விட்டால் = உலாவியில் திற)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  சிம்லிங்க் இலக்குகளை மறை; --no-targets ஹைப்பர்லிங்க்குகளையும் நீக்கும் (எடுத்துச்செல்லக்கூடிய வெளியீடு)",
 
 
     // ── Warning messages (large output) ────────────────────────

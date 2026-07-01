@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Vaienna suuren tulosteen varoitus",
     .help_opt_only = "  --only PATH        Keskity alipuuhun ja tiivistä sisarhakemistot (toistettava)",
     .help_opt_html = "  --html [FILE]      Kirjoita itsenäinen HTML-puu tiedostoon FILE (- = stdout; jätä pois = avaa selaimessa)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Piilota symlinkkien kohteet; --no-targets poistaa myös hyperlinkit (siirrettävä tuloste)",
 
 
     // ── Varoitusviestit (suuri tuloste) ────────────────────────

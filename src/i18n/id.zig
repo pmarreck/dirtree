@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Tekan peringatan keluaran besar",
     .help_opt_only = "  --only PATH        Berfokus pada satu subpohon, menciutkan direktori saudara (dapat diulang)",
     .help_opt_html = "  --html [FILE]      Tulis pohon HTML mandiri ke FILE (- = stdout; kosongkan = buka di peramban)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Sembunyikan target symlink; --no-targets juga menghapus hyperlink (keluaran portabel)",
 
 
     // ── Pesan peringatan (keluaran besar) ──────────────────────

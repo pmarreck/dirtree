@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Придушити попередження про великий вивід",
     .help_opt_only = "  --only PATH        Зосередитися на піддереві, згортаючи сусідні каталоги (повторюване)",
     .help_opt_html = "  --html [FILE]      Записати автономне HTML-дерево у FILE (- = stdout; без нього = відкрити у браузері)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Приховати цілі символічних посилань; --no-targets також прибирає гіперпосилання (переносний вивід)",
 
     .warn_large_output_prefix = "Попередження: вивід ~",
     .warn_large_output_mid = " рядків (поріг: ",

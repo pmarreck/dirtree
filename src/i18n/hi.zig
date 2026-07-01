@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning बड़े आउटपुट की चेतावनी को दबाएँ",
     .help_opt_only = "  --only PATH        किसी उपवृक्ष पर ध्यान केंद्रित करें, सहोदर निर्देशिकाओं को संकुचित करें (दोहराने योग्य)",
     .help_opt_html = "  --html [FILE]      स्वतंत्र HTML ट्री को FILE में लिखें (- = stdout; छोड़ें = ब्राउज़र में खोलें)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  सिमलिंक लक्ष्य छिपाएँ; --no-targets हाइपरलिंक भी हटाता है (पोर्टेबल आउटपुट)",
 
 
     // ── चेतावनी संदेश (बड़ा आउटपुट) ────────────────────────

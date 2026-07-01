@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning د لوی وتلون خبرتیا بنده کړه",
     .help_opt_only = "  --only PATH        په یوه فرعي ونه تمرکز وکړه، خویندوسره لارښودونه راجمع کړه (تکراریدونکی)",
     .help_opt_html = "  --html [FILE]      خپلواک HTML ونه FILE ته ولیکئ (- = stdout؛ پرېښودل = په براوزر کې پرانیستل)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  د symlink موخې پټ کړئ؛ ‏--no-targets هایپرلینکونه هم لرې کوي (د لیږد وړ محصول)",
 
 
     // ── د خبرتیا پیغامونه (لوی وتلون) ──────────────────────────

@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Suppress the large output warning",
     .help_opt_only = "  --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)",
     .help_opt_html = "  --html [FILE]      Write a self-contained HTML tree to FILE (- = stdout; omit = open in browser)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Hide symlink targets; --no-targets also drops hyperlinks (portable output)",
 
 
     // ── Warning messages (large output) ────────────────────────
@@ -150,6 +151,8 @@ pub const aliases = LocaleAliases{
         .{ .name = "--notes", .arg = .notes },
         .{ .name = "--notes-leader", .arg = .note_leader },
         .{ .name = "--no-hyperlinks", .arg = .no_hyperlinks },
+        .{ .name = "--no-symlink-targets", .arg = .no_symlink_targets },
+        .{ .name = "--no-targets", .arg = .no_targets },
         .{ .name = "--hyperlinks", .arg = .hyperlinks },
         .{ .name = "--temp", .arg = .temporary },
         .{ .name = "--temporary", .arg = .temporary },

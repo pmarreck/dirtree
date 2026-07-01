@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Skrij opozorilo o velikem izpisu",
     .help_opt_only = "  --only PATH        Osredotoči se na poddrevo in strni sorojenske imenike (ponovljivo)",
     .help_opt_html = "  --html [FILE]      Zapiši samostojno drevo HTML v FILE (- = stdout; izpusti = odpri v brskalniku)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Skrij cilje simbolskih povezav; --no-targets odstrani tudi hiperpovezave (prenosljiv izpis)",
 
 
     // ── Opozorilna sporočila (velik izpis) ─────────────────────

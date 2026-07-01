@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Waarschuwing bij grote uitvoer onderdrukken",
     .help_opt_only = "  --only PATH        Focus op een subboom, broer-mappen inklappen (herhaalbaar)",
     .help_opt_html = "  --html [FILE]      Schrijf een op zichzelf staande HTML-boom naar FILE (- = stdout; weglaten = openen in browser)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Symlink-doelen verbergen; --no-targets verwijdert ook hyperlinks (draagbare uitvoer)",
 
 
     // ── Waarschuwingen (grote uitvoer) ─────────────────────────

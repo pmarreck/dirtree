@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Kwụsị ịdọ aka na ntị maka nnukwu mmepụta",
     .help_opt_only = "  --only PATH        Lekwasị anya n'otu subtree, na-emechi ndaka ụmụnne (a ga-emegharị ya)",
     .help_opt_html = "  --html [FILE]      Dee osisi HTML kwụ onwe ya na FILE (- = stdout; hapụ = mepee na ihe nchọgharị)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Zoo ebumnuche symlink; --no-targets na-ewepụkwa njikọ (mmepụta enwere ike ibu)",
 
 
     // ── Ozi ịdọ aka na ntị (nnukwu mmepụta) ────────────────────

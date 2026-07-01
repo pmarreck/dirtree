@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Zuia onyo la matokeo makubwa",
     .help_opt_only = "  --only PATH        Zingatia mti mdogo, ukikunja saraka za ndugu (inarudiwa)",
     .help_opt_html = "  --html [FILE]      Andika mti wa HTML unaojitegemea kwenye FILE (- = stdout; acha = fungua kwenye kivinjari)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Ficha shabaha za symlink; --no-targets huondoa pia viungo (matokeo yanayobebeka)",
 
 
     // ── Ujumbe wa onyo (matokeo makubwa) ───────────────────────

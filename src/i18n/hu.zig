@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning A nagy kimenet figyelmeztetésének elnémítása",
     .help_opt_only = "  --only PATH        Egy részfára fókuszálás, a testvérkönyvtárak összecsukása (ismételhető)",
     .help_opt_html = "  --html [FILE]      Önálló HTML-fa írása FILE-ba (- = stdout; elhagyva = megnyitás böngészőben)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Szimbolikus hivatkozások céljainak elrejtése; a --no-targets a hiperhivatkozásokat is eltávolítja (hordozható kimenet)",
 
     .warn_large_output_prefix = "Figyelmeztetés: a kimenet kb. ~",
     .warn_large_output_mid = " sor (küszöb: ",

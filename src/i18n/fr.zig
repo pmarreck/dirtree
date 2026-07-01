@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Supprimer l'avertissement de sortie volumineuse",
     .help_opt_only = "  --only PATH        Cibler un sous-arbre, en repliant les répertoires frères (répétable)",
     .help_opt_html = "  --html [FILE]      Écrire un arbre HTML autonome dans FILE (- = stdout ; sans = ouvrir dans le navigateur)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Masquer les cibles des liens symboliques ; --no-targets supprime aussi les hyperliens (sortie portable)",
 
     .warn_large_output_prefix = "Avertissement : la sortie fait ~",
     .warn_large_output_mid = " lignes (seuil : ",

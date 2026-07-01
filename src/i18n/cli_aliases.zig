@@ -16,6 +16,8 @@ pub const CliArg = enum {
     notes,
     note_leader,
     no_hyperlinks,
+    no_symlink_targets,
+    no_targets,
     hyperlinks,
     temporary,
     default,

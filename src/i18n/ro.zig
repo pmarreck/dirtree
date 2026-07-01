@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Suprimă avertismentul pentru ieșire mare",
     .help_opt_only = "  --only PATH        Concentrează-te pe un subarbore, restrângând directoarele frați (repetabil)",
     .help_opt_html = "  --html [FILE]      Scrie un arbore HTML autonom în FILE (- = stdout; omite = deschide în browser)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Ascunde țintele legăturilor simbolice; --no-targets elimină și hyperlinkurile (ieșire portabilă)",
 
     .warn_large_output_prefix = "Avertisment: ieșirea are ~",
     .warn_large_output_mid = " linii (prag: ",

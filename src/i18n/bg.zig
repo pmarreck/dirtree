@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Потиска предупреждението при голям изход",
     .help_opt_only = "  --only PATH        Съсредоточава върху поддърво, свивайки съседните директории (повторимо)",
     .help_opt_html = "  --html [FILE]      Запиши самостоятелно HTML дърво във FILE (- = stdout; пропускане = отваряне в браузър)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Скриване на целите на символните връзки; --no-targets премахва и хипервръзките (преносим изход)",
 
 
     // ── Предупреждения (голям изход) ────────────────────────────

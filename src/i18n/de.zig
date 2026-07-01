@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Die Warnung bei großer Ausgabe unterdrücken",
     .help_opt_only = "  --only PATH        Auf einen Teilbaum fokussieren, Geschwisterverzeichnisse einklappen (wiederholbar)",
     .help_opt_html = "  --html [FILE]      HTML-Baum als eigenständige Datei nach FILE schreiben (- = stdout; ohne = im Browser öffnen)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Symlink-Ziele ausblenden; --no-targets entfernt auch Hyperlinks (portable Ausgabe)",
 
     .warn_large_output_prefix = "Warnung: Ausgabe umfasst ~",
     .warn_large_output_mid = " Zeilen (Schwellenwert: ",

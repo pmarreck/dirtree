@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Potisni upozorenje o velikom ispisu",
     .help_opt_only = "  --only PATH        Fokusiraj se na podstablo, sklapajući susjedne direktorije (ponovljivo)",
     .help_opt_html = "  --html [FILE]      Zapiši samostalno HTML stablo u FILE (- = stdout; izostavi = otvori u pregledniku)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Sakrij ciljeve simboličkih linkova; --no-targets uklanja i hiperveze (prenosivi izlaz)",
 
 
     // ── Upozorenja (veliki ispis) ──────────────────────────────

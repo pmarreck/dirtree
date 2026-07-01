@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Suprimir o aviso de saída grande",
     .help_opt_only = "  --only PATH        Focar em uma subárvore, recolhendo os diretórios irmãos (repetível)",
     .help_opt_html = "  --html [FILE]      Gravar uma árvore HTML autônoma em FILE (- = stdout; omitir = abrir no navegador)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Ocultar alvos de links simbólicos; --no-targets também remove hyperlinks (saída portável)",
 
     .warn_large_output_prefix = "Aviso: a saída tem ~",
     .warn_large_output_mid = " linhas (limite: ",

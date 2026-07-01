@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning 抑制大量輸出警告",
     .help_opt_only = "  --only PATH        聚焦某個子樹，折疊同層目錄 (可重複)",
     .help_opt_html = "  --html [FILE]      將獨立的 HTML 樹寫入 FILE (- = stdout；省略 = 在瀏覽器中開啟)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  隱藏符號連結目標；--no-targets 也會移除超連結（可攜式輸出）",
 
 
     // ── 警告訊息 (大量輸出) ────────────────────────────────────

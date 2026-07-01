@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning پنهان کردن هشدار خروجی بزرگ",
     .help_opt_only = "  --only PATH        تمرکز روی یک زیردرخت، جمع کردن دایرکتوری‌های هم‌سطح (قابل تکرار)",
     .help_opt_html = "  --html [FILE]      نوشتن درخت HTML مستقل در FILE (- = stdout؛ حذف = باز کردن در مرورگر)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  پنهان کردن هدف‌های پیوند نمادین؛ ‏--no-targets ابرپیوندها را نیز حذف می‌کند (خروجی قابل‌حمل)",
 
     .warn_large_output_prefix = "هشدار: خروجی حدود ~",
     .warn_large_output_mid = " خط (آستانه: ",

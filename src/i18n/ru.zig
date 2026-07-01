@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Подавить предупреждение о большом выводе",
     .help_opt_only = "  --only PATH        Сфокусироваться на поддереве, сворачивая соседние каталоги (повторяемо)",
     .help_opt_html = "  --html [FILE]      Записать автономное HTML-дерево в FILE (- = stdout; без него = открыть в браузере)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Скрыть цели символических ссылок; --no-targets также убирает гиперссылки (переносимый вывод)",
 
     .warn_large_output_prefix = "Предупреждение: вывод ~",
     .warn_large_output_mid = " строк (порог: ",

@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning የትልቅ ውጤት ማስጠንቀቂያን አፍን",
     .help_opt_only = "  --only PATH        በንዑስ-ዛፍ ላይ አተኩር፣ የእኩዮች ማውጫዎችን አጥፋ (ሊደገም ይችላል)",
     .help_opt_html = "  --html [FILE]      ራሱን የቻለ የHTML ዛፍ ወደ FILE ጻፍ (- = stdout፤ ካልገለጹ = በአሳሽ ክፈት)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  የsymlink ዒላማዎችን ደብቅ፤ --no-targets ሃይፐርሊንኮችንም ያስወግዳል (ተንቀሳቃሽ ውጤት)",
 
 
     // ── የማስጠንቀቂያ መልእክቶች (ትልቅ ውጤት) ───────────────────────────

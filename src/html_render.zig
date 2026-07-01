@@ -50,13 +50,13 @@ const theme_css =
 	\\}
 	\\.__P__-tree { padding: 1.25rem 1.5rem; }
 	\\.__P__-root { font-size: 1rem; font-weight: 700; color: #4aa3ff; margin: 0 0 .5rem; word-break: break-all; }
-	\\details { border-left: 1px solid #333; margin-left: .55em; padding-left: .9em; }
-	\\details > details, details > div { /* nested rows indent via the border */ }
-	\\summary { cursor: pointer; list-style: none; user-select: none; white-space: pre; }
+	\\details { margin: 0; padding: 0; border: 0; }
+	\\details > :not(summary) { margin-left: 1em; border-left: 1px solid #333; }
+	\\summary { cursor: pointer; list-style: none; user-select: none; white-space: pre; padding-left: 1.3em; }
 	\\summary::-webkit-details-marker { display: none; }
-	\\summary::before { content: "\25B8\00a0"; color: #808080; }
-	\\details[open] > summary::before { content: "\25BE\00a0"; }
-	\\.__P__-file, .__P__-symlink { white-space: pre; padding-left: 1.1em; }
+	\\summary::before { content: "\25B8"; display: inline-block; width: 1.3em; margin-left: -1.3em; text-align: center; color: #808080; }
+	\\details[open] > summary::before { content: "\25BE"; }
+	\\.__P__-file, .__P__-symlink { white-space: pre; padding-left: 1.3em; }
 	\\.__P__-dir { color: #4aa3ff; font-weight: 600; }
 	\\.__P__-file { color: #d4d4d4; }
 	\\.__P__-symlink { color: #3dd0d0; }
@@ -340,8 +340,8 @@ test "htmlRender: locks the approved v1 dark-theme specifics (regression)" {
 	try std.testing.expect(std.mem.indexOf(u8, out, ".dt-symlink { color: #3dd0d0; }") != null);
 	try std.testing.expect(std.mem.indexOf(u8, out, ".dt-note { color: #7aa86f; font-style: italic;") != null);
 	// custom disclosure triangles (▸ collapsed, ▾ open)
-	try std.testing.expect(std.mem.indexOf(u8, out, "summary::before { content: \"\\25B8\\00a0\";") != null);
-	try std.testing.expect(std.mem.indexOf(u8, out, "details[open] > summary::before { content: \"\\25BE\\00a0\"; }") != null);
+	try std.testing.expect(std.mem.indexOf(u8, out, "summary::before { content: \"\\25B8\"; display: inline-block; width: 1.3em; margin-left: -1.3em;") != null);
+	try std.testing.expect(std.mem.indexOf(u8, out, "details[open] > summary::before { content: \"\\25BE\"; }") != null);
 }
 
 test "htmlRender: embeds the Nerd Font @font-face when a data-URI is supplied" {

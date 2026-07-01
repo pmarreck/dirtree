@@ -98,6 +98,7 @@ pub const RenderConfig = struct {
 	use_color: bool = true,
 	use_icons: bool = true,
 	use_hyperlinks: bool = true,
+	show_symlink_targets: bool = true,
 	simple_mode: bool = false,
 	report_hidden: bool = true,
 	show_notes: bool = true,
@@ -367,6 +368,7 @@ pub fn resolveRenderConfig(cfg: anytype, effective: *const path_eval.EffectiveSt
 		(cfg.force_decorated or cfg.stdout_is_tty) and
 		(effective.color_preference orelse true);
 	const use_hyperlinks = !use_simple and !cfg.no_hyperlinks and
+		!cfg.hide_hyperlinks_run and
 		(cfg.force_decorated or cfg.stdout_is_tty) and
 		(effective.hyperlink_preference orelse true);
 	const use_icons = !cfg.no_icons;
@@ -386,6 +388,7 @@ pub fn resolveRenderConfig(cfg: anytype, effective: *const path_eval.EffectiveSt
 		.use_color = use_color,
 		.use_icons = use_icons,
 		.use_hyperlinks = use_hyperlinks,
+		.show_symlink_targets = !cfg.no_symlink_targets,
 		.simple_mode = use_simple,
 		.report_hidden = !cfg.show_hidden,
 		.show_notes = cfg.cli_notes orelse true,
@@ -739,7 +742,7 @@ pub fn buildHtmlTree(
 			href = ansi.buildFileUrl(arena, abs_path) catch null;
 		}
 
-		const target: ?[]const u8 = if (is_symlink)
+		const target: ?[]const u8 = if (is_symlink and config.show_symlink_targets)
 			readSymlinkTarget(arena, abs_dir, vis.child_rel)
 		else
 			null;
@@ -898,8 +901,8 @@ fn renderFileEntry(
 		try ansi.writeOsc8End(writer);
 	}
 
-	// Show symlink target
-	if (is_symlink) {
+	// Show symlink target (suppressed by --no-symlink-targets/--no-targets)
+	if (is_symlink and config.show_symlink_targets) {
 		if (readSymlinkTarget(allocator, abs_dir, child_rel)) |target| {
 			defer allocator.free(target);
 			try writer.writeAll(" -> ");
@@ -1155,6 +1158,8 @@ test "resolveRenderConfig: CLI > state-file > default precedence" {
 		force_decorated: bool = true,
 		stdout_is_tty: bool = false,
 		no_hyperlinks: bool = false,
+		no_symlink_targets: bool = false,
+		hide_hyperlinks_run: bool = false,
 		no_icons: bool = false,
 		sort_mode: ?dir_scan.SortMode = null,
 		sort_direction: ?dir_scan.SortDirection = null,

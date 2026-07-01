@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Undertryk advarslen om stor udskrift",
     .help_opt_only = "  --only PATH        Fokusér på et undertræ og klap søskendemapper sammen (gentagelig)",
     .help_opt_html = "  --html [FILE]      Skriv et selvstændigt HTML-træ til FILE (- = stdout; udelad = åbn i browser)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Skjul symlink-mål; --no-targets fjerner også hyperlinks (portabelt output)",
 
 
     // ── Advarsler (stor udskrift) ──────────────────────────────

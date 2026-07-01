@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Danne gargadin fitarwa mai yawa",
     .help_opt_only = "  --only PATH        Mai da hankali kan reshe, nade manyan-fayil na 'yan'uwa (maimaitawa)",
     .help_opt_html = "  --html [FILE]      Rubuta itacen HTML mai zaman kansa zuwa FILE (- = stdout; bar = buɗe a mai bincike)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Ɓoye hariri na symlink; --no-targets yana cire hyperlinks ma (fitarwa mai ɗaukuwa)",
 
 
     // ── Sakonnin gargadi (fitarwa mai yawa) ────────────────────

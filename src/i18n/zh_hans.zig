@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning 禁止大输出警告",
     .help_opt_only = "  --only PATH        聚焦某个子树，折叠同级目录 (可重复)",
     .help_opt_html = "  --html [FILE]      将独立的 HTML 树写入 FILE (- = stdout；省略 = 在浏览器中打开)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  隐藏符号链接目标；--no-targets 还会移除超链接（可移植输出）",
 
     .warn_large_output_prefix = "警告: 输出约 ~",
     .warn_large_output_mid = " 行 (阈值: ",

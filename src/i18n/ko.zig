@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning 큰 출력 경고 숨기기",
     .help_opt_only = "  --only PATH        하위 트리에 집중하고 형제 디렉터리를 접기 (반복 가능)",
     .help_opt_html = "  --html [FILE]      독립적인 HTML 트리를 FILE에 저장 (- = stdout, 생략 = 브라우저에서 열기)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  심볼릭 링크 대상 숨기기; --no-targets는 하이퍼링크도 제거 (이식 가능한 출력)",
 
     .warn_large_output_prefix = "경고: 출력이 약 ~",
     .warn_large_output_mid = "줄 (임계값: ",

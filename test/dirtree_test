@@ -1121,6 +1121,7 @@ Options:
   --override-warning Suppress the large output warning
   --only PATH        Focus on a subtree, collapsing sibling directories (repeatable)
   --html [FILE]      Write a self-contained HTML tree to FILE (- = stdout; omit = open in browser)
+  --no-symlink-targets/--no-targets  Hide symlink targets; --no-targets also drops hyperlinks (portable output)
   annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)
   orphaned-notes [DIR] List notes whose target paths no longer exist
   purge-orphaned-notes [DIR] Remove notes whose target paths no longer exist
@@ -4056,6 +4057,35 @@ test_html_bare_piped_to_stdout() {
 	[[ "$out" == *"a.txt"* ]] || { echo "piped stdout HTML should contain the entry" >&2; return 1; }
 }
 
+test_no_symlink_targets_terminal() {
+	local ws out=""
+	ws=$(new_tmpdir); touch "$ws/real.txt"; ln -s real.txt "$ws/link.txt"
+	out=$("$DIRTREE_BIN" --simple --no-icons "$ws" 2>/dev/null)
+	[[ "$out" == *"link.txt -> real.txt"* ]] || { echo "default should show symlink target" >&2; return 1; }
+	out=$("$DIRTREE_BIN" --simple --no-icons --no-symlink-targets "$ws" 2>/dev/null)
+	[[ "$out" == *"link.txt"* ]] || { echo "symlink name should still show" >&2; return 1; }
+	if [[ "$out" == *"-> real.txt"* ]]; then echo "--no-symlink-targets should hide the target" >&2; return 1; fi
+}
+
+test_no_symlink_targets_html() {
+	local ws out=""
+	ws=$(new_tmpdir); touch "$ws/real.txt"; ln -s real.txt "$ws/link.txt"
+	out=$("$DIRTREE_BIN" --html - "$ws" 2>/dev/null)
+	[[ "$out" == *"→"* ]] || { echo "HTML default should show symlink target" >&2; return 1; }
+	out=$("$DIRTREE_BIN" --html - --no-symlink-targets "$ws" 2>/dev/null)
+	if [[ "$out" == *"→"* ]]; then echo "--no-symlink-targets should drop dt-target in HTML" >&2; return 1; fi
+	# links are untouched by --no-symlink-targets
+	[[ "$out" == *"<a "* ]] || { echo "--no-symlink-targets should keep hyperlinks" >&2; return 1; }
+}
+
+test_no_targets_html() {
+	local ws out=""
+	ws=$(new_tmpdir); touch "$ws/real.txt"; ln -s real.txt "$ws/link.txt"
+	out=$("$DIRTREE_BIN" --html - --no-targets "$ws" 2>/dev/null)
+	if [[ "$out" == *"→"* ]]; then echo "--no-targets should drop symlink targets" >&2; return 1; fi
+	if [[ "$out" == *"<a "* ]]; then echo "--no-targets should drop hyperlinks too" >&2; return 1; fi
+}
+
 test_no_notes_flag_hides_notes() {
 	local workspace target out=""
 	workspace=$(new_tmpdir); target="$workspace/notes-off"; mkdir -p "$target"; touch "$target/f.txt"
@@ -5188,6 +5218,12 @@ run_all_tests() {
 		test_html_bare_opens_browser
 	run_test "bare --html piped to stdout streams HTML (no browser)" \
 		test_html_bare_piped_to_stdout
+	run_test "--no-symlink-targets hides symlink targets (terminal)" \
+		test_no_symlink_targets_terminal
+	run_test "--no-symlink-targets hides symlink targets (HTML), keeps links" \
+		test_no_symlink_targets_html
+	run_test "--no-targets drops symlink targets and links (HTML)" \
+		test_no_targets_html
 	run_test "--no-notes hides notes" \
 		test_no_notes_flag_hides_notes
 	run_test "DIRTREE_HIDE_NOTES hides notes" \

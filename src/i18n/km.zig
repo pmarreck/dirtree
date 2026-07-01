@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning បិទការព្រមានសម្រាប់លទ្ធផលធំ",
     .help_opt_only = "  --only PATH        ផ្តោតលើដើមរង បត់ថតបងប្អូន (អាចធ្វើម្តងទៀត)",
     .help_opt_html = "  --html [FILE]      សរសេរមែកធាង HTML ឯករាជ្យទៅ FILE (- = stdout; លុប = បើកក្នុងកម្មវិធីរុករក)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  លាក់គោលដៅ symlink; --no-targets លុបតំណខ្ពស់ផងដែរ (លទ្ធផលចល័ត)",
 
     .warn_large_output_prefix = "ការព្រមាន៖ លទ្ធផលប្រហែល ~",
     .warn_large_output_mid = " បន្ទាត់ (កម្រិត៖ ",

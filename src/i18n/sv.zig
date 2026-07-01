@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Dölj varningen om stor utdata",
     .help_opt_only = "  --only PATH        Fokusera på ett underträd och fäll ihop syskonkataloger (upprepningsbar)",
     .help_opt_html = "  --html [FILE]      Skriv ett fristående HTML-träd till FILE (- = stdout; utelämna = öppna i webbläsare)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Dölj symlänkmål; --no-targets tar även bort hyperlänkar (portabel utdata)",
 
 
     // ── Varningsmeddelanden (stor utdata) ──────────────────────

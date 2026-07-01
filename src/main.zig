@@ -59,6 +59,10 @@ pub const CliConfig = struct {
 	// Leader dots from name to note in aligned mode (opt-in, display-only).
 	note_leader: bool = false,
 	no_hyperlinks: bool = false,
+	// Run-only (never persisted): hide symlink `-> target` display.
+	no_symlink_targets: bool = false,
+	// Run-only: suppress hyperlinks for THIS run without persisting (set by --no-targets).
+	hide_hyperlinks_run: bool = false,
 	// Affirmative inverse of --no-hyperlinks
 	hyperlinks: bool = false,
 	// Apply CLI overrides for this run only; do NOT persist to .dirtree-state.
@@ -606,6 +610,19 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						i += 1;
 						continue;
 					},
+					.no_symlink_targets => {
+						config.no_symlink_targets = true;
+						i += 1;
+						continue;
+					},
+					.no_targets => {
+						// Portable/shareable output: hide symlink targets AND hyperlinks
+						// for this run only (never persisted).
+						config.no_symlink_targets = true;
+						config.hide_hyperlinks_run = true;
+						i += 1;
+						continue;
+					},
 					.hyperlinks => {
 						config.hyperlinks = true;
 						config.state_modified = true;
@@ -1128,6 +1145,7 @@ fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
 		.{ .flag = "--override-warning", .text = s.help_opt_override_warning, .args = &[_]i18n.CliArg{.override_warning} },
 		.{ .flag = "--only PATH", .text = s.help_opt_only, .args = &[_]i18n.CliArg{.only} },
 		.{ .flag = "--html", .text = s.help_opt_html, .args = &[_]i18n.CliArg{ .html, .format } },
+		.{ .flag = "--no-symlink-targets/--no-targets", .text = s.help_opt_no_targets, .args = &[_]i18n.CliArg{ .no_symlink_targets, .no_targets } },
 		.{ .flag = "annotate PATH DESC", .text = s.help_opt_annotate, .args = &[_]i18n.CliArg{.annotate}, .subcmd = true },
 		.{ .flag = "orphaned-notes [DIR]", .text = s.help_opt_orphaned_notes, .args = &[_]i18n.CliArg{.orphaned_notes}, .subcmd = true },
 		.{ .flag = "purge-orphaned-notes [DIR]", .text = s.help_opt_purge_orphaned_notes, .args = &[_]i18n.CliArg{.purge_orphaned_notes}, .subcmd = true },
@@ -1546,7 +1564,7 @@ pub fn main(init: std.process.Init) !u8 {
 				// HTML is an inherently rich (browser) format, so icons/links are
 				// independent of the terminal's TTY/color gating — enable them unless
 				// the user explicitly opted out (--no-icons / --no-hyperlinks).
-				const html_links = !cfg.no_hyperlinks and (effective.hyperlink_preference orelse true);
+				const html_links = !cfg.no_hyperlinks and !cfg.hide_hyperlinks_run and (effective.hyperlink_preference orelse true);
 				var html_build_config = render_config;
 				html_build_config.use_hyperlinks = html_links;
 				const nodes = tree_render.buildHtmlTree(
@@ -2388,6 +2406,35 @@ test "parseArgs: --html sets html_output" {
 			try std.testing.expect(cfg.html_output);
 		},
 		else => return error.TestExpectedConfig,
+	}
+}
+
+test "parseArgs: --no-symlink-targets and --no-targets" {
+	const A = std.testing.allocator;
+	{
+		const args = &[_][:0]const u8{ "dirtree", "--no-symlink-targets" };
+		var r = parseArgs(A, args);
+		switch (r) {
+			.config => |*cfg| {
+				defer cfg.deinit(A);
+				try std.testing.expect(cfg.no_symlink_targets);
+				try std.testing.expect(!cfg.hide_hyperlinks_run);
+			},
+			else => return error.TestExpectedConfig,
+		}
+	}
+	{
+		const args = &[_][:0]const u8{ "dirtree", "--no-targets" };
+		var r = parseArgs(A, args);
+		switch (r) {
+			.config => |*cfg| {
+				defer cfg.deinit(A);
+				try std.testing.expect(cfg.no_symlink_targets);
+				try std.testing.expect(cfg.hide_hyperlinks_run);
+				try std.testing.expect(!cfg.state_modified);
+			},
+			else => return error.TestExpectedConfig,
+		}
 	}
 }
 

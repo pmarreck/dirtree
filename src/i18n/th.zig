@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning ระงับคำเตือนเอาต์พุตขนาดใหญ่",
     .help_opt_only = "  --only PATH        โฟกัสที่ซับทรี โดยยุบไดเรกทอรีพี่น้อง (ใช้ซ้ำได้)",
     .help_opt_html = "  --html [FILE]      เขียนต้นไม้ HTML แบบครบในตัวไปยัง FILE (- = stdout; ละไว้ = เปิดในเบราว์เซอร์)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  ซ่อนเป้าหมายของ symlink; --no-targets จะลบไฮเปอร์ลิงก์ด้วย (เอาต์พุตพกพาได้)",
 
 
     // ── ข้อความเตือน (เอาต์พุตขนาดใหญ่) ──────────────────────────

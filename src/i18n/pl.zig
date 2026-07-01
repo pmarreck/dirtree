@@ -78,6 +78,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning Wycisz ostrzeżenie o dużym wyjściu",
     .help_opt_only = "  --only PATH        Skup się na poddrzewie, zwijając katalogi rodzeństwa (powtarzalne)",
     .help_opt_html = "  --html [FILE]      Zapisz samodzielne drzewo HTML do FILE (- = stdout; pominięcie = otwórz w przeglądarce)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Ukryj cele dowiązań symbolicznych; --no-targets usuwa też hiperłącza (przenośne wyjście)",
 
     .warn_large_output_prefix = "Ostrzeżenie: wyjście to ~",
     .warn_large_output_mid = " wierszy (próg: ",

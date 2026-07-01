@@ -76,6 +76,7 @@ pub const strings = Strings{
     .help_opt_override_warning = "  --override-warning بڑی آؤٹ پٹ کی تنبیہ کو دبائیں",
     .help_opt_only = "  --only PATH        ایک ذیلی ٹری پر توجہ مرکوز کریں، ہم پلہ ڈائریکٹریاں سمیٹیں (دہرایا جا سکتا ہے)",
     .help_opt_html = "  --html [FILE]      خود مکمل HTML ٹری کو FILE میں لکھیں (- = stdout؛ چھوڑ دیں = براؤزر میں کھولیں)",
+    .help_opt_no_targets = "  --no-symlink-targets/--no-targets  سِملنک اہداف چھپائیں؛ ‏--no-targets ہائپر لنکس بھی ہٹاتا ہے (پورٹیبل آؤٹ پٹ)",
 
 
     // ── Warning messages (large output) ────────────────────────
