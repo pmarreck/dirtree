@@ -145,6 +145,7 @@ dirtree
 
 # Collapse vendor directory and hide .log files
 dirtree --close vendor --hide '/\.log$/'
+# This creates a new '.dirtree-state' file with that config.
 
 # Temporarily show everything that is hidden
 dirtree --show-hidden
