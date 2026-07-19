@@ -139,7 +139,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--sahayata", .arg = .help },
         .{ .name = "--bare-mein", .arg = .about },
         .{ .name = "--gehrai", .arg = .depth },
-        .{ .name = "--path", .arg = .path },
         .{ .name = "--saral", .arg = .simple },
         .{ .name = "--sajjit", .arg = .decorated },
         .{ .name = "--bina-aaikan", .arg = .no_icons },

@@ -855,3 +855,43 @@ test "Test C: parseLocaleCode round-trips over the full locale set" {
         try std.testing.expectEqual(loc, parseLocaleCode(with_enc).?);
     }
 }
+
+test "Test D: no non-English locale reuses an English canonical CLI token (locale-inference safety)" {
+    // MFIC set-classifier over ALL locales. detectLocaleFromAliases skips English
+    // and returns the first non-English locale whose alias matches an argument, so
+    // a non-English table that copies an English canonical token (e.g. a stray
+    // "note" left over from seeding a locale file off en.zig) would hijack locale
+    // inference: typing that plain English word switches the whole UI into that
+    // language. The contract is that English canonical flags live ONLY in the
+    // English table, so each non-English alias-name set must be DISJOINT from
+    // English's. Tested as a classifier over the full cross-product, not a spot check.
+    @setEvalBranchQuota(2000000);
+    const en_aliases = localeCliAliases(.en);
+    inline for (all_locales) |loc| {
+        if (loc != .en) {
+            for (localeCliAliases(loc)) |entry| {
+                for (en_aliases) |en_entry| {
+                    if (std.mem.eql(u8, entry.name, en_entry.name)) {
+                        std.debug.print("locale '{s}': CLI alias '{s}' duplicates an English canonical token — would hijack locale inference\n", .{ loc.code(), entry.name });
+                        return error.EnglishTokenReusedByLocale;
+                    }
+                }
+            }
+        }
+    }
+}
+
+test "Test E: English canonical CLI tokens never infer a non-English locale" {
+    // Behavioral regression for the Urdu-under-English repro: `dirtree note ...`
+    // must NOT select a non-English locale. Every English canonical CLI token,
+    // passed alone as an argument, must leave locale inference undecided (null) so
+    // the environment/--lang/default wins instead.
+    @setEvalBranchQuota(2000000);
+    for (localeCliAliases(.en)) |en_entry| {
+        const args = [_][:0]const u8{en_entry.name};
+        if (detectLocaleFromAliases(&args)) |loc| {
+            std.debug.print("English token '{s}' wrongly inferred locale '{s}'\n", .{ en_entry.name, loc.code() });
+            return error.EnglishTokenInferredLocale;
+        }
+    }
+}

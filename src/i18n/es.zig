@@ -140,7 +140,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--decorado", .arg = .decorated },
         .{ .name = "--sin-iconos", .arg = .no_icons },
         .{ .name = "--sin-color", .arg = .no_color },
-        .{ .name = "--color", .arg = .color },
         .{ .name = "--sin-aviso-huerfanos", .arg = .no_orphan_warning },
         .{ .name = "--sin-notas", .arg = .no_notes },
         .{ .name = "--mostrar-notas", .arg = .show_notes },

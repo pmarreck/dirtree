@@ -163,7 +163,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "--vis-skjulte", .arg = .show_hidden },
         .{ .name = "--omskriv-indstillinger", .arg = .rewrite_settings },
         .{ .name = "--konfiguration", .arg = .config },
-        .{ .name = "--test", .arg = .@"test" },
         .{ .name = "--sprog", .arg = .lang },
         .{ .name = "--midlertidig", .arg = .temporary },
         .{ .name = "annoter", .arg = .annotate },

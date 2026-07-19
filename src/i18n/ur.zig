@@ -172,7 +172,6 @@ pub const aliases = LocaleAliases{
         .{ .name = "tashreeh", .arg = .annotate },
         .{ .name = "yateem-note", .arg = .orphaned_notes },
         .{ .name = "yateem-note-saaf-karo", .arg = .purge_orphaned_notes },
-        .{ .name = "note", .arg = .annotate },
         .{ .name = "--nuskha", .arg = .version },
         .{ .name = "--nuskha-jaanch", .arg = .version_check },
     },
