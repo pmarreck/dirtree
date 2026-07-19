@@ -315,15 +315,92 @@ pub fn parseLocaleCode(code_str: []const u8) ?Locale {
 
 /// Detect locale from environment variables.
 /// Priority: LC_MESSAGES > LANG > fallback to English.
+/// True for the POSIX portable ("C") / "POSIX" locale, with an optional
+/// .encoding suffix (e.g. "C.UTF-8"). Such a value explicitly requests no
+/// localization, so it resolves to English rather than falling through.
+fn isPortableLocale(v: []const u8) bool {
+    const base = if (std.mem.indexOfScalar(u8, v, '.')) |dot| v[0..dot] else v;
+    return std.mem.eql(u8, base, "C") or std.mem.eql(u8, base, "POSIX");
+}
+
+fn envHasValue(v: ?[]const u8) ?[]const u8 {
+    if (v) |s| {
+        if (s.len > 0) return s;
+    }
+    return null;
+}
+
+/// Interpret one POSIX locale category value: "C"/"POSIX" => English; a known
+/// code => that locale; anything else => English (a SET category never falls
+/// through to a lower-priority variable — that is the POSIX override rule).
+fn interpretPosixLocale(v: []const u8) Locale {
+    if (isPortableLocale(v)) return .en;
+    return parseLocaleCode(v) orelse .en;
+}
+
+/// Pure locale resolver: given the raw env values, apply the canonical
+/// precedence DIRTREE_LANG (app override) > LC_ALL > LC_MESSAGES > LANG, with
+/// POSIX "set-wins" semantics (a set-but-"C" category yields English, it does
+/// not fall through). Kept pure (no getenv) so precedence is directly testable;
+/// detectLocaleFromEnv is the thin impure wrapper.
+pub fn pickLocaleFromEnvValues(
+    dirtree_lang: ?[]const u8,
+    lc_all: ?[]const u8,
+    lc_messages: ?[]const u8,
+    lang: ?[]const u8,
+) Locale {
+    // 1. Application override (project-prefixed) wins outright when it names a
+    //    locale we recognize; a stray/garbled value simply defers to POSIX.
+    if (envHasValue(dirtree_lang)) |v| {
+        if (parseLocaleCode(v)) |loc| return loc;
+    }
+    // 2. POSIX categories, highest first. The FIRST category that is set
+    //    decides the result — including "C"/"POSIX" => English — rather than
+    //    falling through to a lower-priority variable.
+    if (envHasValue(lc_all)) |v| return interpretPosixLocale(v);
+    if (envHasValue(lc_messages)) |v| return interpretPosixLocale(v);
+    if (envHasValue(lang)) |v| return interpretPosixLocale(v);
+    return .en;
+}
+
 pub fn detectLocaleFromEnv() Locale {
     const runtime = @import("../runtime.zig");
-    if (runtime.getEnv("LC_MESSAGES")) |val| {
-        if (parseLocaleCode(val)) |loc| return loc;
-    }
-    if (runtime.getEnv("LANG")) |val| {
-        if (parseLocaleCode(val)) |loc| return loc;
-    }
-    return .en;
+    return pickLocaleFromEnvValues(
+        runtime.getEnv("DIRTREE_LANG"),
+        runtime.getEnv("LC_ALL"),
+        runtime.getEnv("LC_MESSAGES"),
+        runtime.getEnv("LANG"),
+    );
+}
+
+test "env precedence: DIRTREE_LANG app override beats every POSIX category" {
+    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues("de", "fr_FR.UTF-8", "es_ES", "it_IT"));
+}
+
+test "env precedence: LC_ALL beats LC_MESSAGES and LANG" {
+    try std.testing.expectEqual(Locale.fr, pickLocaleFromEnvValues(null, "fr_FR.UTF-8", "es_ES", "it_IT"));
+}
+
+test "env precedence: LC_ALL=C forces English even when LANG is a real locale (repro)" {
+    // The reported case: LANG=en_US LANGUAGE=en LC_ALL=C.UTF-8 must yield English,
+    // and more sharply LC_ALL=C must WIN over a non-English LANG.
+    try std.testing.expectEqual(Locale.en, pickLocaleFromEnvValues(null, "C.UTF-8", null, "de_DE.UTF-8"));
+}
+
+test "env precedence: LC_MESSAGES beats LANG when LC_ALL unset" {
+    try std.testing.expectEqual(Locale.es, pickLocaleFromEnvValues(null, null, "es_ES.UTF-8", "it_IT"));
+}
+
+test "env precedence: LANG used when it is the only signal" {
+    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues(null, null, null, "de_DE.UTF-8"));
+}
+
+test "env precedence: no signal => English" {
+    try std.testing.expectEqual(Locale.en, pickLocaleFromEnvValues(null, null, null, null));
+}
+
+test "env precedence: empty strings are treated as unset" {
+    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues("", "", "", "de_DE"));
 }
 
 /// Infer a locale from a localized CLI alias present in `args` (e.g. "--hilfe"
