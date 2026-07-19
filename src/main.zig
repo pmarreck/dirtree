@@ -344,6 +344,47 @@ fn parseHtmlTarget(config: *CliConfig, args: []const [:0]const u8, flag_idx: usi
 	return flag_idx + 1;
 }
 
+/// True if a help flag (-h, --help, or a localized help alias) appears before
+/// the end-of-options `--` marker. Position-independent so `note --help` and
+/// `--lang en --help` are both recognized as help intent.
+fn helpRequested(args: []const [:0]const u8) bool {
+	for (args) |arg| {
+		if (std.mem.eql(u8, arg, "--")) break; // end of options; rest are operands
+		if (std.mem.eql(u8, arg, "-h")) return true;
+		if (i18n.matchLongFlag(arg)) |a| {
+			if (a == .help) return true;
+		}
+	}
+	return false;
+}
+
+/// True if any token (before `--`) resolves to a verb subcommand
+/// (annotate/note, orphaned-notes, purge-orphaned-notes, or a localized alias).
+/// A token immediately following `--lang` is skipped so a locale code is never
+/// misread as a verb. Used to tell "bare --help" (global help) apart from
+/// "subcommand + --help" (subcommand-help intent).
+fn containsSubcommandVerb(args: []const [:0]const u8) bool {
+	for (args, 0..) |arg, idx| {
+		if (std.mem.eql(u8, arg, "--")) break;
+		if (idx > 0 and (std.mem.eql(u8, args[idx - 1], "--lang") or i18n.isFlag(args[idx - 1], .lang))) continue;
+		if (i18n.matchLongFlag(arg)) |a| switch (a) {
+			.annotate, .orphaned_notes, .purge_orphaned_notes => return true,
+			else => {},
+		};
+	}
+	return false;
+}
+
+/// Index of the subcommand candidate: normally 0, but a single leading
+/// `--lang CODE` may precede the verb (the v1-documented exception), so skip
+/// past it. Returns args.len when nothing follows the flag.
+fn subcommandIndex(args: []const [:0]const u8) usize {
+	if (args.len >= 1 and (std.mem.eql(u8, args[0], "--lang") or i18n.isFlag(args[0], .lang))) {
+		return if (args.len >= 3) 2 else args.len;
+	}
+	return 0;
+}
+
 pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) ParseResult {
 	var config = CliConfig{};
 	var config_owned = true;
@@ -385,27 +426,40 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 		}
 	}
 
-	// Subcommand: annotate / note (and localized variants).
-	// Must appear as the first positional argument. Flags before it
-	// (other than --lang) are not supported in v1.
-	if (args.len > 0) {
-		if (i18n.matchLongFlag(args[0])) |maybe_arg| {
+	// Help intent short-circuits before subcommand dispatch. A lone help flag
+	// (any position) shows the global help; a help flag together with a verb
+	// subcommand looks like a request for subcommand-specific help, which is not
+	// implemented yet -- emit a pointed (intentionally untranslated, temporary)
+	// error rather than the confusing "annotate requires a description". This
+	// placeholder is removed when per-subcommand help lands.
+	if (helpRequested(args)) {
+		if (containsSubcommandVerb(args)) {
+			return .{ .err = "Subcommand help not yet supported" };
+		}
+		return .help;
+	}
+
+	// Subcommand: annotate / note (and localized variants). The verb is the
+	// first operand; a single leading `--lang CODE` may precede it (v1).
+	const sub_idx = subcommandIndex(args);
+	if (sub_idx < args.len) {
+		if (i18n.matchLongFlag(args[sub_idx])) |maybe_arg| {
 			if (maybe_arg == .annotate) {
-				if (args.len < 2) {
+				if (args.len < sub_idx + 2) {
 					return .{ .err = s.err_annotate_requires_path };
 				}
-				if (args.len < 3) {
+				if (args.len < sub_idx + 3) {
 					return .{ .err = s.err_annotate_requires_description };
 				}
-				if (args.len > 3) {
+				if (args.len > sub_idx + 3) {
 					return .{ .err = s.err_annotate_too_many_args };
 				}
-				const desc = args[2];
+				const desc = args[sub_idx + 2];
 				if (std.mem.indexOfScalar(u8, desc, '\n') != null) {
 					return .{ .err = s.err_annotate_multiline };
 				}
 				// Normalize path: strip leading ./ and /, strip trailing /
-				var p: []const u8 = args[1];
+				var p: []const u8 = args[sub_idx + 1];
 				if (p.len >= 2 and p[0] == '.' and p[1] == '/') p = p[2..];
 				while (p.len > 0 and p[0] == '/') p = p[1..];
 				while (p.len > 0 and p[p.len - 1] == '/') p = p[0 .. p.len - 1];
@@ -417,11 +471,11 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 
 	// Subcommands: orphaned-notes / purge-orphaned-notes (and localized variants).
 	// Both take an optional directory argument (default: current directory).
-	if (args.len > 0) {
-		if (i18n.matchLongFlag(args[0])) |maybe_arg| {
+	if (sub_idx < args.len) {
+		if (i18n.matchLongFlag(args[sub_idx])) |maybe_arg| {
 			switch (maybe_arg) {
 				.orphaned_notes, .purge_orphaned_notes => {
-					const dir: []const u8 = if (args.len >= 2) args[1] else ".";
+					const dir: []const u8 = if (args.len > sub_idx + 1) args[sub_idx + 1] else ".";
 					const oa = OrphanArgs{ .dir = dir };
 					return if (maybe_arg == .orphaned_notes)
 						ParseResult{ .orphaned_notes = oa }
@@ -2718,6 +2772,68 @@ test "parseArgs: annotate path normalization" {
 	switch (result) {
 		.annotate => |a| {
 			try std.testing.expectEqualStrings("src/main.zig", a.path);
+		},
+		else => return error.TestExpectedAnnotate,
+	}
+}
+
+test "parseArgs: 'note --help' => pointed 'not yet supported' error" {
+	// Looks like a request for subcommand help (unimplemented). Must NOT fall
+	// through to annotate's 'requires a description' error, nor show global help.
+	const args = &[_][:0]const u8{ "dirtree", "note", "--help" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.err => |m| try std.testing.expectEqualStrings("Subcommand help not yet supported", m),
+		else => return error.TestExpectedSubcommandHelpError,
+	}
+}
+
+test "parseArgs: '--lang en note --help' => pointed error (subcommand after --lang)" {
+	const args = &[_][:0]const u8{ "dirtree", "--lang", "en", "note", "--help" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.err => |m| try std.testing.expectEqualStrings("Subcommand help not yet supported", m),
+		else => return error.TestExpectedSubcommandHelpError,
+	}
+}
+
+test "parseArgs: '--help note' => pointed error (verb after the flag)" {
+	const args = &[_][:0]const u8{ "dirtree", "--help", "note" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.err => |m| try std.testing.expectEqualStrings("Subcommand help not yet supported", m),
+		else => return error.TestExpectedSubcommandHelpError,
+	}
+}
+
+test "parseArgs: '--help' with a plain path operand => global help" {
+	// A directory operand is not a subcommand, so --help shows global help.
+	const args = &[_][:0]const u8{ "dirtree", "src", "--help" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.help => {},
+		else => return error.TestExpectedHelp,
+	}
+}
+
+test "parseArgs: bare '--help' anywhere still shows global help" {
+	const args = &[_][:0]const u8{ "dirtree", "--lang", "en", "--help" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.help => {},
+		else => return error.TestExpectedHelp,
+	}
+}
+
+test "parseArgs: annotate executes when it follows a leading --lang" {
+	// v1 documents that --lang may precede a subcommand; the old args[0]-only
+	// check mis-parsed the verb as a directory.
+	const args = &[_][:0]const u8{ "dirtree", "--lang", "en", "note", "src/x.zig", "desc" };
+	const result = parseArgs(std.testing.allocator, args);
+	switch (result) {
+		.annotate => |a| {
+			try std.testing.expectEqualStrings("src/x.zig", a.path);
+			try std.testing.expectEqualStrings("desc", a.description);
 		},
 		else => return error.TestExpectedAnnotate,
 	}
