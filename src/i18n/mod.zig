@@ -345,21 +345,35 @@ fn interpretPosixLocale(v: []const u8) Locale {
 /// detectLocaleFromEnv is the thin impure wrapper.
 pub fn pickLocaleFromEnvValues(
     dirtree_lang: ?[]const u8,
+    language: ?[]const u8,
     lc_all: ?[]const u8,
     lc_messages: ?[]const u8,
     lang: ?[]const u8,
 ) Locale {
     // 1. Application override (project-prefixed) wins outright when it names a
-    //    locale we recognize; a stray/garbled value simply defers to POSIX.
+    //    locale we recognize; a stray/garbled value simply defers to the rest.
     if (envHasValue(dirtree_lang)) |v| {
         if (parseLocaleCode(v)) |loc| return loc;
     }
-    // 2. POSIX categories, highest first. The FIRST category that is set
-    //    decides the result — including "C"/"POSIX" => English — rather than
-    //    falling through to a lower-priority variable.
-    if (envHasValue(lc_all)) |v| return interpretPosixLocale(v);
-    if (envHasValue(lc_messages)) |v| return interpretPosixLocale(v);
-    if (envHasValue(lang)) |v| return interpretPosixLocale(v);
+    // 2. The controlling POSIX category is the FIRST of LC_ALL > LC_MESSAGES >
+    //    LANG that is set; nothing set means the default "C" locale.
+    const posix_val: ?[]const u8 = envHasValue(lc_all) orelse envHasValue(lc_messages) orelse envHasValue(lang);
+    const active_is_portable = if (posix_val) |v| isPortableLocale(v) else true;
+    // 3. GNU gettext honors LANGUAGE (a colon-separated catalog-preference
+    //    list) AHEAD of the POSIX categories — but only when the active locale
+    //    is not the portable "C"/"POSIX" locale (the C-locale exception).
+    if (!active_is_portable) {
+        if (envHasValue(language)) |list| {
+            var lang_it = std.mem.splitScalar(u8, list, ':');
+            while (lang_it.next()) |entry| {
+                if (entry.len == 0) continue;
+                if (parseLocaleCode(entry)) |loc| return loc;
+            }
+        }
+    }
+    // 4. POSIX result: the controlling category (a set-but-"C" value => English),
+    //    or English when nothing is set.
+    if (posix_val) |v| return interpretPosixLocale(v);
     return .en;
 }
 
@@ -367,6 +381,7 @@ pub fn detectLocaleFromEnv() Locale {
     const runtime = @import("../runtime.zig");
     return pickLocaleFromEnvValues(
         runtime.getEnv("DIRTREE_LANG"),
+        runtime.getEnv("LANGUAGE"),
         runtime.getEnv("LC_ALL"),
         runtime.getEnv("LC_MESSAGES"),
         runtime.getEnv("LANG"),
@@ -374,33 +389,55 @@ pub fn detectLocaleFromEnv() Locale {
 }
 
 test "env precedence: DIRTREE_LANG app override beats every POSIX category" {
-    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues("de", "fr_FR.UTF-8", "es_ES", "it_IT"));
+    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues("de", null, "fr_FR.UTF-8", "es_ES", "it_IT"));
 }
 
 test "env precedence: LC_ALL beats LC_MESSAGES and LANG" {
-    try std.testing.expectEqual(Locale.fr, pickLocaleFromEnvValues(null, "fr_FR.UTF-8", "es_ES", "it_IT"));
+    try std.testing.expectEqual(Locale.fr, pickLocaleFromEnvValues(null, null, "fr_FR.UTF-8", "es_ES", "it_IT"));
 }
 
 test "env precedence: LC_ALL=C forces English even when LANG is a real locale (repro)" {
     // The reported case: LANG=en_US LANGUAGE=en LC_ALL=C.UTF-8 must yield English,
     // and more sharply LC_ALL=C must WIN over a non-English LANG.
-    try std.testing.expectEqual(Locale.en, pickLocaleFromEnvValues(null, "C.UTF-8", null, "de_DE.UTF-8"));
+    try std.testing.expectEqual(Locale.en, pickLocaleFromEnvValues(null, null, "C.UTF-8", null, "de_DE.UTF-8"));
 }
 
 test "env precedence: LC_MESSAGES beats LANG when LC_ALL unset" {
-    try std.testing.expectEqual(Locale.es, pickLocaleFromEnvValues(null, null, "es_ES.UTF-8", "it_IT"));
+    try std.testing.expectEqual(Locale.es, pickLocaleFromEnvValues(null, null, null, "es_ES.UTF-8", "it_IT"));
 }
 
 test "env precedence: LANG used when it is the only signal" {
-    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues(null, null, null, "de_DE.UTF-8"));
+    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues(null, null, null, null, "de_DE.UTF-8"));
 }
 
 test "env precedence: no signal => English" {
-    try std.testing.expectEqual(Locale.en, pickLocaleFromEnvValues(null, null, null, null));
+    try std.testing.expectEqual(Locale.en, pickLocaleFromEnvValues(null, null, null, null, null));
 }
 
 test "env precedence: empty strings are treated as unset" {
-    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues("", "", "", "de_DE"));
+    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues("", "", "", "", "de_DE"));
+}
+
+test "env precedence: LANGUAGE (GNU) honored ahead of a non-C LANG" {
+    // LANG sets a real (non-C) active locale, so GNU LANGUAGE wins for messages.
+    try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues(null, "de", null, null, "en_US.UTF-8"));
+}
+
+test "env precedence: LANGUAGE colon-list picks the first parseable entry" {
+    try std.testing.expectEqual(Locale.fr, pickLocaleFromEnvValues(null, "xx:fr:de", null, null, "en_US.UTF-8"));
+}
+
+test "env precedence: LANGUAGE ignored under the C-locale exception (LC_ALL=C)" {
+    // Even with LANGUAGE=de, an active C locale means no localization.
+    try std.testing.expectEqual(Locale.en, pickLocaleFromEnvValues(null, "de", "C.UTF-8", null, "de_DE.UTF-8"));
+}
+
+test "env precedence: LANGUAGE ignored when no POSIX category is set (default C)" {
+    try std.testing.expectEqual(Locale.en, pickLocaleFromEnvValues(null, "de", null, null, null));
+}
+
+test "env precedence: DIRTREE_LANG still beats LANGUAGE" {
+    try std.testing.expectEqual(Locale.es, pickLocaleFromEnvValues("es", "de", null, null, "en_US.UTF-8"));
 }
 
 /// Infer a locale from a localized CLI alias present in `args` (e.g. "--hilfe"
