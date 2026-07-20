@@ -1437,7 +1437,11 @@ pub fn main(init: std.process.Init) !u8 {
 			return 0;
 		},
 		.err => |msg| {
-			try stderr.writeAll(msg);
+			// Bidi-isolate the English "(en: …)" shadow so RTL error text renders
+			// correctly; a no-op for LTR locales and shadow-less messages.
+			var wrap_buf: [4096]u8 = undefined;
+			const out = i18n.bidiWrapShadow(&wrap_buf, msg, i18n.isRtl(i18n.getLocale()));
+			try stderr.writeAll(out);
 			try stderr.writeAll("\n");
 			try stderr.flush();
 			return 1;

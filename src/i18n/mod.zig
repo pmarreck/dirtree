@@ -388,6 +388,45 @@ pub fn detectLocaleFromEnv() Locale {
     );
 }
 
+/// The five right-to-left script locales in the baseline set.
+pub fn isRtl(loc: Locale) bool {
+    return switch (loc) {
+        .ar, .he, .fa, .ps, .ur => true,
+        else => false,
+    };
+}
+
+/// U+200E LEFT-TO-RIGHT MARK — brackets an LTR run so it renders as an isolated
+/// segment inside surrounding RTL text (Unicode bidi algorithm).
+const lrm = "\u{200E}";
+
+/// Bidi-isolate the trailing English "(en: …)" bilingual shadow of an error so
+/// the LTR shadow renders correctly inside RTL message text: wrap it in LRM
+/// marks at emit time. Pure, and a no-op for LTR locales or messages without a
+/// shadow — so the marks live in exactly one place (by construction) rather than
+/// being hand-baked inconsistently into every RTL error string. Returns `msg`
+/// unchanged when no wrapping applies or when `buf` is too small.
+pub fn bidiWrapShadow(buf: []u8, msg: []const u8, is_rtl: bool) []const u8 {
+    if (!is_rtl) return msg;
+    // The shadow begins at " (en:"; keep the leading space on the RTL side and
+    // bracket the "(en: …)" LTR run — up to end of string — with LRM marks.
+    const marker = " (en:";
+    const found = std.mem.indexOf(u8, msg, marker) orelse return msg;
+    const cut = found + 1; // index of '('
+    const total = msg.len + lrm.len * 2;
+    if (total > buf.len) return msg; // too small to wrap safely — emit as-is
+    var pos: usize = 0;
+    @memcpy(buf[pos..][0..cut], msg[0..cut]);
+    pos += cut;
+    @memcpy(buf[pos..][0..lrm.len], lrm);
+    pos += lrm.len;
+    @memcpy(buf[pos..][0 .. msg.len - cut], msg[cut..]);
+    pos += msg.len - cut;
+    @memcpy(buf[pos..][0..lrm.len], lrm);
+    pos += lrm.len;
+    return buf[0..pos];
+}
+
 test "env precedence: DIRTREE_LANG app override beats every POSIX category" {
     try std.testing.expectEqual(Locale.de, pickLocaleFromEnvValues("de", null, "fr_FR.UTF-8", "es_ES", "it_IT"));
 }
@@ -438,6 +477,44 @@ test "env precedence: LANGUAGE ignored when no POSIX category is set (default C)
 
 test "env precedence: DIRTREE_LANG still beats LANGUAGE" {
     try std.testing.expectEqual(Locale.es, pickLocaleFromEnvValues("es", "de", null, null, "en_US.UTF-8"));
+}
+
+test "G2 RTL: a known bilingual error is LRM-bracketed for every RTL locale" {
+    // The skill's RTL smoke test: render a KNOWN bilingual string and assert the
+    // directional marks are present. Uses a synthetic shadow so the check does
+    // not depend on which per-locale error strings happen to be translated.
+    const known = "خطأ: وصف مطلوب (en: Error: a description is required)";
+    inline for ([_]Locale{ .ar, .he, .fa, .ps, .ur }) |loc| {
+        try std.testing.expect(isRtl(loc));
+        var buf: [256]u8 = undefined;
+        const out = bidiWrapShadow(&buf, known, isRtl(loc));
+        // Exactly two LRM marks bracket the LTR shadow.
+        try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, out, lrm));
+        // The mark sits immediately before the shadow's '(' and closes the string.
+        try std.testing.expect(std.mem.indexOf(u8, out, lrm ++ "(en:") != null);
+        try std.testing.expect(std.mem.endsWith(u8, out, lrm));
+        // Shadow content survives intact.
+        try std.testing.expect(std.mem.indexOf(u8, out, "(en:") != null);
+    }
+}
+
+test "G2 RTL: LTR locales pass the message through unchanged (no marks added)" {
+    const known = "خطأ: وصف مطلوب (en: Error: a description is required)";
+    inline for ([_]Locale{ .en, .de, .ja }) |loc| {
+        try std.testing.expect(!isRtl(loc));
+        var buf: [256]u8 = undefined;
+        const out = bidiWrapShadow(&buf, known, isRtl(loc));
+        try std.testing.expectEqualStrings(known, out);
+        try std.testing.expect(std.mem.indexOf(u8, out, lrm) == null);
+    }
+}
+
+test "G2 RTL: a message with no English shadow is returned unchanged even for RTL" {
+    const known = "خطأ بدون ظل إنجليزي"; // pure Arabic, no "(en: ...)"
+    var buf: [256]u8 = undefined;
+    const out = bidiWrapShadow(&buf, known, true);
+    try std.testing.expectEqualStrings(known, out);
+    try std.testing.expect(std.mem.indexOf(u8, out, lrm) == null);
 }
 
 /// Infer a locale from a localized CLI alias present in `args` (e.g. "--hilfe"
