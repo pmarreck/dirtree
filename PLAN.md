@@ -7,6 +7,51 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 
 ---
 
+## Phase 6 — i18n locale-selection bug + skill alignment (2026-07-19/20)
+
+Trigger: inbox note `inbox/2026-07-19-note-help-uses-urdu.md` — `dirtree note --help`
+emitted an **Urdu** error under an English environment.
+
+- [x] **6.1 🔥 Urdu locale-hijack fix + MFIC disjointness classifier** — five non-English
+  locale tables carried a verbatim English canonical CLI token (`ur:note es:--color
+  hi:--path nb/da:--test`); `detectLocaleFromAliases` skips English but returns the first
+  non-English locale whose alias matches an arg, so a plain English word switched the UI
+  into that language. Removed the strays; added Test D (set-classifier: non-en alias sets
+  disjoint from English) + Test E (behavioral). Commit `9b67000`. _(2026-07-19)_
+- [x] **6.2 🔥 env locale precedence** — `detectLocaleFromEnv` ignored `DIRTREE_LANG` and
+  `LC_ALL`. Extracted pure `pickLocaleFromEnvValues`; precedence `DIRTREE_LANG > LC_ALL >
+  LC_MESSAGES > LANG`, POSIX set-wins (C/POSIX ⇒ English). Commit `470408c`. _(2026-07-19)_
+- [x] **6.3 🔥 `-h/--help` around subcommands** — `note --help` hit annotate dispatch and
+  errored; verb only recognized as `args[0]`. Help now short-circuits: bare help ⇒ global
+  help (any position); help + a verb ⇒ pointed **untranslated placeholder** "Subcommand
+  help not yet supported" (removed when Variant A lands); verb recognized as first operand
+  after an optional leading `--lang`. Commit `8ac0fea`. _(2026-07-19)_
+- [x] **6.4 G1 — GNU `LANGUAGE`** honored (colon-list) with its C-locale exception, ahead
+  of the POSIX categories. Commit `f5d7ba0`. _(2026-07-20)_
+- [x] **6.5 G2 — RTL bidi shadow** — pure `isRtl` + `bidiWrapShadow` LRM-brackets the
+  `(en: …)` LTR shadow at emit time (was hand-baked only in help, never in error strings;
+  `ar` had none). Commit `bed3dd9`. _(2026-07-20)_
+- [x] i18n **skill** updated: added testing requirement **#7 Alias-inference disjointness**
+  (`~/.claude/skills/i18n/SKILL.md`). Corrected stale 22→50 locale auto-memory.
+
+### Phase 6 — REMAINING (each its own commit; TDD)
+- [ ] **6.6 Variant A — per-subcommand help (fully translated ×50)** [Peter: translate now].
+  Design = canonical tags (Peter-approved): author help content for `annotate`/`note`,
+  `orphaned-notes`, `purge-orphaned-notes`; tag sections with **canonical (English) topic**
+  names mapped from the (possibly localized) verb via `matchLongFlag`→`CliArg`; global help
+  strips tags, `<verb> --help` filters to that section. **MFIC test:** every topic has a
+  well-formed line-anchored `<topic>…</topic>` pair in every locale + stripped global help
+  has zero residual tags. This **replaces** the "Subcommand help not yet supported"
+  placeholder (6.3). Big lift: content + 50 quality translations (consider a focused pass).
+- [ ] **6.7 G3 — platform locale adapters** — macOS `CFLocaleCopyPreferredLanguages`,
+  Windows `GetUserPreferredUILanguages`, as a fallback when the Unix env gives no signal.
+  Unit-test the pure selection logic; the actual platform calls are only exercisable on the
+  mac/Windows CI runners (can't integration-test on Linux).
+- [ ] (noted, not scoped) `ar/he/fa` ship an **untranslated English**
+  `err_annotate_requires_description` — a translation-completeness gap surfaced during G2.
+
+---
+
 ## Phase 1 — Behavioral bugs + the coverage that would have caught them
 
 - [x] **1.1 — NOT A BUG (audit #1 false positive)** `annotate PATH ""` (`main.zig` `persistAnnotation` ~:2272). Help says "empty DESC clears"; impl removes then re-adds an empty tombstone (`\tpath = \n`). Fix: when `description.len==0`, remove and skip re-add. *Failing CLI test first*: after `annotate p ""`, the `annotate=[` block / that path is absent.
