@@ -111,6 +111,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] רשימת הערות שנתיביהן אינם קיימים",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] הסרת הערות שנתיביהן אינם קיימים",
+    .help_subcommands =
+    \\<annotate>
+    \\שימוש: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (כינוי)
+    \\
+    \\שמור הערה בת שורה אחת על קובץ או ספרייה. ההערה נשמרת ב-
+    \\.dirtree-state ומוצגת ליד PATH בפעם הבאה שהעץ מוצג.
+    \\
+    \\ארגומנטים:
+    \\  PATH   קובץ או ספרייה, יחסית לספרייה הנוכחית
+    \\  DESC   טקסט ההערה; העבר מחרוזת ריקה "" כדי לנקות הערה קיימת
+    \\
+    \\דוגמאות:
+    \\  dirtree annotate src/main.zig "נקודת כניסה של שורת הפקודה"
+    \\  dirtree note docs "הערות התכנון נמצאות כאן"
+    \\  dirtree annotate README.md ""        # ניקוי ההערה על README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\שימוש: dirtree orphaned-notes [DIR]
+    \\
+    \\רשימת הערות שנתיב היעד שלהן כבר אינו קיים — למשל לאחר ששם קובץ
+    \\שונה, הקובץ הועבר או נמחק. ברירת המחדל של DIR היא הספרייה הנוכחית.
+    \\זו פעולת קריאה בלבד: דבר אינו משתנה. השתמש ב-purge-orphaned-notes כדי להסירן.
+    \\
+    \\דוגמאות:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\שימוש: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\הסרת הערות שנתיב היעד שלהן כבר אינו קיים. ברירת המחדל של DIR היא
+    \\הספרייה הנוכחית. הרץ תחילה orphaned-notes כדי לראות מראש בדיוק מה יוסר.
+    \\
+    \\דוגמאות:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "הערות יתומות (נתיבים שכבר אינם קיימים):",
     .orphaned_none = "אין הערות יתומות.",
     .purge_header = "הערות יתומות הוסרו:",

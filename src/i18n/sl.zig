@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Ohrani enovrstično opombo o datoteki ali imeniku (vzdevek: note; prazen DESC izbriše)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Naštej opombe, katerih ciljne poti ne obstajajo več",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Odstrani opombe, katerih ciljne poti ne obstajajo več",
+    .help_subcommands =
+    \\<annotate>
+    \\Uporaba: dirtree annotate PATH DESC
+    \\         dirtree note PATH DESC          (vzdevek)
+    \\
+    \\Ohrani enovrstično opombo o datoteki ali imeniku. Opomba se shrani v
+    \\.dirtree-state in se prikaže poleg PATH ob naslednjem izrisu drevesa.
+    \\
+    \\Argumenti:
+    \\  PATH   datoteka ali imenik, relativno glede na trenutni imenik
+    \\  DESC   besedilo opombe; podaj prazen niz "" za izbris obstoječe opombe
+    \\
+    \\Primeri:
+    \\  dirtree annotate src/main.zig "vstopna točka CLI"
+    \\  dirtree note docs "tukaj so opombe o zasnovi"
+    \\  dirtree annotate README.md ""        # izbriši opombo za README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Uporaba: dirtree orphaned-notes [DIR]
+    \\
+    \\Naštej opombe, katerih ciljna pot ne obstaja več — na primer potem ko je bila
+    \\datoteka preimenovana, premaknjena ali izbrisana. DIR privzeto kaže na trenutni imenik.
+    \\To je samo za branje: nič se ne spremeni. Uporabi purge-orphaned-notes za njihovo odstranitev.
+    \\
+    \\Primeri:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Uporaba: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Odstrani opombe, katerih ciljna pot ne obstaja več. DIR privzeto kaže na trenutni
+    \\imenik. Najprej zaženi orphaned-notes za predogled, kaj točno bo odstranjeno.
+    \\
+    \\Primeri:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Osirotele opombe (poti, ki ne obstajajo več):",
     .orphaned_none = "Ni osirotelih opomb.",
     .purge_header = "Odstranjene osirotele opombe:",

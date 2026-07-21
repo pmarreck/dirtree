@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC ஒரு கோப்பு அல்லது அடைவு பற்றிய ஒற்றை வரிக் குறிப்பை நிலைப்படுத்து (மாற்றுப்பெயர்: note; காலி DESC அழிக்கிறது)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] இலக்குப் பாதைகள் இனி இல்லாத குறிப்புகளைப் பட்டியலிடு",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] இலக்குப் பாதைகள் இனி இல்லாத குறிப்புகளை நீக்கு",
+    .help_subcommands =
+    \\<annotate>
+    \\பயன்பாடு: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (மாற்றுப்பெயர்)
+    \\
+    \\ஒரு கோப்பு அல்லது அடைவு பற்றிய ஒற்றை வரிக் குறிப்பை நிலைப்படுத்து. குறிப்பு
+    \\.dirtree-state இல் சேமிக்கப்பட்டு, அடுத்த முறை மரம் காட்டப்படும்போது PATH-க்கு அருகில் காட்டப்படும்.
+    \\
+    \\செயலுருபுகள்:
+    \\  PATH   கோப்பு அல்லது அடைவு, தற்போதைய அடைவைப் பொறுத்து
+    \\  DESC   குறிப்பின் உரை; உள்ள குறிப்பை அழிக்க ஒரு காலி சரம் "" கொடுக்கவும்
+    \\
+    \\எடுத்துக்காட்டுகள்:
+    \\  dirtree annotate src/main.zig "CLI நுழைவுப் புள்ளி"
+    \\  dirtree note docs "வடிவமைப்புக் குறிப்புகள் இங்கே உள்ளன"
+    \\  dirtree annotate README.md ""        # README.md இன் குறிப்பை அழி
+    \\</annotate>
+    \\<orphaned_notes>
+    \\பயன்பாடு: dirtree orphaned-notes [DIR]
+    \\
+    \\இலக்குப் பாதை இனி இல்லாத குறிப்புகளைப் பட்டியலிடு — எடுத்துக்காட்டாக ஒரு கோப்பு
+    \\பெயர்மாற்றப்பட்ட, நகர்த்தப்பட்ட அல்லது நீக்கப்பட்ட பிறகு. DIR இயல்பாக தற்போதைய அடைவு.
+    \\இது படிக்க-மட்டும்: எதுவும் மாற்றப்படாது. இவற்றை நீக்க purge-orphaned-notes பயன்படுத்தவும்.
+    \\
+    \\எடுத்துக்காட்டுகள்:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\பயன்பாடு: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\இலக்குப் பாதை இனி இல்லாத குறிப்புகளை நீக்கு. DIR இயல்பாக தற்போதைய
+    \\அடைவு. சரியாக என்ன நீக்கப்படும் என்பதை முன்னோட்டமிட முதலில்
+    \\orphaned-notes இயக்கவும்.
+    \\
+    \\எடுத்துக்காட்டுகள்:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "அநாதைக் குறிப்புகள் (இனி இல்லாத பாதைகள்):",
     .orphaned_none = "அநாதைக் குறிப்புகள் இல்லை.",
     .purge_header = "அநாதைக் குறிப்புகள் நீக்கப்பட்டன:",

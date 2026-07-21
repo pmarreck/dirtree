@@ -111,6 +111,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] فهرست یادداشت‌هایی که مسیرشان وجود ندارد",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] حذف یادداشت‌هایی که مسیرشان وجود ندارد",
+    .help_subcommands =
+    \\<annotate>
+    \\کاربرد: dirtree annotate PATH DESC
+    \\        dirtree note PATH DESC          (نام مستعار)
+    \\
+    \\یک یادداشت یک‌خطی دربارهٔ یک فایل یا پوشه ذخیره کنید. یادداشت در
+    \\.dirtree-state ذخیره می‌شود و دفعهٔ بعد که درخت رسم می‌شود در کنار PATH نمایش داده می‌شود.
+    \\
+    \\آرگومان‌ها:
+    \\  PATH   فایل یا پوشه، نسبت به پوشهٔ فعلی
+    \\  DESC   متن یادداشت؛ برای پاک‌کردن یک یادداشت موجود رشتهٔ خالی "" را بدهید
+    \\
+    \\مثال‌ها:
+    \\  dirtree annotate src/main.zig "نقطهٔ ورود خط فرمان"
+    \\  dirtree note docs "یادداشت‌های طراحی اینجا هستند"
+    \\  dirtree annotate README.md ""        # پاک‌کردن یادداشت روی README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\کاربرد: dirtree orphaned-notes [DIR]
+    \\
+    \\فهرست یادداشت‌هایی که مسیر هدفشان دیگر وجود ندارد — برای مثال پس از آنکه
+    \\فایلی تغییر نام یافته، جابه‌جا یا حذف شده باشد. مقدار پیش‌فرض DIR پوشهٔ فعلی است.
+    \\این فقط خواندنی است: چیزی تغییر نمی‌کند. برای حذف آن‌ها از purge-orphaned-notes استفاده کنید.
+    \\
+    \\مثال‌ها:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\کاربرد: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\حذف یادداشت‌هایی که مسیر هدفشان دیگر وجود ندارد. مقدار پیش‌فرض DIR پوشهٔ
+    \\فعلی است. ابتدا orphaned-notes را اجرا کنید تا دقیقاً آنچه حذف خواهد شد را پیش‌نمایش ببینید.
+    \\
+    \\مثال‌ها:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "یادداشت‌های یتیم (مسیرهایی که دیگر وجود ندارند):",
     .orphaned_none = "هیچ یادداشت یتیمی وجود ندارد.",
     .purge_header = "یادداشت‌های یتیم حذف شدند:",

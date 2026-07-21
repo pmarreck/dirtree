@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Запазва едноредова бележка за файл или директория (псевдоним: note; празно DESC изчиства)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Изброява бележки, чиито целеви пътища вече не съществуват",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Премахва бележки, чиито целеви пътища вече не съществуват",
+    .help_subcommands =
+    \\<annotate>
+    \\Употреба: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (псевдоним)
+    \\
+    \\Запазете едноредова бележка за файл или директория. Бележката се съхранява
+    \\в .dirtree-state и се показва до PATH при следващото изчертаване на дървото.
+    \\
+    \\Аргументи:
+    \\  PATH   файл или директория, относително спрямо текущата директория
+    \\  DESC   текстът на бележката; подайте празен низ "" за изчистване на съществуваща бележка
+    \\
+    \\Примери:
+    \\  dirtree annotate src/main.zig "входна точка на CLI"
+    \\  dirtree note docs "тук се намират бележките по дизайна"
+    \\  dirtree annotate README.md ""        # изчисти бележката за README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Употреба: dirtree orphaned-notes [DIR]
+    \\
+    \\Избройте бележки, чийто целеви път вече не съществува — например след като файл
+    \\е бил преименуван, преместен или изтрит. По подразбиране DIR е текущата директория.
+    \\Това е само за четене: нищо не се променя. Използвайте purge-orphaned-notes за премахването им.
+    \\
+    \\Примери:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Употреба: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Премахнете бележки, чийто целеви път вече не съществува. По подразбиране DIR е
+    \\текущата директория. Първо изпълнете orphaned-notes, за да прегледате точно какво
+    \\ще бъде премахнато.
+    \\
+    \\Примери:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Осиротели бележки (пътища, които вече не съществуват):",
     .orphaned_none = "Няма осиротели бележки.",
     .purge_header = "Премахнати осиротели бележки:",

@@ -111,6 +111,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Listázza a már nem létező útvonalú jegyzeteket",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Távolítsa el a már nem létező útvonalú jegyzeteket",
+    .help_subcommands =
+    \\<annotate>
+    \\Használat: dirtree annotate PATH DESC
+    \\           dirtree note PATH DESC          (alias)
+    \\
+    \\Egysoros jegyzet tartós mentése egy fájlról vagy könyvtárról. A jegyzet a
+    \\.dirtree-state fájlba kerül, és a PATH mellett jelenik meg a fa következő kirajzolásakor.
+    \\
+    \\Argumentumok:
+    \\  PATH   fájl vagy könyvtár, a jelenlegi könyvtárhoz viszonyítva
+    \\  DESC   a jegyzet szövege; adj meg üres karakterláncot "" egy meglévő jegyzet törléséhez
+    \\
+    \\Példák:
+    \\  dirtree annotate src/main.zig "CLI belépési pont"
+    \\  dirtree note docs "a tervezési jegyzetek itt találhatók"
+    \\  dirtree annotate README.md ""        # a jegyzet törlése a README.md fájlon
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Használat: dirtree orphaned-notes [DIR]
+    \\
+    \\Azon jegyzetek listázása, amelyek célútvonala már nem létezik — például miután egy
+    \\fájlt átneveztek, áthelyeztek vagy töröltek. A DIR alapértelmezése a jelenlegi könyvtár.
+    \\Ez csak olvasható: semmi nem változik. Az eltávolításukhoz használd a purge-orphaned-notes parancsot.
+    \\
+    \\Példák:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Használat: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Azon jegyzetek eltávolítása, amelyek célútvonala már nem létezik. A DIR alapértelmezése a
+    \\jelenlegi könyvtár. Előbb futtasd az orphaned-notes parancsot, hogy pontosan lásd, mi kerül eltávolításra.
+    \\
+    \\Példák:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Árva jegyzetek (már nem létező útvonalak):",
     .orphaned_none = "Nincsenek árva jegyzetek.",
     .purge_header = "Árva jegyzetek eltávolítva:",

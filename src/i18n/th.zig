@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC บันทึกหมายเหตุหนึ่งบรรทัดเกี่ยวกับไฟล์หรือไดเรกทอรี (ชื่ออื่น: note; DESC ว่างจะล้างค่า)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] แสดงรายการบันทึกที่พาธเป้าหมายไม่มีอยู่แล้ว",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] ลบบันทึกที่พาธเป้าหมายไม่มีอยู่แล้ว",
+    .help_subcommands =
+    \\<annotate>
+    \\วิธีใช้: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (ชื่ออื่น)
+    \\
+    \\บันทึกหมายเหตุหนึ่งบรรทัดเกี่ยวกับไฟล์หรือไดเรกทอรี หมายเหตุจะถูกเก็บไว้ใน
+    \\.dirtree-state และแสดงข้างๆ PATH ในครั้งถัดไปที่แสดงผลต้นไม้
+    \\
+    \\อาร์กิวเมนต์:
+    \\  PATH   ไฟล์หรือไดเรกทอรี เทียบกับไดเรกทอรีปัจจุบัน
+    \\  DESC   ข้อความหมายเหตุ; ส่งสตริงว่าง "" เพื่อล้างหมายเหตุที่มีอยู่
+    \\
+    \\ตัวอย่าง:
+    \\  dirtree annotate src/main.zig "จุดเริ่มต้น CLI"
+    \\  dirtree note docs "หมายเหตุการออกแบบอยู่ที่นี่"
+    \\  dirtree annotate README.md ""        # ล้างหมายเหตุของ README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\วิธีใช้: dirtree orphaned-notes [DIR]
+    \\
+    \\แสดงรายการหมายเหตุที่พาธเป้าหมายไม่มีอยู่แล้ว — เช่น หลังจากไฟล์ถูก
+    \\เปลี่ยนชื่อ ย้าย หรือลบ DIR มีค่าเริ่มต้นเป็นไดเรกทอรีปัจจุบัน
+    \\คำสั่งนี้อ่านอย่างเดียว: ไม่มีการเปลี่ยนแปลงใดๆ ใช้ purge-orphaned-notes เพื่อลบออก
+    \\
+    \\ตัวอย่าง:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\วิธีใช้: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\ลบหมายเหตุที่พาธเป้าหมายไม่มีอยู่แล้ว DIR มีค่าเริ่มต้นเป็น
+    \\ไดเรกทอรีปัจจุบัน เรียกใช้ orphaned-notes ก่อนเพื่อดูตัวอย่างว่าจะมีอะไร
+    \\ถูกลบบ้าง
+    \\
+    \\ตัวอย่าง:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "บันทึกที่ไร้เจ้าของ (พาธที่ไม่มีอยู่แล้ว):",
     .orphaned_none = "ไม่มีบันทึกที่ไร้เจ้าของ",
     .purge_header = "ล้างบันทึกที่ไร้เจ้าของแล้ว:",

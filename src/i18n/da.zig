@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Gem en enlinjes note om en fil eller mappe (alias: note; tom DESC rydder)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Vis noter, hvis målstier ikke længere findes",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Fjern noter, hvis målstier ikke længere findes",
+    .help_subcommands =
+    \\<annotate>
+    \\Brug: dirtree annotate PATH DESC
+    \\      dirtree note PATH DESC          (alias)
+    \\
+    \\Gem en enlinjes note om en fil eller mappe. Noten gemmes i
+    \\.dirtree-state og vises ved siden af PATH, næste gang træet tegnes.
+    \\
+    \\Argumenter:
+    \\  PATH   fil eller mappe, relativ til den aktuelle mappe
+    \\  DESC   noteteksten; angiv en tom streng "" for at rydde en eksisterende note
+    \\
+    \\Eksempler:
+    \\  dirtree annotate src/main.zig "CLI-indgangspunkt"
+    \\  dirtree note docs "designnoter findes her"
+    \\  dirtree annotate README.md ""        # ryd noten for README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Brug: dirtree orphaned-notes [DIR]
+    \\
+    \\Vis noter, hvis målsti ikke længere findes — for eksempel efter at en fil
+    \\er blevet omdøbt, flyttet eller slettet. DIR er som standard den aktuelle mappe.
+    \\Kun læsning: intet ændres. Brug purge-orphaned-notes for at fjerne dem.
+    \\
+    \\Eksempler:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Brug: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Fjern noter, hvis målsti ikke længere findes. DIR er som standard den aktuelle
+    \\mappe. Kør orphaned-notes først for at se præcis, hvad der bliver fjernet.
+    \\
+    \\Eksempler:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Forældreløse noter (stier, der ikke længere findes):",
     .orphaned_none = "Ingen forældreløse noter.",
     .purge_header = "Forældreløse noter fjernet:",

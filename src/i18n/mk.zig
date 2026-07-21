@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Зачувај еднолиниска белешка за датотека или директориум (алијас: note; празен DESC брише)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Излистај белешки чии целни патеки повеќе не постојат",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Отстрани белешки чии целни патеки повеќе не постојат",
+    .help_subcommands =
+    \\<annotate>
+    \\Употреба: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (алијас)
+    \\
+    \\Зачувај еднолиниска белешка за датотека или директориум. Белешката се
+    \\зачувува во .dirtree-state и се прикажува до PATH при следното исцртување на стеблото.
+    \\
+    \\Аргументи:
+    \\  PATH   датотека или директориум, релативно во однос на тековниот директориум
+    \\  DESC   текстот на белешката; предади празна низа "" за бришење на постоечка белешка
+    \\
+    \\Примери:
+    \\  dirtree annotate src/main.zig "влезна точка на CLI"
+    \\  dirtree note docs "тука се наоѓаат белешките за дизајнот"
+    \\  dirtree annotate README.md ""        # избриши ја белешката за README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Употреба: dirtree orphaned-notes [DIR]
+    \\
+    \\Излистај белешки чија целна патека повеќе не постои — на пример откако датотека
+    \\е преименувана, преместена или избришана. DIR стандардно е тековниот директориум.
+    \\Ова е само за читање: ништо не се менува. Користи purge-orphaned-notes за да ги отстраниш.
+    \\
+    \\Примери:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Употреба: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Отстрани белешки чија целна патека повеќе не постои. DIR стандардно е тековниот
+    \\директориум. Прво изврши orphaned-notes за да видиш точно што ќе биде отстрането.
+    \\
+    \\Примери:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Осиротени белешки (патеки што повеќе не постојат):",
     .orphaned_none = "Нема осиротени белешки.",
     .purge_header = "Отстранети осиротени белешки:",

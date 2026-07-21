@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC د یوه فایل یا لارښود په اړه یوه یوه کرښه یادښت وساته (نوم بل: note؛ تشه DESC پاکوي)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] هغه یادښتونه ولیکه چې د هدف لارې یې نور شتون نلري",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] هغه یادښتونه لرې کړه چې د هدف لارې یې نور شتون نلري",
+    .help_subcommands =
+    \\<annotate>
+    \\کارونه: dirtree annotate PATH DESC
+    \\        dirtree note PATH DESC          (نوم بل)
+    \\
+    \\د یوه فایل یا لارښود په اړه یوه یوه کرښه یادښت وساته. یادښت په
+    \\.dirtree-state کې خوندي کیږي او بل ځل چې ونه رنډر شي د PATH ترڅنګ ښکاري.
+    \\
+    \\دلیلونه:
+    \\  PATH   فایل یا لارښود، د اوسني لارښود په نسبت
+    \\  DESC   د یادښت متن؛ د یوه موجود یادښت د پاکولو لپاره تشه "" ورکړه
+    \\
+    \\بیلګې:
+    \\  dirtree annotate src/main.zig "د کمانډ لاین د ننوتلو ټکی"
+    \\  dirtree note docs "د ډیزاین یادښتونه دلته دي"
+    \\  dirtree annotate README.md ""        # د README.md یادښت پاکول
+    \\</annotate>
+    \\<orphaned_notes>
+    \\کارونه: dirtree orphaned-notes [DIR]
+    \\
+    \\هغه یادښتونه ولیکه چې د هدف لاره یې نور شتون نلري — د بیلګې په توګه وروسته له دې
+    \\چې یو فایل بیا نومول شوی، لیږدول شوی، یا ړنګ شوی وي. DIR تلواله اوسنی لارښود دی.
+    \\دا یوازې د لوستلو لپاره ده: هیڅ شی نه بدلیږي. د دوی د لرې کولو لپاره purge-orphaned-notes وکاروه.
+    \\
+    \\بیلګې:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\کارونه: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\هغه یادښتونه لرې کړه چې د هدف لاره یې نور شتون نلري. DIR تلواله اوسنی
+    \\لارښود دی. لومړی orphaned-notes وچلوه ترڅو په دقیق ډول وګورې چې څه به لرې شي.
+    \\
+    \\بیلګې:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "بې سرپرسته یادښتونه (هغه لارې چې نور شتون نلري):",
     .orphaned_none = "هیڅ بې سرپرسته یادښتونه نشته.",
     .purge_header = "بې سرپرسته یادښتونه پاک شول:",

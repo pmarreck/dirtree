@@ -111,6 +111,47 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Listar notas cujos caminhos não existem mais",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Remover notas cujos caminhos não existem mais",
+    .help_subcommands =
+    \\<annotate>
+    \\Uso: dirtree annotate PATH DESC
+    \\     dirtree note PATH DESC          (alias)
+    \\
+    \\Salva uma nota de uma linha sobre um arquivo ou diretório. A nota é salva
+    \\em .dirtree-state e mostrada ao lado de PATH na próxima vez que a árvore
+    \\for renderizada.
+    \\
+    \\Argumentos:
+    \\  PATH   arquivo ou diretório, relativo ao diretório atual
+    \\  DESC   o texto da nota; passe uma string vazia "" para limpar uma nota existente
+    \\
+    \\Exemplos:
+    \\  dirtree annotate src/main.zig "Ponto de entrada da CLI"
+    \\  dirtree note docs "as notas de design ficam aqui"
+    \\  dirtree annotate README.md ""        # limpa a nota de README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Uso: dirtree orphaned-notes [DIR]
+    \\
+    \\Lista notas cujo caminho de destino não existe mais — por exemplo, depois
+    \\que um arquivo foi renomeado, movido ou excluído. DIR usa o diretório atual por padrão.
+    \\É somente leitura: nada é alterado. Use purge-orphaned-notes para removê-las.
+    \\
+    \\Exemplos:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Uso: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Remove notas cujo caminho de destino não existe mais. DIR usa o diretório
+    \\atual por padrão. Execute orphaned-notes primeiro para pré-visualizar
+    \\exatamente o que será removido.
+    \\
+    \\Exemplos:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Notas órfãs (caminhos que não existem mais):",
     .orphaned_none = "Nenhuma nota órfã.",
     .purge_header = "Notas órfãs removidas:",

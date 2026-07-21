@@ -115,6 +115,44 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC 為檔案或目錄保存一行註記 (別名: note; 空 DESC 會清除)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] 列出目標路徑不再存在的註記",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] 移除目標路徑不再存在的註記",
+    .help_subcommands =
+    \\<annotate>
+    \\用法: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (別名)
+    \\
+    \\為檔案或目錄保存一行註記。該註記會保存在 .dirtree-state 中，
+    \\並在下次渲染樹時顯示在 PATH 旁邊。
+    \\
+    \\參數:
+    \\  PATH   檔案或目錄，相對於目前目錄
+    \\  DESC   註記文字；傳入空字串 "" 可清除既有的註記
+    \\
+    \\範例:
+    \\  dirtree annotate src/main.zig "CLI 進入點"
+    \\  dirtree note docs "設計說明放在這裡"
+    \\  dirtree annotate README.md ""        # 清除 README.md 上的註記
+    \\</annotate>
+    \\<orphaned_notes>
+    \\用法: dirtree orphaned-notes [DIR]
+    \\
+    \\列出目標路徑不再存在的註記 —— 例如檔案被重新命名、移動或刪除之後。
+    \\DIR 預設為目前目錄。此操作為唯讀，不會更改任何內容。要移除它們請用 purge-orphaned-notes。
+    \\
+    \\範例:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\用法: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\移除目標路徑不再存在的註記。DIR 預設為目前目錄。請先執行
+    \\orphaned-notes 以準確預覽將要移除的內容。
+    \\
+    \\範例:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "孤立註記（不再存在的路徑）：",
     .orphaned_none = "沒有孤立註記。",
     .purge_header = "已移除孤立註記：",

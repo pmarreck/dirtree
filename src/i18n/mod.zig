@@ -584,6 +584,90 @@ pub fn isFlag(arg: []const u8, expected: CliArg) bool {
     return found == expected;
 }
 
+// ── Per-subcommand help (Variant A, PLAN §6.6) ────────────────────
+//
+// Each locale's `Strings.help_subcommands` is ONE corpus holding a detailed
+// help section per verb subcommand, delimited by canonical, line-anchored
+// in-band tags whose names are the CliArg @tagName (NOT translated). Global
+// help never renders the corpus (so it carries zero tags); `dirtree <verb>
+// --help` slices out the matching section and strips its marker lines.
+
+/// The verb subcommands that own a per-topic help section. The canonical
+/// @tagName of each (annotate / orphaned_notes / purge_orphaned_notes) is the
+/// in-band tag used to delimit its section in `Strings.help_subcommands`.
+pub const subcommand_help_topics = [_]CliArg{ .annotate, .orphaned_notes, .purge_orphaned_notes };
+
+/// Slice one subcommand's help body out of the tagged `help_subcommands` corpus.
+/// `topic` is the canonical CliArg @tagName (e.g. "annotate"). Matching is
+/// LINE-ANCHORED: the `<topic>` open and `</topic>` close markers must each
+/// occupy a whole line; the returned body is the lines between them (marker
+/// lines removed, trailing newline of the last body line kept), or null if the
+/// topic is absent or its close marker is missing. In-band-markup slicing.
+pub fn extractSubcommandHelp(corpus: []const u8, topic: []const u8) ?[]const u8 {
+    var open_buf: [40]u8 = undefined;
+    var close_buf: [40]u8 = undefined;
+    const open = std.fmt.bufPrint(&open_buf, "<{s}>", .{topic}) catch return null;
+    const close = std.fmt.bufPrint(&close_buf, "</{s}>", .{topic}) catch return null;
+
+    var body_start: ?usize = null;
+    var line_start: usize = 0;
+    var i: usize = 0;
+    while (i <= corpus.len) : (i += 1) {
+        if (i != corpus.len and corpus[i] != '\n') continue;
+        const line = corpus[line_start..i];
+        if (body_start == null) {
+            if (std.mem.eql(u8, line, open)) body_start = if (i < corpus.len) i + 1 else i;
+        } else if (std.mem.eql(u8, line, close)) {
+            return corpus[body_start.?..line_start];
+        }
+        line_start = i + 1;
+    }
+    return null;
+}
+
+/// True if `text` contains a line-anchored `marker` line (the marker alone on
+/// its own line). Used by the MFIC guard to assert no topic tags leak into the
+/// stripped/global help and that section bodies carry no residual markers.
+pub fn hasMarkerLine(text: []const u8, marker: []const u8) bool {
+    var line_start: usize = 0;
+    var i: usize = 0;
+    while (i <= text.len) : (i += 1) {
+        if (i != text.len and text[i] != '\n') continue;
+        if (std.mem.eql(u8, text[line_start..i], marker)) return true;
+        line_start = i + 1;
+    }
+    return false;
+}
+
+test "extractSubcommandHelp: slices a line-anchored section, markers removed" {
+    const corpus =
+        "<annotate>\n" ++
+        "line one\n" ++
+        "line two\n" ++
+        "</annotate>\n" ++
+        "<orphaned_notes>\n" ++
+        "orphan body\n" ++
+        "</orphaned_notes>\n";
+    const a = extractSubcommandHelp(corpus, "annotate").?;
+    try std.testing.expectEqualStrings("line one\nline two\n", a);
+    const o = extractSubcommandHelp(corpus, "orphaned_notes").?;
+    try std.testing.expectEqualStrings("orphan body\n", o);
+}
+
+test "extractSubcommandHelp: missing topic and unterminated section => null" {
+    const corpus = "<annotate>\nbody\n</annotate>\n";
+    try std.testing.expect(extractSubcommandHelp(corpus, "purge_orphaned_notes") == null);
+    // Open marker with no matching close line.
+    const unterminated = "<annotate>\nbody line\nno closing tag\n";
+    try std.testing.expect(extractSubcommandHelp(unterminated, "annotate") == null);
+}
+
+test "extractSubcommandHelp: an inline (non-line-anchored) marker never matches" {
+    // A `<annotate>` embedded mid-line must NOT open a section.
+    const corpus = "prose with <annotate> inline\nnot a body\n";
+    try std.testing.expect(extractSubcommandHelp(corpus, "annotate") == null);
+}
+
 // ── Environment variable matching ─────────────────────────────────
 
 /// Comptime-built: for each EnvVar, the list of all alias names across locales.
@@ -1083,6 +1167,74 @@ test "Test E: English canonical CLI tokens never infer a non-English locale" {
         if (detectLocaleFromAliases(&args)) |loc| {
             std.debug.print("English token '{s}' wrongly inferred locale '{s}'\n", .{ en_entry.name, loc.code() });
             return error.EnglishTokenInferredLocale;
+        }
+    }
+}
+
+fn countMarkerLines(text: []const u8, marker: []const u8) usize {
+    var n: usize = 0;
+    var line_start: usize = 0;
+    var i: usize = 0;
+    while (i <= text.len) : (i += 1) {
+        if (i != text.len and text[i] != '\n') continue;
+        if (std.mem.eql(u8, text[line_start..i], marker)) n += 1;
+        line_start = i + 1;
+    }
+    return n;
+}
+
+test "Test F: help_subcommands is well-formed for every topic × every locale" {
+    // MFIC guard for the in-band-markup per-subcommand help (Variant A, PLAN §6.6):
+    // for each locale and each canonical topic, the corpus must carry EXACTLY ONE
+    // line-anchored <topic>…</topic> pair, the sliced body must be non-empty, and
+    // no residual topic marker may survive slicing. Swept over the full locale ×
+    // topic cross-product (a classifier over sets, not a spot check), so a locale
+    // that drops, duplicates, or mangles a section fails the build — the fragility
+    // guard the tag approach needs (see i18n skill testing req #7).
+    @setEvalBranchQuota(2000000);
+    inline for (all_locales) |loc| {
+        const corpus = stringsFor(loc).help_subcommands;
+        inline for (subcommand_help_topics) |topic| {
+            const name = @tagName(topic);
+            const open = "<" ++ name ++ ">";
+            const close = "</" ++ name ++ ">";
+            if (countMarkerLines(corpus, open) != 1 or countMarkerLines(corpus, close) != 1) {
+                std.debug.print("locale '{s}': topic '{s}' needs exactly one '{s}' and one '{s}' line\n", .{ loc.code(), name, open, close });
+                return error.SubcommandHelpMarkerCount;
+            }
+            const body = extractSubcommandHelp(corpus, name) orelse {
+                std.debug.print("locale '{s}': topic '{s}' section not sliceable\n", .{ loc.code(), name });
+                return error.SubcommandHelpUnsliceable;
+            };
+            if (body.len == 0) {
+                std.debug.print("locale '{s}': topic '{s}' body is empty\n", .{ loc.code(), name });
+                return error.SubcommandHelpEmptyBody;
+            }
+            // No topic marker (any of the three) may survive inside a sliced body.
+            inline for (subcommand_help_topics) |t2| {
+                const n2 = @tagName(t2);
+                if (hasMarkerLine(body, "<" ++ n2 ++ ">") or hasMarkerLine(body, "</" ++ n2 ++ ">")) {
+                    std.debug.print("locale '{s}': sliced '{s}' body still contains a '{s}' marker\n", .{ loc.code(), name, n2 });
+                    return error.SubcommandHelpResidualMarker;
+                }
+            }
+        }
+        // Canonical CLI command tokens must survive verbatim in every locale —
+        // a translator must never translate an invocation the user actually
+        // types. Structural gates prove structure, not meaning; this is the
+        // narrow slice of meaning that MUST be byte-exact (see i18n skill).
+        const required_tokens = [_][]const u8{
+            "dirtree annotate",
+            "dirtree note",
+            "dirtree orphaned-notes",
+            "dirtree purge-orphaned-notes",
+            ".dirtree-state",
+        };
+        for (required_tokens) |tok| {
+            if (std.mem.indexOf(u8, corpus, tok) == null) {
+                std.debug.print("locale '{s}': help_subcommands missing verbatim CLI token '{s}'\n", .{ loc.code(), tok });
+                return error.SubcommandHelpMissingToken;
+            }
         }
     }
 }

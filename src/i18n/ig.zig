@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Chekwaa ndetu otu ahịrị gbasara faịlụ ma ọ bụ ndaka (aha ọzọ: note; DESC efu na-ehichapụ)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Depụta ndetu ndị ụzọ ebumnuche ha na-adịghị adị ọzọ",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Wepụ ndetu ndị ụzọ ebumnuche ha na-adịghị adị ọzọ",
+    .help_subcommands =
+    \\<annotate>
+    \\Ojiji: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (aha ọzọ)
+    \\
+    \\Chekwaa ndetu otu ahịrị gbasara faịlụ ma ọ bụ ndaka. A na-echekwa ndetu ahụ na
+    \\.dirtree-state, a ga-egosikwa ya n'akụkụ PATH oge ọzọ a ga-egosi osisi ahụ.
+    \\
+    \\Arụmụka:
+    \\  PATH   faịlụ ma ọ bụ ndaka, nke metụtara ndaka ugbu a
+    \\  DESC   ederede ndetu ahụ; nyefee eriri efu "" iji hichapụ ndetu dị adị
+    \\
+    \\Ihe atụ:
+    \\  dirtree annotate src/main.zig "ọnụ ụzọ mbata CLI"
+    \\  dirtree note docs "ndetu imewe dị ebe a"
+    \\  dirtree annotate README.md ""        # hichapụ ndetu dị na README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Ojiji: dirtree orphaned-notes [DIR]
+    \\
+    \\Depụta ndetu ndị ụzọ ebumnuche ha na-adịghị adị ọzọ — dịka mgbe a gbanwere aha
+    \\faịlụ, bugharịa ya, ma ọ bụ hichapụ ya. DIR na-abụ ndaka ugbu a site na ndabara.
+    \\Nke a bụ ọgụgụ naanị: ọ dịghị ihe a na-agbanwe. Jiri purge-orphaned-notes iji wepụ ha.
+    \\
+    \\Ihe atụ:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Ojiji: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Wepụ ndetu ndị ụzọ ebumnuche ha na-adịghị adị ọzọ. DIR na-abụ ndaka ugbu a site na
+    \\ndabara. Buru ụzọ gbaa orphaned-notes iji hụ kpọmkwem ihe a ga-ewepụ.
+    \\
+    \\Ihe atụ:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Ndetu na-enweghị nne (ụzọ ndị na-adịghị adị ọzọ):",
     .orphaned_none = "Enweghị ndetu na-enweghị nne.",
     .purge_header = "Ehichapụrụ ndetu na-enweghị nne:",

@@ -111,6 +111,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Показать заметки с несуществующими путями",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Удалить заметки с несуществующими путями",
+    .help_subcommands =
+    \\<annotate>
+    \\Использование: dirtree annotate PATH DESC
+    \\               dirtree note PATH DESC          (псевдоним)
+    \\
+    \\Сохраняет однострочную заметку о файле или каталоге. Заметка сохраняется в
+    \\.dirtree-state и показывается рядом с PATH при следующем отображении дерева.
+    \\
+    \\Аргументы:
+    \\  PATH   файл или каталог относительно текущего каталога
+    \\  DESC   текст заметки; передайте пустую строку "", чтобы удалить существующую заметку
+    \\
+    \\Примеры:
+    \\  dirtree annotate src/main.zig "точка входа CLI"
+    \\  dirtree note docs "здесь живут заметки по дизайну"
+    \\  dirtree annotate README.md ""        # удалить заметку у README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Использование: dirtree orphaned-notes [DIR]
+    \\
+    \\Показывает заметки, целевой путь которых больше не существует — например,
+    \\после переименования, перемещения или удаления файла. DIR по умолчанию — текущий каталог.
+    \\Только для чтения: ничего не изменяется. Для удаления используйте purge-orphaned-notes.
+    \\
+    \\Примеры:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Использование: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Удаляет заметки, целевой путь которых больше не существует. DIR по умолчанию —
+    \\текущий каталог. Сначала запустите orphaned-notes, чтобы точно увидеть, что
+    \\будет удалено.
+    \\
+    \\Примеры:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Осиротевшие заметки (пути, которых больше нет):",
     .orphaned_none = "Осиротевших заметок нет.",
     .purge_header = "Удалены осиротевшие заметки:",

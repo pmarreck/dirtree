@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC একটি ফাইল বা ডিরেক্টরি সম্পর্কে এক-লাইনের নোট সংরক্ষণ করুন (উপনাম: note; খালি DESC মুছে দেয়)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] এমন নোটের তালিকা যাদের লক্ষ্য পাথ আর বিদ্যমান নেই",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] এমন নোট সরান যাদের লক্ষ্য পাথ আর বিদ্যমান নেই",
+    .help_subcommands =
+    \\<annotate>
+    \\ব্যবহার: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (উপনাম)
+    \\
+    \\একটি ফাইল বা ডিরেক্টরি সম্পর্কে এক-লাইনের নোট সংরক্ষণ করুন। নোটটি
+    \\.dirtree-state-এ সংরক্ষিত হয় এবং পরবর্তীবার ট্রি রেন্ডার করার সময় PATH-এর পাশে দেখানো হয়।
+    \\
+    \\আর্গুমেন্ট:
+    \\  PATH   ফাইল বা ডিরেক্টরি, বর্তমান ডিরেক্টরির সাপেক্ষে
+    \\  DESC   নোটের টেক্সট; বিদ্যমান নোট মুছতে একটি খালি স্ট্রিং "" পাস করুন
+    \\
+    \\উদাহরণ:
+    \\  dirtree annotate src/main.zig "CLI এন্ট্রি পয়েন্ট"
+    \\  dirtree note docs "ডিজাইন নোট এখানে থাকে"
+    \\  dirtree annotate README.md ""        # README.md-এর নোট মুছে ফেলুন
+    \\</annotate>
+    \\<orphaned_notes>
+    \\ব্যবহার: dirtree orphaned-notes [DIR]
+    \\
+    \\এমন নোটের তালিকা করুন যাদের লক্ষ্য পাথ আর বিদ্যমান নেই — উদাহরণস্বরূপ কোনো ফাইলের
+    \\নাম পরিবর্তন, স্থানান্তর বা মুছে ফেলার পরে। DIR ডিফল্টভাবে বর্তমান ডিরেক্টরি।
+    \\এটি শুধু-পঠনযোগ্য: কিছুই পরিবর্তন করা হয় না। এগুলি সরাতে purge-orphaned-notes ব্যবহার করুন।
+    \\
+    \\উদাহরণ:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\ব্যবহার: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\এমন নোট সরান যাদের লক্ষ্য পাথ আর বিদ্যমান নেই। DIR ডিফল্টভাবে
+    \\বর্তমান ডিরেক্টরি। ঠিক কী কী সরানো হবে তা আগে থেকে দেখতে প্রথমে
+    \\orphaned-notes চালান।
+    \\
+    \\উদাহরণ:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "অনাথ নোট (পাথ যা আর বিদ্যমান নেই):",
     .orphaned_none = "কোনো অনাথ নোট নেই।",
     .purge_header = "অনাথ নোট সরানো হয়েছে:",

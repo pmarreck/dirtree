@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Spara en enradig anteckning om en fil eller katalog (alias: note; tom DESC rensar)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Lista anteckningar vars målsökvägar inte längre finns",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Ta bort anteckningar vars målsökvägar inte längre finns",
+    .help_subcommands =
+    \\<annotate>
+    \\Användning: dirtree annotate PATH DESC
+    \\            dirtree note PATH DESC          (alias)
+    \\
+    \\Spara en enradig anteckning om en fil eller katalog. Anteckningen sparas i
+    \\.dirtree-state och visas bredvid PATH nästa gång trädet ritas upp.
+    \\
+    \\Argument:
+    \\  PATH   fil eller katalog, relativt den aktuella katalogen
+    \\  DESC   anteckningstexten; ange en tom sträng "" för att rensa en befintlig anteckning
+    \\
+    \\Exempel:
+    \\  dirtree annotate src/main.zig "CLI-startpunkt"
+    \\  dirtree note docs "designanteckningar finns här"
+    \\  dirtree annotate README.md ""        # rensa anteckningen för README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Användning: dirtree orphaned-notes [DIR]
+    \\
+    \\Lista anteckningar vars målsökväg inte längre finns — till exempel efter att en fil
+    \\har bytt namn, flyttats eller tagits bort. DIR är som standard den aktuella katalogen.
+    \\Endast läsning: inget ändras. Använd purge-orphaned-notes för att ta bort dem.
+    \\
+    \\Exempel:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Användning: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Ta bort anteckningar vars målsökväg inte längre finns. DIR är som standard den
+    \\aktuella katalogen. Kör orphaned-notes först för att se exakt vad som kommer att
+    \\tas bort.
+    \\
+    \\Exempel:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Föräldralösa anteckningar (sökvägar som inte längre finns):",
     .orphaned_none = "Inga föräldralösa anteckningar.",
     .purge_header = "Borttagna föräldralösa anteckningar:",

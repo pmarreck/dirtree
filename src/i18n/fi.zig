@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Tallenna yksirivinen muistiinpano tiedostosta tai hakemistosta (alias: note; tyhjä DESC tyhjentää)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Listaa muistiinpanot, joiden kohdepolkuja ei enää ole",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Poista muistiinpanot, joiden kohdepolkuja ei enää ole",
+    .help_subcommands =
+    \\<annotate>
+    \\Käyttö: dirtree annotate PATH DESC
+    \\        dirtree note PATH DESC          (alias)
+    \\
+    \\Tallenna pysyvästi yksirivinen muistiinpano tiedostosta tai hakemistosta. Muistiinpano
+    \\tallennetaan .dirtree-state-tiedostoon ja näytetään PATH:n vieressä, kun puu seuraavan kerran piirretään.
+    \\
+    \\Argumentit:
+    \\  PATH   tiedosto tai hakemisto, suhteessa nykyiseen hakemistoon
+    \\  DESC   muistiinpanon teksti; anna tyhjä merkkijono "" tyhjentääksesi olemassa olevan muistiinpanon
+    \\
+    \\Esimerkit:
+    \\  dirtree annotate src/main.zig "CLI:n aloituspiste"
+    \\  dirtree note docs "suunnittelumuistiinpanot ovat täällä"
+    \\  dirtree annotate README.md ""        # tyhjennä README.md:n muistiinpano
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Käyttö: dirtree orphaned-notes [DIR]
+    \\
+    \\Luettele muistiinpanot, joiden kohdepolkua ei enää ole — esimerkiksi sen jälkeen, kun tiedosto
+    \\nimettiin uudelleen, siirrettiin tai poistettiin. DIR on oletuksena nykyinen hakemisto.
+    \\Tämä on vain luku: mitään ei muuteta. Poista ne komennolla purge-orphaned-notes.
+    \\
+    \\Esimerkit:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Käyttö: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Poista muistiinpanot, joiden kohdepolkua ei enää ole. DIR on oletuksena nykyinen
+    \\hakemisto. Suorita ensin orphaned-notes nähdäksesi tarkalleen, mitä poistetaan.
+    \\
+    \\Esimerkit:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Orvot muistiinpanot (polut, joita ei enää ole):",
     .orphaned_none = "Ei orpoja muistiinpanoja.",
     .purge_header = "Poistetut orvot muistiinpanot:",

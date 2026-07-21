@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Hifadhi dokezo la mstari mmoja kuhusu faili au saraka (jina jingine: note; DESC tupu hufuta)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Orodhesha madokezo ambayo njia zake lengwa hazipo tena",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Ondoa madokezo ambayo njia zake lengwa hazipo tena",
+    .help_subcommands =
+    \\<annotate>
+    \\Matumizi: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (jina jingine)
+    \\
+    \\Hifadhi dokezo la mstari mmoja kuhusu faili au saraka. Dokezo huhifadhiwa katika
+    \\.dirtree-state na huonyeshwa kando ya PATH mara ijayo mti utakapoonyeshwa.
+    \\
+    \\Hoja:
+    \\  PATH   faili au saraka, kwa uhusiano na saraka ya sasa
+    \\  DESC   maandishi ya dokezo; pitisha mfuatano tupu "" kufuta dokezo lililopo
+    \\
+    \\Mifano:
+    \\  dirtree annotate src/main.zig "Njia ya kuingia ya CLI"
+    \\  dirtree note docs "madokezo ya muundo yapo hapa"
+    \\  dirtree annotate README.md ""        # futa dokezo kwenye README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Matumizi: dirtree orphaned-notes [DIR]
+    \\
+    \\Orodhesha madokezo ambayo njia zake lengwa hazipo tena — kwa mfano baada ya faili
+    \\kubadilishwa jina, kuhamishwa, au kufutwa. DIR ni saraka ya sasa kwa chaguo-msingi.
+    \\Hii ni ya kusoma tu: hakuna kinachobadilishwa. Tumia purge-orphaned-notes kuyaondoa.
+    \\
+    \\Mifano:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Matumizi: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Ondoa madokezo ambayo njia zake lengwa hazipo tena. DIR ni saraka ya sasa kwa
+    \\chaguo-msingi. Endesha orphaned-notes kwanza ili kuona hasa kitakachoondolewa.
+    \\
+    \\Mifano:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Madokezo yaliyoachwa (njia ambazo hazipo tena):",
     .orphaned_none = "Hakuna madokezo yaliyoachwa.",
     .purge_header = "Madokezo yaliyoachwa yameondolewa:",

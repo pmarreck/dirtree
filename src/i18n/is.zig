@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Vista eins línu athugasemd um skrá eða möppu (samheiti: note; tóm DESC hreinsar)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Lista athugasemdir þar sem markslóðir eru ekki lengur til",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Fjarlægja athugasemdir þar sem markslóðir eru ekki lengur til",
+    .help_subcommands =
+    \\<annotate>
+    \\Notkun: dirtree annotate PATH DESC
+    \\        dirtree note PATH DESC          (samheiti)
+    \\
+    \\Vista eins línu athugasemd um skrá eða möppu. Athugasemdin er vistuð í
+    \\.dirtree-state og birt við hlið PATH næst þegar tréð er teiknað.
+    \\
+    \\Viðföng:
+    \\  PATH   skrá eða mappa, miðað við núverandi möppu
+    \\  DESC   athugasemdatextinn; sendu tóman streng "" til að hreinsa fyrirliggjandi athugasemd
+    \\
+    \\Dæmi:
+    \\  dirtree annotate src/main.zig "Upphafspunktur CLI"
+    \\  dirtree note docs "hönnunarathugasemdir eru hér"
+    \\  dirtree annotate README.md ""        # hreinsa athugasemdina á README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Notkun: dirtree orphaned-notes [DIR]
+    \\
+    \\Lista athugasemdir þar sem markslóðin er ekki lengur til — til dæmis eftir að
+    \\skrá var endurnefnd, færð eða fjarlægð. DIR er sjálfgefið núverandi mappa.
+    \\Aðeins lestur: engu er breytt. Notaðu purge-orphaned-notes til að fjarlægja þær.
+    \\
+    \\Dæmi:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Notkun: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Fjarlægja athugasemdir þar sem markslóðin er ekki lengur til. DIR er sjálfgefið
+    \\núverandi mappa. Keyrðu orphaned-notes fyrst til að sjá nákvæmlega hvað verður
+    \\fjarlægt.
+    \\
+    \\Dæmi:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Munaðarlausar athugasemdir (slóðir sem eru ekki lengur til):",
     .orphaned_none = "Engar munaðarlausar athugasemdir.",
     .purge_header = "Hreinsaðar munaðarlausar athugasemdir:",

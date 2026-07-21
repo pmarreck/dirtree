@@ -111,6 +111,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Notizen auflisten, deren Zielpfade nicht mehr existieren",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Notizen entfernen, deren Zielpfade nicht mehr existieren",
+    .help_subcommands =
+    \\<annotate>
+    \\Verwendung: dirtree annotate PATH DESC
+    \\            dirtree note PATH DESC          (Alias)
+    \\
+    \\Speichert eine einzeilige Notiz zu einer Datei oder einem Verzeichnis. Die Notiz wird in
+    \\.dirtree-state gespeichert und beim nächsten Rendern des Baums neben PATH angezeigt.
+    \\
+    \\Argumente:
+    \\  PATH   Datei oder Verzeichnis, relativ zum aktuellen Verzeichnis
+    \\  DESC   der Notiztext; übergib eine leere Zeichenkette "", um eine vorhandene Notiz zu löschen
+    \\
+    \\Beispiele:
+    \\  dirtree annotate src/main.zig "CLI-Einstiegspunkt"
+    \\  dirtree note docs "hier stehen die Design-Notizen"
+    \\  dirtree annotate README.md ""        # Notiz zu README.md löschen
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Verwendung: dirtree orphaned-notes [DIR]
+    \\
+    \\Listet Notizen auf, deren Zielpfad nicht mehr existiert — zum Beispiel, nachdem eine Datei
+    \\umbenannt, verschoben oder gelöscht wurde. DIR ist standardmäßig das aktuelle Verzeichnis.
+    \\Nur lesend: es wird nichts geändert. Zum Entfernen dient purge-orphaned-notes.
+    \\
+    \\Beispiele:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Verwendung: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Entfernt Notizen, deren Zielpfad nicht mehr existiert. DIR ist standardmäßig das
+    \\aktuelle Verzeichnis. Führe zuerst orphaned-notes aus, um genau zu sehen, was
+    \\entfernt wird.
+    \\
+    \\Beispiele:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Verwaiste Notizen (Pfade, die nicht mehr existieren):",
     .orphaned_none = "Keine verwaisten Notizen.",
     .purge_header = "Verwaiste Notizen entfernt:",

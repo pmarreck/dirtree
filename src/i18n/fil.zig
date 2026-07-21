@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Mag-save ng isang-linyang nota tungkol sa file o directory (alias: note; ang walang-laman na DESC ay nagke-clear)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Ilista ang mga nota na ang target na path ay wala na",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Alisin ang mga nota na ang target na path ay wala na",
+    .help_subcommands =
+    \\<annotate>
+    \\Paggamit: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (alias)
+    \\
+    \\Mag-save ng isang-linyang nota tungkol sa isang file o directory. Ang nota ay iniimbak sa
+    \\.dirtree-state at ipinapakita katabi ng PATH sa susunod na beses na i-render ang tree.
+    \\
+    \\Mga argumento:
+    \\  PATH   file o directory, relative sa kasalukuyang directory
+    \\  DESC   ang teksto ng nota; magpasa ng walang-lamang string "" upang i-clear ang umiiral na nota
+    \\
+    \\Mga halimbawa:
+    \\  dirtree annotate src/main.zig "entry point ng CLI"
+    \\  dirtree note docs "narito ang mga design note"
+    \\  dirtree annotate README.md ""        # i-clear ang nota sa README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Paggamit: dirtree orphaned-notes [DIR]
+    \\
+    \\Ilista ang mga nota na ang target na path ay wala na — halimbawa matapos na ang isang
+    \\file ay pinalitan ng pangalan, inilipat, o tinanggal. Ang DIR ay default sa kasalukuyang directory.
+    \\Ito ay read-only: walang binabago. Gamitin ang purge-orphaned-notes upang alisin ang mga ito.
+    \\
+    \\Mga halimbawa:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Paggamit: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Alisin ang mga nota na ang target na path ay wala na. Ang DIR ay default sa
+    \\kasalukuyang directory. Patakbuhin muna ang orphaned-notes upang i-preview nang eksakto kung ano ang
+    \\aalisin.
+    \\
+    \\Mga halimbawa:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Mga orphaned na nota (mga path na wala na):",
     .orphaned_none = "Walang orphaned na nota.",
     .purge_header = "Mga orphaned na nota na inalis:",

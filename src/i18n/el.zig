@@ -111,6 +111,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Εμφάνιση σημειώσεων με ανύπαρκτες διαδρομές",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Αφαίρεση σημειώσεων με ανύπαρκτες διαδρομές",
+    .help_subcommands =
+    \\<annotate>
+    \\Χρήση: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (alias)
+    \\
+    \\Αποθηκεύει μόνιμα μια σημείωση μίας γραμμής για ένα αρχείο ή φάκελο. Η σημείωση
+    \\αποθηκεύεται στο .dirtree-state και εμφανίζεται δίπλα στο PATH την επόμενη φορά που σχεδιάζεται το δένδρο.
+    \\
+    \\Ορίσματα:
+    \\  PATH   αρχείο ή φάκελος, σε σχέση με τον τρέχοντα φάκελο
+    \\  DESC   το κείμενο της σημείωσης· δώστε κενή συμβολοσειρά "" για εκκαθάριση υπάρχουσας σημείωσης
+    \\
+    \\Παραδείγματα:
+    \\  dirtree annotate src/main.zig "σημείο εισόδου CLI"
+    \\  dirtree note docs "εδώ βρίσκονται οι σημειώσεις σχεδίασης"
+    \\  dirtree annotate README.md ""        # εκκαθάριση της σημείωσης στο README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Χρήση: dirtree orphaned-notes [DIR]
+    \\
+    \\Εμφανίζει σημειώσεις των οποίων η διαδρομή-στόχος δεν υπάρχει πλέον — για παράδειγμα αφού ένα
+    \\αρχείο μετονομάστηκε, μετακινήθηκε ή διαγράφηκε. Το DIR προεπιλέγεται στον τρέχοντα φάκελο.
+    \\Αυτό είναι μόνο για ανάγνωση: τίποτα δεν αλλάζει. Χρησιμοποιήστε purge-orphaned-notes για να τις αφαιρέσετε.
+    \\
+    \\Παραδείγματα:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Χρήση: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Αφαιρεί σημειώσεις των οποίων η διαδρομή-στόχος δεν υπάρχει πλέον. Το DIR προεπιλέγεται στον
+    \\τρέχοντα φάκελο. Εκτελέστε πρώτα orphaned-notes για να δείτε ακριβώς τι θα αφαιρεθεί.
+    \\
+    \\Παραδείγματα:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Ορφανές σημειώσεις (διαδρομές που δεν υπάρχουν πλέον):",
     .orphaned_none = "Δεν υπάρχουν ορφανές σημειώσεις.",
     .purge_header = "Αφαιρέθηκαν ορφανές σημειώσεις:",

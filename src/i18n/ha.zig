@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Ajiye bayani na layi daya game da fayil ko babban-fayil (alias: note; DESC fanko yana sharewa)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Lissafa bayanan da hanyoyin abin nufi ba su sake wanzuwa ba",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Cire bayanan da hanyoyin abin nufi ba su sake wanzuwa ba",
+    .help_subcommands =
+    \\<annotate>
+    \\Amfani: dirtree annotate PATH DESC
+    \\        dirtree note PATH DESC          (alias)
+    \\
+    \\Ajiye bayani na layi daya game da fayil ko babban-fayil. Ana ajiye bayanin a
+    \\.dirtree-state kuma a nuna shi kusa da PATH lokaci na gaba da aka nuna bishiyar.
+    \\
+    \\Muhawarori:
+    \\  PATH   fayil ko babban-fayil, mai dangantaka da babban-fayil na yanzu
+    \\  DESC   rubutun bayani; ka ba da rubutu fanko "" don share bayani mai wanzuwa
+    \\
+    \\Misalai:
+    \\  dirtree annotate src/main.zig "wurin shiga CLI"
+    \\  dirtree note docs "bayanan zane suna nan"
+    \\  dirtree annotate README.md ""        # share bayani a kan README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Amfani: dirtree orphaned-notes [DIR]
+    \\
+    \\Lissafa bayanan da hanyoyin abin nufi ba su sake wanzuwa ba — misali bayan an sake
+    \\wa fayil suna, an matsar da shi, ko an share shi. DIR tsoho shi ne babban-fayil na yanzu.
+    \\Wannan karantawa kawai ce: ba a canza komai ba. Yi amfani da purge-orphaned-notes don cire su.
+    \\
+    \\Misalai:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Amfani: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Cire bayanan da hanyoyin abin nufi ba su sake wanzuwa ba. DIR tsoho shi ne
+    \\babban-fayil na yanzu. Fara gudanar da orphaned-notes don ganin ainihin abin da za a cire.
+    \\
+    \\Misalai:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Bayanan maraya (hanyoyin da ba su sake wanzuwa ba):",
     .orphaned_none = "Babu bayanan maraya.",
     .purge_header = "An cire bayanan maraya:",

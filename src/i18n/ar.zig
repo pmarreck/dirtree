@@ -111,6 +111,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] سرد الملاحظات التي لم تعد مساراتها موجودة",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] إزالة الملاحظات التي لم تعد مساراتها موجودة",
+    .help_subcommands =
+    \\<annotate>
+    \\الاستخدام: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (اسم بديل)
+    \\
+    \\احفظ ملاحظة من سطر واحد حول ملف أو مجلد. تُحفظ الملاحظة في
+    \\.dirtree-state وتظهر بجوار PATH عند رسم الشجرة في المرة التالية.
+    \\
+    \\الوسائط:
+    \\  PATH   ملف أو مجلد، نسبةً إلى المجلد الحالي
+    \\  DESC   نص الملاحظة؛ مرّر سلسلة فارغة "" لمسح ملاحظة موجودة
+    \\
+    \\أمثلة:
+    \\  dirtree annotate src/main.zig "نقطة دخول واجهة الأوامر"
+    \\  dirtree note docs "ملاحظات التصميم هنا"
+    \\  dirtree annotate README.md ""        # مسح الملاحظة على README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\الاستخدام: dirtree orphaned-notes [DIR]
+    \\
+    \\سرد الملاحظات التي لم يعد مسارها الهدف موجوداً — مثلاً بعد إعادة تسمية
+    \\ملف أو نقله أو حذفه. القيمة الافتراضية لـ DIR هي المجلد الحالي.
+    \\هذا للقراءة فقط: لا يتغيّر شيء. استخدم purge-orphaned-notes لإزالتها.
+    \\
+    \\أمثلة:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\الاستخدام: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\إزالة الملاحظات التي لم يعد مسارها الهدف موجوداً. القيمة الافتراضية لـ
+    \\DIR هي المجلد الحالي. شغّل orphaned-notes أولاً لمعاينة ما سيُزال بالضبط.
+    \\
+    \\أمثلة:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "ملاحظات يتيمة (مسارات لم تعد موجودة):",
     .orphaned_none = "لا توجد ملاحظات يتيمة.",
     .purge_header = "تمت إزالة الملاحظات اليتيمة:",

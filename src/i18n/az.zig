@@ -111,6 +111,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Yolları artıq mövcud olmayan qeydləri sadala",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Yolları artıq mövcud olmayan qeydləri sil",
+    .help_subcommands =
+    \\<annotate>
+    \\İstifadə: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (alias)
+    \\
+    \\Fayl və ya qovluq haqqında birsətirlik qeydi daimi saxla. Qeyd .dirtree-state
+    \\faylında saxlanılır və ağac növbəti dəfə çəkiləndə PATH-in yanında göstərilir.
+    \\
+    \\Arqumentlər:
+    \\  PATH   fayl və ya qovluq, cari qovluğa nisbətən
+    \\  DESC   qeydin mətni; mövcud qeydi silmək üçün boş sətir "" ötür
+    \\
+    \\Nümunələr:
+    \\  dirtree annotate src/main.zig "CLI giriş nöqtəsi"
+    \\  dirtree note docs "dizayn qeydləri burada yerləşir"
+    \\  dirtree annotate README.md ""        # README.md üzərindəki qeydi sil
+    \\</annotate>
+    \\<orphaned_notes>
+    \\İstifadə: dirtree orphaned-notes [DIR]
+    \\
+    \\Hədəf yolu artıq mövcud olmayan qeydləri siyahıla — məsələn, bir fayl
+    \\adı dəyişdirildikdən, köçürüldükdən və ya silindikdən sonra. DIR varsayılan olaraq cari qovluqdur.
+    \\Bu yalnız oxumaq üçündür: heç nə dəyişdirilmir. Onları silmək üçün purge-orphaned-notes istifadə et.
+    \\
+    \\Nümunələr:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\İstifadə: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Hədəf yolu artıq mövcud olmayan qeydləri sil. DIR varsayılan olaraq cari
+    \\qovluqdur. Dəqiq nəyin silinəcəyini görmək üçün əvvəlcə orphaned-notes işlət.
+    \\
+    \\Nümunələr:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Kimsəsiz qeydlər (artıq mövcud olmayan yollar):",
     .orphaned_none = "Kimsəsiz qeyd yoxdur.",
     .purge_header = "Kimsəsiz qeydlər silindi:",

@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Trajno spremi jednorednu bilješku o datoteci ili direktoriju (alias: note; prazan DESC briše)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Navedi bilješke čije ciljne putanje više ne postoje",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Ukloni bilješke čije ciljne putanje više ne postoje",
+    .help_subcommands =
+    \\<annotate>
+    \\Upotreba: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (alias)
+    \\
+    \\Trajno spremi jednorednu bilješku o datoteci ili direktoriju. Bilješka se
+    \\sprema u .dirtree-state i prikazuje pokraj PATH pri sljedećem iscrtavanju stabla.
+    \\
+    \\Argumenti:
+    \\  PATH   datoteka ili direktorij, relativno u odnosu na trenutni direktorij
+    \\  DESC   tekst bilješke; predaj prazan niz "" za brisanje postojeće bilješke
+    \\
+    \\Primjeri:
+    \\  dirtree annotate src/main.zig "ulazna točka CLI-ja"
+    \\  dirtree note docs "ovdje žive bilješke o dizajnu"
+    \\  dirtree annotate README.md ""        # obriši bilješku na README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Upotreba: dirtree orphaned-notes [DIR]
+    \\
+    \\Navedi bilješke čija ciljna putanja više ne postoji — na primjer nakon što je
+    \\datoteka preimenovana, premještena ili izbrisana. DIR se zadano odnosi na trenutni direktorij.
+    \\Ovo je samo za čitanje: ništa se ne mijenja. Koristi purge-orphaned-notes za njihovo uklanjanje.
+    \\
+    \\Primjeri:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Upotreba: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Ukloni bilješke čija ciljna putanja više ne postoji. DIR se zadano odnosi na
+    \\trenutni direktorij. Prvo pokreni orphaned-notes za pregled onoga što će točno
+    \\biti uklonjeno.
+    \\
+    \\Primjeri:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Napuštene bilješke (putanje koje više ne postoje):",
     .orphaned_none = "Nema napuštenih bilješki.",
     .purge_header = "Uklonjene napuštene bilješke:",

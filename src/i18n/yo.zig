@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Tọjú àkọsílẹ̀ ìlà-kan nípa fáìlì tàbí ìwé-ìpamọ́ (alias: note; DESC ṣófo ń pa rẹ́)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Ṣàkọsílẹ̀ àwọn àkọsílẹ̀ tí ọ̀nà ojúlówó wọn kò sí mọ́",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Yọ àwọn àkọsílẹ̀ tí ọ̀nà ojúlówó wọn kò sí mọ́ kúrò",
+    .help_subcommands =
+    \\<annotate>
+    \\Ìlò: dirtree annotate PATH DESC
+    \\     dirtree note PATH DESC          (alias)
+    \\
+    \\Tọjú àkọsílẹ̀ ìlà-kan nípa fáìlì tàbí ìwé-ìpamọ́. A ń tọjú àkọsílẹ̀ náà sí
+    \\.dirtree-state, a ó sì fi hàn lẹ́gbẹ̀ẹ́ PATH nígbà tó bá kàn tí a bá fi igi náà hàn.
+    \\
+    \\Àwọn àríyànjiyàn:
+    \\  PATH   fáìlì tàbí ìwé-ìpamọ́, ní ìbátan sí ìwé-ìpamọ́ lọ́wọ́lọ́wọ́
+    \\  DESC   ọ̀rọ̀ àkọsílẹ̀ náà; fi ọ̀rọ̀ ṣófo "" ránṣẹ́ láti pa àkọsílẹ̀ tó wà tẹ́lẹ̀ rẹ́
+    \\
+    \\Àwọn àpẹẹrẹ:
+    \\  dirtree annotate src/main.zig "ibi àbáwọlé CLI"
+    \\  dirtree note docs "àwọn àkọsílẹ̀ ìṣàpẹrẹ wà níbí"
+    \\  dirtree annotate README.md ""        # pa àkọsílẹ̀ tó wà lórí README.md rẹ́
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Ìlò: dirtree orphaned-notes [DIR]
+    \\
+    \\Ṣàkọsílẹ̀ àwọn àkọsílẹ̀ tí ọ̀nà ojúlówó wọn kò sí mọ́ — fún àpẹẹrẹ lẹ́yìn tí a ti
+    \\yí orúkọ fáìlì kan padà, tí a gbé e, tàbí tí a pa á rẹ́. DIR jẹ́ ìwé-ìpamọ́ lọ́wọ́lọ́wọ́ ní àbínibí.
+    \\Èyí jẹ́ kíkà nìkan: kò sí ohun tí a yí padà. Lo purge-orphaned-notes láti yọ wọ́n kúrò.
+    \\
+    \\Àwọn àpẹẹrẹ:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Ìlò: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Yọ àwọn àkọsílẹ̀ tí ọ̀nà ojúlówó wọn kò sí mọ́ kúrò. DIR jẹ́ ìwé-ìpamọ́ lọ́wọ́lọ́wọ́ ní
+    \\àbínibí. Kọ́kọ́ ṣiṣẹ́ orphaned-notes láti wo ohun gan-an tí a ó yọ kúrò.
+    \\
+    \\Àwọn àpẹẹrẹ:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Àwọn àkọsílẹ̀ aláìní (ọ̀nà tí kò sí mọ́):",
     .orphaned_none = "Kò sí àkọsílẹ̀ aláìní.",
     .purge_header = "Àwọn àkọsílẹ̀ aláìní tí a yọ kúrò:",

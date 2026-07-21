@@ -111,6 +111,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] បញ្ជីចំណារដែលផ្លូវលែងមាន",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] លុបចំណារដែលផ្លូវលែងមាន",
+    .help_subcommands =
+    \\<annotate>
+    \\ការប្រើប្រាស់: dirtree annotate PATH DESC
+    \\            dirtree note PATH DESC          (ឈ្មោះក្រៅ)
+    \\
+    \\រក្សាទុកចំណារមួយបន្ទាត់អំពីវែនសារ ឬថាស់នាមុខ។ ចំណារត្រូវបានរក្សាទុកក្នុង
+    \\.dirtree-state ហើយបង្ហាញនៅក្បែរ PATH នៅពេលបង្ហាញមែកធាងលើកក្រោយ។
+    \\
+    \\អាគុយម៉ង់:
+    \\  PATH   វែនសារ ឬថាស់នាមុខ ធៀបនឹងថាស់នាមុខបច្ចុប្បន្ន
+    \\  DESC   អត្ថបទចំណារ; បញ្ជូនខ្សែអក្សរទទេ "" ដើម្បីសម្អាតចំណារដែលមានស្រាប់
+    \\
+    \\ដំបូង:
+    \\  dirtree annotate src/main.zig "ចំណុចចូល CLI"
+    \\  dirtree note docs "ចំណារការរចនានៅទីនេះ"
+    \\  dirtree annotate README.md ""        # សម្អាតចំណារនៅលើ README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\ការប្រើប្រាស់: dirtree orphaned-notes [DIR]
+    \\
+    \\បញ្ជីចំណារដែលផ្លូវគោលដៅលែងមាន — ឧទាហរណ៍ បន្ទាប់ពីវែនសារត្រូវបាន
+    \\ប្តូរឈ្មោះ ផ្លាស់ទី ឬលុប។ DIR លំនាំដើមជាថាស់នាមុខបច្ចុប្បន្ន។
+    \\នេះគឺអានតែប៉ុណ្ណោះ: គ្មានអ្វីត្រូវបានផ្លាស់ប្តូរ។ ប្រើ purge-orphaned-notes ដើម្បីលុបពួកវា។
+    \\
+    \\ដំបូង:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\ការប្រើប្រាស់: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\លុបចំណារដែលផ្លូវគោលដៅលែងមាន។ DIR លំនាំដើមជា
+    \\ថាស់នាមុខបច្ចុប្បន្ន។ ដំណើរការ orphaned-notes ជាមុនសិន ដើម្បីមើលជាមុននូវអ្វី
+    \\ដែលនឹងត្រូវលុប។
+    \\
+    \\ដំបូង:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "ចំណារកំព្រា (ផ្លូវដែលលែងមាន)៖",
     .orphaned_none = "គ្មានចំណារកំព្រាទេ។",
     .purge_header = "បានលុបចំណារកំព្រា៖",

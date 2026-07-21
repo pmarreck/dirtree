@@ -111,6 +111,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] 存在しないパスの注釈を一覧表示",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] 存在しないパスの注釈を削除",
+    .help_subcommands =
+    \\<annotate>
+    \\使い方: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (エイリアス)
+    \\
+    \\ファイルまたはディレクトリに関する1行の注釈を保存します。注釈は
+    \\.dirtree-state に保存され、次回ツリーを表示するときに PATH の横に表示されます。
+    \\
+    \\引数:
+    \\  PATH   カレントディレクトリからの相対パスで指定するファイルまたはディレクトリ
+    \\  DESC   注釈のテキスト。既存の注釈を消すには空文字列 "" を渡します
+    \\
+    \\使用例:
+    \\  dirtree annotate src/main.zig "CLIのエントリポイント"
+    \\  dirtree note docs "設計メモはここにあります"
+    \\  dirtree annotate README.md ""        # README.md の注釈を消去
+    \\</annotate>
+    \\<orphaned_notes>
+    \\使い方: dirtree orphaned-notes [DIR]
+    \\
+    \\対象のパスがもう存在しない注釈を一覧表示します — 例えばファイルの
+    \\名前変更、移動、削除の後などです。DIR の既定値はカレントディレクトリです。
+    \\これは読み取り専用で、何も変更しません。削除するには purge-orphaned-notes を使います。
+    \\
+    \\使用例:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\使い方: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\対象のパスがもう存在しない注釈を削除します。DIR の既定値は
+    \\カレントディレクトリです。削除される内容を正確に確認するには、先に
+    \\orphaned-notes を実行してください。
+    \\
+    \\使用例:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "孤立した注釈 (存在しないパス):",
     .orphaned_none = "孤立した注釈はありません。",
     .purge_header = "孤立した注釈を削除しました:",

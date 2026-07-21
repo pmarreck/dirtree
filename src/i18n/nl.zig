@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Een eenregelige notitie over een bestand of map bewaren (alias: note; lege DESC wist)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Notities opsommen waarvan de doelpaden niet meer bestaan",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Notities verwijderen waarvan de doelpaden niet meer bestaan",
+    .help_subcommands =
+    \\<annotate>
+    \\Gebruik: dirtree annotate PATH DESC
+    \\         dirtree note PATH DESC          (alias)
+    \\
+    \\Bewaart een eenregelige notitie over een bestand of map. De notitie wordt opgeslagen in
+    \\.dirtree-state en naast PATH getoond wanneer de boom de volgende keer wordt weergegeven.
+    \\
+    \\Argumenten:
+    \\  PATH   bestand of map, relatief ten opzichte van de huidige map
+    \\  DESC   de notitietekst; geef een lege tekenreeks "" om een bestaande notitie te wissen
+    \\
+    \\Voorbeelden:
+    \\  dirtree annotate src/main.zig "CLI-startpunt"
+    \\  dirtree note docs "hier staan de ontwerpnotities"
+    \\  dirtree annotate README.md ""        # wis de notitie over README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Gebruik: dirtree orphaned-notes [DIR]
+    \\
+    \\Somt notities op waarvan het doelpad niet meer bestaat — bijvoorbeeld nadat een bestand
+    \\is hernoemd, verplaatst of verwijderd. DIR is standaard de huidige map.
+    \\Alleen-lezen: er wordt niets gewijzigd. Gebruik purge-orphaned-notes om ze te verwijderen.
+    \\
+    \\Voorbeelden:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Gebruik: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Verwijdert notities waarvan het doelpad niet meer bestaat. DIR is standaard de
+    \\huidige map. Voer eerst orphaned-notes uit om precies te zien wat er wordt
+    \\verwijderd.
+    \\
+    \\Voorbeelden:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Verweesde notities (paden die niet meer bestaan):",
     .orphaned_none = "Geen verweesde notities.",
     .purge_header = "Verweesde notities verwijderd:",

@@ -111,6 +111,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Liệt kê ghi chú có đường dẫn không còn tồn tại",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Xóa ghi chú có đường dẫn không còn tồn tại",
+    .help_subcommands =
+    \\<annotate>
+    \\Cách dùng: dirtree annotate PATH DESC
+    \\           dirtree note PATH DESC          (bí danh)
+    \\
+    \\Lưu một ghi chú một dòng về một tệp hoặc thư mục. Ghi chú được lưu trong
+    \\.dirtree-state và hiển thị bên cạnh PATH ở lần hiển thị cây tiếp theo.
+    \\
+    \\Tham số:
+    \\  PATH   tệp hoặc thư mục, tương đối với thư mục hiện tại
+    \\  DESC   nội dung ghi chú; truyền chuỗi rỗng "" để xóa ghi chú hiện có
+    \\
+    \\Ví dụ:
+    \\  dirtree annotate src/main.zig "Điểm vào CLI"
+    \\  dirtree note docs "ghi chú thiết kế nằm ở đây"
+    \\  dirtree annotate README.md ""        # xóa ghi chú trên README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Cách dùng: dirtree orphaned-notes [DIR]
+    \\
+    \\Liệt kê các ghi chú có đường dẫn đích không còn tồn tại — ví dụ sau khi một
+    \\tệp bị đổi tên, di chuyển hoặc xóa. DIR mặc định là thư mục hiện tại.
+    \\Chỉ đọc: không có gì bị thay đổi. Dùng purge-orphaned-notes để xóa chúng.
+    \\
+    \\Ví dụ:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Cách dùng: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Xóa các ghi chú có đường dẫn đích không còn tồn tại. DIR mặc định là
+    \\thư mục hiện tại. Chạy orphaned-notes trước để xem trước chính xác những gì
+    \\sẽ bị xóa.
+    \\
+    \\Ví dụ:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Ghi chú mồ côi (đường dẫn không còn tồn tại):",
     .orphaned_none = "Không có ghi chú mồ côi.",
     .purge_header = "Đã xóa ghi chú mồ côi:",

@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Simpan catatan satu baris tentang berkas atau direktori (alias: note; DESC kosong menghapus)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Daftar catatan yang jalur targetnya tidak ada lagi",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Hapus catatan yang jalur targetnya tidak ada lagi",
+    .help_subcommands =
+    \\<annotate>
+    \\Penggunaan: dirtree annotate PATH DESC
+    \\            dirtree note PATH DESC          (alias)
+    \\
+    \\Simpan catatan satu baris tentang sebuah berkas atau direktori. Catatan disimpan di
+    \\.dirtree-state dan ditampilkan di samping PATH saat pohon ditampilkan berikutnya.
+    \\
+    \\Argumen:
+    \\  PATH   berkas atau direktori, relatif terhadap direktori saat ini
+    \\  DESC   teks catatan; berikan string kosong "" untuk menghapus catatan yang ada
+    \\
+    \\Contoh:
+    \\  dirtree annotate src/main.zig "titik masuk CLI"
+    \\  dirtree note docs "catatan desain ada di sini"
+    \\  dirtree annotate README.md ""        # hapus catatan pada README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Penggunaan: dirtree orphaned-notes [DIR]
+    \\
+    \\Daftar catatan yang jalur targetnya tidak ada lagi — misalnya setelah sebuah
+    \\berkas diganti nama, dipindahkan, atau dihapus. DIR secara default adalah direktori saat ini.
+    \\Ini hanya-baca: tidak ada yang diubah. Gunakan purge-orphaned-notes untuk menghapusnya.
+    \\
+    \\Contoh:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Penggunaan: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Hapus catatan yang jalur targetnya tidak ada lagi. DIR secara default adalah
+    \\direktori saat ini. Jalankan orphaned-notes terlebih dahulu untuk melihat pratinjau persis apa
+    \\yang akan dihapus.
+    \\
+    \\Contoh:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Catatan yatim (jalur yang tidak ada lagi):",
     .orphaned_none = "Tidak ada catatan yatim.",
     .purge_header = "Catatan yatim yang dihapus:",

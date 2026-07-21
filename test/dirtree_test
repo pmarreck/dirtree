@@ -569,6 +569,96 @@ test_capture_dirtree_printable_runs_help() {
 	fi
 }
 
+test_subcommand_help_annotate() {
+	local stdout_pb="" stderr_pb="" rc=0 decoded
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --lang en note --help; then
+		echo "capture failed for 'note --help'" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 ]]; then
+		echo "expected rc=0 from 'note --help', got $rc" >&2
+		return 1
+	fi
+	if [[ -n "$stderr_pb" ]]; then
+		echo "expected empty stderr from 'note --help'" >&2
+		return 1
+	fi
+	decode_printable decoded "$stdout_pb"
+	if [[ "$decoded" != *"Usage: dirtree annotate PATH DESC"* ]]; then
+		echo "'note --help' missing the annotate usage line" >&2
+		return 1
+	fi
+	if [[ "$decoded" == *"<annotate>"* ]]; then
+		echo "'note --help' leaked a raw <annotate> tag" >&2
+		return 1
+	fi
+	if [[ "$decoded" == *"--simple"* ]]; then
+		echo "'note --help' showed global help, not the subcommand section" >&2
+		return 1
+	fi
+}
+
+test_subcommand_help_orphaned_notes() {
+	local stdout_pb="" stderr_pb="" rc=0 decoded
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --lang en orphaned-notes --help; then
+		echo "capture failed for 'orphaned-notes --help'" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 || -n "$stderr_pb" ]]; then
+		echo "expected rc=0 and empty stderr from 'orphaned-notes --help' (rc=$rc)" >&2
+		return 1
+	fi
+	decode_printable decoded "$stdout_pb"
+	if [[ "$decoded" != *"Usage: dirtree orphaned-notes [DIR]"* ]]; then
+		echo "'orphaned-notes --help' missing its usage line" >&2
+		return 1
+	fi
+	if [[ "$decoded" == *"--simple"* ]]; then
+		echo "'orphaned-notes --help' showed global help, not the subcommand section" >&2
+		return 1
+	fi
+}
+
+test_subcommand_help_purge_orphaned_notes() {
+	local stdout_pb="" stderr_pb="" rc=0 decoded
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --lang en purge-orphaned-notes --help; then
+		echo "capture failed for 'purge-orphaned-notes --help'" >&2
+		return 1
+	fi
+	if [[ "$rc" -ne 0 || -n "$stderr_pb" ]]; then
+		echo "expected rc=0 and empty stderr from 'purge-orphaned-notes --help' (rc=$rc)" >&2
+		return 1
+	fi
+	decode_printable decoded "$stdout_pb"
+	if [[ "$decoded" != *"Usage: dirtree purge-orphaned-notes [DIR]"* ]]; then
+		echo "'purge-orphaned-notes --help' missing its usage line" >&2
+		return 1
+	fi
+	if [[ "$decoded" == *"--simple"* ]]; then
+		echo "'purge-orphaned-notes --help' showed global help, not the subcommand section" >&2
+		return 1
+	fi
+}
+
+test_global_help_excludes_subcommand_tags() {
+	local stdout_pb="" stderr_pb="" rc=0 decoded
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --lang en --help; then
+		echo "capture failed for global --help" >&2
+		return 1
+	fi
+	decode_printable decoded "$stdout_pb"
+	# Global help still lists real flags (proving it's the global view)...
+	if [[ "$decoded" != *"--simple"* ]]; then
+		echo "global --help missing the --simple option" >&2
+		return 1
+	fi
+	# ...but must never leak an in-band subcommand-help tag.
+	if [[ "$decoded" == *"<annotate>"* || "$decoded" == *"</purge_orphaned_notes>"* ]]; then
+		echo "global --help leaked an in-band subcommand tag" >&2
+		return 1
+	fi
+}
+
 test_fixture_helper_resets_state_between_uses() {
 	if ! command -v fixture_simple_tree >/dev/null 2>&1; then
 		echo "fixture_simple_tree helper is missing" >&2
@@ -4870,6 +4960,14 @@ run_all_tests() {
 		test_capture_command_printable_handles_nuls
 	run_test "capture_dirtree_printable runs --help" \
 		test_capture_dirtree_printable_runs_help
+	run_test "note --help shows the annotate subcommand section" \
+		test_subcommand_help_annotate
+	run_test "orphaned-notes --help shows its section" \
+		test_subcommand_help_orphaned_notes
+	run_test "purge-orphaned-notes --help shows its section" \
+		test_subcommand_help_purge_orphaned_notes
+	run_test "global --help excludes subcommand tags" \
+		test_global_help_excludes_subcommand_tags
 	run_test "fixture helper resets state between uses" \
 		test_fixture_helper_resets_state_between_uses
 	run_test "decor fixture clears state and retains file" \

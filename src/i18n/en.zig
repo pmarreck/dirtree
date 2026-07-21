@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] List notes whose target paths no longer exist",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Remove notes whose target paths no longer exist",
+    .help_subcommands =
+    \\<annotate>
+    \\Usage: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (alias)
+    \\
+    \\Persist a one-line note about a file or directory. The note is saved in
+    \\.dirtree-state and shown beside PATH the next time the tree is rendered.
+    \\
+    \\Arguments:
+    \\  PATH   file or directory, relative to the current directory
+    \\  DESC   the note text; pass an empty string "" to clear an existing note
+    \\
+    \\Examples:
+    \\  dirtree annotate src/main.zig "CLI entry point"
+    \\  dirtree note docs "design notes live here"
+    \\  dirtree annotate README.md ""        # clear the note on README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Usage: dirtree orphaned-notes [DIR]
+    \\
+    \\List notes whose target path no longer exists — for example after a file
+    \\was renamed, moved, or deleted. DIR defaults to the current directory.
+    \\This is read-only: nothing is changed. Use purge-orphaned-notes to remove them.
+    \\
+    \\Examples:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Usage: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Remove notes whose target path no longer exists. DIR defaults to the
+    \\current directory. Run orphaned-notes first to preview exactly what will
+    \\be removed.
+    \\
+    \\Examples:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Orphaned notes (paths that no longer exist):",
     .orphaned_none = "No orphaned notes.",
     .purge_header = "Purged orphaned notes:",

@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC ਫਾਈਲ ਜਾਂ ਡਾਇਰੈਕਟਰੀ ਬਾਰੇ ਇੱਕ-ਲਾਈਨ ਨੋਟ ਸੰਭਾਲੋ (ਉਪਨਾਮ: note; ਖਾਲੀ DESC ਸਾਫ਼ ਕਰਦਾ ਹੈ)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] ਉਹ ਨੋਟ ਸੂਚੀਬੱਧ ਕਰੋ ਜਿਨ੍ਹਾਂ ਦੇ ਨਿਸ਼ਾਨਾ ਮਾਰਗ ਹੁਣ ਮੌਜੂਦ ਨਹੀਂ ਹਨ",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] ਉਹ ਨੋਟ ਹਟਾਓ ਜਿਨ੍ਹਾਂ ਦੇ ਨਿਸ਼ਾਨਾ ਮਾਰਗ ਹੁਣ ਮੌਜੂਦ ਨਹੀਂ ਹਨ",
+    .help_subcommands =
+    \\<annotate>
+    \\ਵਰਤੋਂ: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (ਉਪਨਾਮ)
+    \\
+    \\ਕਿਸੇ ਫਾਈਲ ਜਾਂ ਡਾਇਰੈਕਟਰੀ ਬਾਰੇ ਇੱਕ-ਲਾਈਨ ਨੋਟ ਸੰਭਾਲੋ। ਨੋਟ
+    \\.dirtree-state ਵਿੱਚ ਸੰਭਾਲਿਆ ਜਾਂਦਾ ਹੈ ਅਤੇ ਅਗਲੀ ਵਾਰ ਰੁੱਖ ਰੈਂਡਰ ਹੋਣ ਵੇਲੇ PATH ਦੇ ਕੋਲ ਵਿਖਾਇਆ ਜਾਂਦਾ ਹੈ।
+    \\
+    \\ਆਰਗੂਮੈਂਟ:
+    \\  PATH   ਫਾਈਲ ਜਾਂ ਡਾਇਰੈਕਟਰੀ, ਮੌਜੂਦਾ ਡਾਇਰੈਕਟਰੀ ਦੇ ਸਾਪੇਖ
+    \\  DESC   ਨੋਟ ਦਾ ਪਾਠ; ਮੌਜੂਦਾ ਨੋਟ ਸਾਫ਼ ਕਰਨ ਲਈ ਇੱਕ ਖਾਲੀ ਸਟ੍ਰਿੰਗ "" ਦਿਓ
+    \\
+    \\ਉਦਾਹਰਨਾਂ:
+    \\  dirtree annotate src/main.zig "CLI ਦਾਖਲਾ ਬਿੰਦੂ"
+    \\  dirtree note docs "ਡਿਜ਼ਾਈਨ ਨੋਟ ਇੱਥੇ ਰਹਿੰਦੇ ਹਨ"
+    \\  dirtree annotate README.md ""        # README.md ਦਾ ਨੋਟ ਸਾਫ਼ ਕਰੋ
+    \\</annotate>
+    \\<orphaned_notes>
+    \\ਵਰਤੋਂ: dirtree orphaned-notes [DIR]
+    \\
+    \\ਉਹ ਨੋਟ ਸੂਚੀਬੱਧ ਕਰੋ ਜਿਨ੍ਹਾਂ ਦਾ ਨਿਸ਼ਾਨਾ ਮਾਰਗ ਹੁਣ ਮੌਜੂਦ ਨਹੀਂ ਹੈ — ਉਦਾਹਰਨ ਵਜੋਂ ਕਿਸੇ ਫਾਈਲ ਦਾ
+    \\ਨਾਮ ਬਦਲਣ, ਸਥਾਨ ਬਦਲਣ ਜਾਂ ਮਿਟਾਉਣ ਤੋਂ ਬਾਅਦ। DIR ਮੂਲ ਰੂਪ ਵਿੱਚ ਮੌਜੂਦਾ ਡਾਇਰੈਕਟਰੀ ਹੈ।
+    \\ਇਹ ਸਿਰਫ਼-ਪੜ੍ਹਨ ਲਈ ਹੈ: ਕੁਝ ਵੀ ਨਹੀਂ ਬਦਲਿਆ ਜਾਂਦਾ। ਇਹਨਾਂ ਨੂੰ ਹਟਾਉਣ ਲਈ purge-orphaned-notes ਵਰਤੋ।
+    \\
+    \\ਉਦਾਹਰਨਾਂ:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\ਵਰਤੋਂ: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\ਉਹ ਨੋਟ ਹਟਾਓ ਜਿਨ੍ਹਾਂ ਦਾ ਨਿਸ਼ਾਨਾ ਮਾਰਗ ਹੁਣ ਮੌਜੂਦ ਨਹੀਂ ਹੈ। DIR ਮੂਲ ਰੂਪ ਵਿੱਚ
+    \\ਮੌਜੂਦਾ ਡਾਇਰੈਕਟਰੀ ਹੈ। ਬਿਲਕੁਲ ਕੀ ਹਟਾਇਆ ਜਾਵੇਗਾ ਇਸ ਦੀ ਝਲਕ ਵੇਖਣ ਲਈ ਪਹਿਲਾਂ
+    \\orphaned-notes ਚਲਾਓ।
+    \\
+    \\ਉਦਾਹਰਨਾਂ:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "ਅਨਾਥ ਨੋਟ (ਉਹ ਮਾਰਗ ਜੋ ਹੁਣ ਮੌਜੂਦ ਨਹੀਂ ਹਨ):",
     .orphaned_none = "ਕੋਈ ਅਨਾਥ ਨੋਟ ਨਹੀਂ।",
     .purge_header = "ਅਨਾਥ ਨੋਟ ਹਟਾਏ ਗਏ:",

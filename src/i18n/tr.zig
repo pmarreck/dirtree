@@ -111,6 +111,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Yolları artık var olmayan notları listele",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Yolları artık var olmayan notları kaldır",
+    .help_subcommands =
+    \\<annotate>
+    \\Kullanım: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (alias)
+    \\
+    \\Bir dosya veya dizin hakkında tek satırlık bir notu kalıcı olarak kaydeder. Not
+    \\.dirtree-state içinde saklanır ve ağaç bir sonraki çizilişinde PATH'in yanında gösterilir.
+    \\
+    \\Argümanlar:
+    \\  PATH   dosya veya dizin, geçerli dizine göre
+    \\  DESC   notun metni; mevcut bir notu temizlemek için boş dize "" geçin
+    \\
+    \\Örnekler:
+    \\  dirtree annotate src/main.zig "CLI giriş noktası"
+    \\  dirtree note docs "tasarım notları burada"
+    \\  dirtree annotate README.md ""        # README.md üzerindeki notu temizle
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Kullanım: dirtree orphaned-notes [DIR]
+    \\
+    \\Hedef yolu artık var olmayan notları listele — örneğin bir dosya
+    \\yeniden adlandırıldıktan, taşındıktan veya silindikten sonra. DIR varsayılan olarak geçerli dizindir.
+    \\Bu salt okunurdur: hiçbir şey değiştirilmez. Onları kaldırmak için purge-orphaned-notes kullanın.
+    \\
+    \\Örnekler:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Kullanım: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Hedef yolu artık var olmayan notları kaldır. DIR varsayılan olarak geçerli
+    \\dizindir. Tam olarak neyin kaldırılacağını önizlemek için önce orphaned-notes çalıştır.
+    \\
+    \\Örnekler:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Yetim notlar (artık var olmayan yollar):",
     .orphaned_none = "Yetim not yok.",
     .purge_header = "Yetim notlar kaldırıldı:",

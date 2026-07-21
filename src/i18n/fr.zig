@@ -111,6 +111,47 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Lister les notes dont les chemins n'existent plus",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Supprimer les notes dont les chemins n'existent plus",
+    .help_subcommands =
+    \\<annotate>
+    \\Utilisation : dirtree annotate PATH DESC
+    \\              dirtree note PATH DESC          (alias)
+    \\
+    \\Enregistre une note d'une ligne sur un fichier ou un répertoire. La note
+    \\est enregistrée dans .dirtree-state et affichée à côté de PATH la prochaine
+    \\fois que l'arborescence est affichée.
+    \\
+    \\Arguments :
+    \\  PATH   fichier ou répertoire, relatif au répertoire courant
+    \\  DESC   le texte de la note ; passez une chaîne vide "" pour effacer une note existante
+    \\
+    \\Exemples :
+    \\  dirtree annotate src/main.zig "Point d'entrée CLI"
+    \\  dirtree note docs "les notes de conception sont ici"
+    \\  dirtree annotate README.md ""        # efface la note sur README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Utilisation : dirtree orphaned-notes [DIR]
+    \\
+    \\Liste les notes dont le chemin cible n'existe plus — par exemple après
+    \\qu'un fichier a été renommé, déplacé ou supprimé. DIR est par défaut le répertoire courant.
+    \\C'est en lecture seule : rien n'est modifié. Utilisez purge-orphaned-notes pour les supprimer.
+    \\
+    \\Exemples :
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Utilisation : dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Supprime les notes dont le chemin cible n'existe plus. DIR est par défaut
+    \\le répertoire courant. Lancez d'abord orphaned-notes pour prévisualiser
+    \\exactement ce qui sera supprimé.
+    \\
+    \\Exemples :
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Notes orphelines (chemins qui n'existent plus) :",
     .orphaned_none = "Aucune note orpheline.",
     .purge_header = "Notes orphelines supprimées :",

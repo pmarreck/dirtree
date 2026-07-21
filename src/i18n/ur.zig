@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC کسی فائل یا ڈائریکٹری کے بارے میں ایک سطری نوٹ محفوظ کریں (alias: note؛ خالی DESC اسے صاف کر دیتا ہے)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] ایسے نوٹس کی فہرست بنائیں جن کے ہدف راستے اب موجود نہیں",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] ایسے نوٹس ہٹائیں جن کے ہدف راستے اب موجود نہیں",
+    .help_subcommands =
+    \\<annotate>
+    \\استعمال: dirtree annotate PATH DESC
+    \\         dirtree note PATH DESC          (متبادل نام)
+    \\
+    \\کسی فائل یا ڈائریکٹری کے بارے میں ایک سطری نوٹ محفوظ کریں۔ نوٹ
+    \\.dirtree-state میں محفوظ ہوتا ہے اور اگلی بار جب ٹری رینڈر ہوگا تو PATH کے ساتھ دکھایا جاتا ہے۔
+    \\
+    \\دلائل:
+    \\  PATH   فائل یا ڈائریکٹری، موجودہ ڈائریکٹری کی نسبت سے
+    \\  DESC   نوٹ کا متن؛ کسی موجودہ نوٹ کو صاف کرنے کے لیے خالی سٹرنگ "" دیں
+    \\
+    \\مثالیں:
+    \\  dirtree annotate src/main.zig "CLI کا داخلی نقطہ"
+    \\  dirtree note docs "ڈیزائن کے نوٹس یہاں ہیں"
+    \\  dirtree annotate README.md ""        # README.md پر نوٹ صاف کریں
+    \\</annotate>
+    \\<orphaned_notes>
+    \\استعمال: dirtree orphaned-notes [DIR]
+    \\
+    \\ایسے نوٹس کی فہرست بنائیں جن کا ہدف راستہ اب موجود نہیں — مثلاً کسی فائل کا
+    \\نام تبدیل کرنے، اسے منتقل کرنے، یا حذف کرنے کے بعد۔ DIR طے شدہ طور پر موجودہ ڈائریکٹری ہے۔
+    \\یہ صرف پڑھنے کے لیے ہے: کچھ تبدیل نہیں ہوتا۔ انہیں ہٹانے کے لیے purge-orphaned-notes استعمال کریں۔
+    \\
+    \\مثالیں:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\استعمال: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\ایسے نوٹس ہٹائیں جن کا ہدف راستہ اب موجود نہیں۔ DIR طے شدہ طور پر موجودہ
+    \\ڈائریکٹری ہے۔ بالکل وہی دیکھنے کے لیے جو ہٹایا جائے گا، پہلے orphaned-notes چلائیں۔
+    \\
+    \\مثالیں:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "یتیم نوٹس (ایسے راستے جو اب موجود نہیں):",
     .orphaned_none = "کوئی یتیم نوٹ نہیں۔",
     .purge_header = "یتیم نوٹس ہٹا دیے گئے:",

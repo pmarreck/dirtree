@@ -111,6 +111,47 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Elenca le note i cui percorsi non esistono più",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Rimuovi le note i cui percorsi non esistono più",
+    .help_subcommands =
+    \\<annotate>
+    \\Uso: dirtree annotate PATH DESC
+    \\     dirtree note PATH DESC          (alias)
+    \\
+    \\Salva una nota di una riga su un file o una directory. La nota viene
+    \\salvata in .dirtree-state e mostrata accanto a PATH la prossima volta che
+    \\l'albero viene renderizzato.
+    \\
+    \\Argomenti:
+    \\  PATH   file o directory, relativo alla directory corrente
+    \\  DESC   il testo della nota; passa una stringa vuota "" per cancellare una nota esistente
+    \\
+    \\Esempi:
+    \\  dirtree annotate src/main.zig "Punto di ingresso della CLI"
+    \\  dirtree note docs "qui vivono le note di progettazione"
+    \\  dirtree annotate README.md ""        # cancella la nota su README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Uso: dirtree orphaned-notes [DIR]
+    \\
+    \\Elenca le note il cui percorso di destinazione non esiste più — ad esempio
+    \\dopo che un file è stato rinominato, spostato o eliminato. DIR predefinito è la directory corrente.
+    \\È di sola lettura: non viene modificato nulla. Usa purge-orphaned-notes per rimuoverle.
+    \\
+    \\Esempi:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Uso: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Rimuovi le note il cui percorso di destinazione non esiste più. DIR
+    \\predefinito è la directory corrente. Esegui prima orphaned-notes per
+    \\vedere in anteprima esattamente cosa verrà rimosso.
+    \\
+    \\Esempi:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Note orfane (percorsi che non esistono più):",
     .orphaned_none = "Nessuna nota orfana.",
     .purge_header = "Note orfane rimosse:",

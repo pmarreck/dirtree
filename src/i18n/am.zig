@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC ስለ ፋይል ወይም ማውጫ ባለ-አንድ-መስመር ማስታወሻ አስቀምጥ (alias: note፤ ባዶ DESC ያጸዳል)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] ዒላማ መንገዶቻቸው ከእንግዲህ የሌሉ ማስታወሻዎችን ዘርዝር",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] ዒላማ መንገዶቻቸው ከእንግዲህ የሌሉ ማስታወሻዎችን አስወግድ",
+    .help_subcommands =
+    \\<annotate>
+    \\አጠቃቀም: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (alias)
+    \\
+    \\ስለ ፋይል ወይም ማውጫ ባለ-አንድ-መስመር ማስታወሻ አስቀምጥ። ማስታወሻው በ .dirtree-state ውስጥ
+    \\ይቀመጣል እና በሚቀጥለው ጊዜ ዛፉ ሲታይ ከ PATH አጠገብ ይታያል።
+    \\
+    \\መከራከሪያዎች:
+    \\  PATH   ፋይል ወይም ማውጫ፣ ከአሁኑ ማውጫ አንጻር
+    \\  DESC   የማስታወሻው ጽሑፍ፤ ያለውን ማስታወሻ ለማጽዳት ባዶ ሕብረቁምፊ "" አስተላልፍ
+    \\
+    \\ምሳሌዎች:
+    \\  dirtree annotate src/main.zig "የCLI መግቢያ ነጥብ"
+    \\  dirtree note docs "የንድፍ ማስታወሻዎች እዚህ አሉ"
+    \\  dirtree annotate README.md ""        # በ README.md ላይ ያለውን ማስታወሻ አጽዳ
+    \\</annotate>
+    \\<orphaned_notes>
+    \\አጠቃቀም: dirtree orphaned-notes [DIR]
+    \\
+    \\ዒላማ መንገዳቸው ከእንግዲህ የሌሉ ማስታወሻዎችን ዘርዝር — ለምሳሌ ፋይል ስሙ ከተቀየረ፣ ከተዘዋወረ
+    \\ወይም ከተሰረዘ በኋላ። DIR በነባሪነት የአሁኑ ማውጫ ነው።
+    \\ይህ ለንባብ ብቻ ነው፤ ምንም አይቀየርም። እነሱን ለማስወገድ purge-orphaned-notes ተጠቀም።
+    \\
+    \\ምሳሌዎች:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\አጠቃቀም: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\ዒላማ መንገዳቸው ከእንግዲህ የሌሉ ማስታወሻዎችን አስወግድ። DIR በነባሪነት የአሁኑ ማውጫ ነው።
+    \\የሚወገደው በትክክል ምን እንደሆነ አስቀድሞ ለማየት መጀመሪያ orphaned-notes አሂድ።
+    \\
+    \\ምሳሌዎች:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "የተተዉ ማስታወሻዎች (ከእንግዲህ የሌሉ መንገዶች):",
     .orphaned_none = "የተተዉ ማስታወሻዎች የሉም።",
     .purge_header = "የተተዉ ማስታወሻዎች ተወግደዋል:",

@@ -111,6 +111,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Показати нотатки з неіснуючими шляхами",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Видалити нотатки з неіснуючими шляхами",
+    .help_subcommands =
+    \\<annotate>
+    \\Використання: dirtree annotate PATH DESC
+    \\              dirtree note PATH DESC          (псевдонім)
+    \\
+    \\Зберігає однорядкову нотатку про файл або каталог. Нотатка зберігається у
+    \\.dirtree-state і показується поряд із PATH під час наступного відображення дерева.
+    \\
+    \\Аргументи:
+    \\  PATH   файл або каталог відносно поточного каталогу
+    \\  DESC   текст нотатки; передайте порожній рядок "", щоб видалити наявну нотатку
+    \\
+    \\Приклади:
+    \\  dirtree annotate src/main.zig "точка входу CLI"
+    \\  dirtree note docs "тут живуть нотатки щодо дизайну"
+    \\  dirtree annotate README.md ""        # видалити нотатку для README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Використання: dirtree orphaned-notes [DIR]
+    \\
+    \\Показує нотатки, цільовий шлях яких більше не існує — наприклад, після того
+    \\як файл перейменували, перемістили чи видалили. DIR за замовчуванням — поточний каталог.
+    \\Лише для читання: нічого не змінюється. Для видалення використовуйте purge-orphaned-notes.
+    \\
+    \\Приклади:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Використання: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Видаляє нотатки, цільовий шлях яких більше не існує. DIR за замовчуванням —
+    \\поточний каталог. Спершу запустіть orphaned-notes, щоб точно побачити, що
+    \\буде видалено.
+    \\
+    \\Приклади:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Осиротілі нотатки (шляхи, яких більше немає):",
     .orphaned_none = "Осиротілих нотаток немає.",
     .purge_header = "Видалено осиротілі нотатки:",

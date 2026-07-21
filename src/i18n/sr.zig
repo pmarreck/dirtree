@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Сачувај једнолинијску белешку о датотеци или директоријуму (псеудоним: note; празан DESC брише)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Излистај белешке чије циљне путање више не постоје",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Уклони белешке чије циљне путање више не постоје",
+    .help_subcommands =
+    \\<annotate>
+    \\Употреба: dirtree annotate PATH DESC
+    \\          dirtree note PATH DESC          (псеудоним)
+    \\
+    \\Сачувај једнолинијску белешку о датотеци или директоријуму. Белешка се чува у
+    \\.dirtree-state и приказује се поред PATH при следећем исцртавању стабла.
+    \\
+    \\Аргументи:
+    \\  PATH   датотека или директоријум, релативно у односу на тренутни директоријум
+    \\  DESC   текст белешке; унеси празан низ "" да обришеш постојећу белешку
+    \\
+    \\Примери:
+    \\  dirtree annotate src/main.zig "улазна тачка CLI"
+    \\  dirtree note docs "овде стоје белешке о дизајну"
+    \\  dirtree annotate README.md ""        # обриши белешку за README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Употреба: dirtree orphaned-notes [DIR]
+    \\
+    \\Излистај белешке чије циљне путање више не постоје — на пример, након што је
+    \\датотека преименована, премештена или обрисана. DIR је подразумевано тренутни директоријум.
+    \\Само за читање: ништа се не мења. За уклањање користи purge-orphaned-notes.
+    \\
+    \\Примери:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Употреба: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Уклони белешке чије циљне путање више не постоје. DIR је подразумевано
+    \\тренутни директоријум. Прво покрени orphaned-notes да тачно видиш шта ће
+    \\бити уклоњено.
+    \\
+    \\Примери:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Напуштене белешке (путање које више не постоје):",
     .orphaned_none = "Нема напуштених белешки.",
     .purge_header = "Уклоњене напуштене белешке:",

@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Ruaj një shënim njërreshtësh për një skedar ose drejtori (alias: note; DESC bosh e pastron)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Listo shënimet shtigjet e të cilave nuk ekzistojnë më",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Hiq shënimet shtigjet e të cilave nuk ekzistojnë më",
+    .help_subcommands =
+    \\<annotate>
+    \\Përdorimi: dirtree annotate PATH DESC
+    \\           dirtree note PATH DESC          (alias)
+    \\
+    \\Ruaj në mënyrë të përhershme një shënim njërreshtësh për një skedar ose drejtori. Shënimi
+    \\ruhet në .dirtree-state dhe shfaqet pranë PATH herën tjetër që vizatohet pema.
+    \\
+    \\Argumentet:
+    \\  PATH   skedar ose drejtori, në lidhje me drejtorinë aktuale
+    \\  DESC   teksti i shënimit; jep një varg bosh "" për të pastruar një shënim ekzistues
+    \\
+    \\Shembuj:
+    \\  dirtree annotate src/main.zig "pika hyrëse e CLI-së"
+    \\  dirtree note docs "shënimet e projektimit ndodhen këtu"
+    \\  dirtree annotate README.md ""        # pastro shënimin te README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Përdorimi: dirtree orphaned-notes [DIR]
+    \\
+    \\Listo shënimet, shtegu i synuar i të cilave nuk ekziston më — për shembull pasi një
+    \\skedar u riemërtua, u zhvendos ose u fshi. DIR ka si parazgjedhje drejtorinë aktuale.
+    \\Kjo është vetëm për lexim: asgjë nuk ndryshohet. Përdor purge-orphaned-notes për t'i hequr.
+    \\
+    \\Shembuj:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Përdorimi: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Hiq shënimet, shtegu i synuar i të cilave nuk ekziston më. DIR ka si parazgjedhje
+    \\drejtorinë aktuale. Xhiro fillimisht orphaned-notes për të parë saktësisht çfarë do të hiqet.
+    \\
+    \\Shembuj:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Shënime jetime (shtigje që nuk ekzistojnë më):",
     .orphaned_none = "Asnjë shënim jetim.",
     .purge_header = "Shënimet jetime u hoqën:",

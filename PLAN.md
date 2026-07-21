@@ -35,20 +35,38 @@ emitted an **Urdu** error under an English environment.
   (`~/.claude/skills/i18n/SKILL.md`). Corrected stale 22→50 locale auto-memory.
 
 ### Phase 6 — REMAINING (each its own commit; TDD)
-- [ ] **6.6 Variant A — per-subcommand help (fully translated ×50)** [Peter: translate now].
-  Design = canonical tags (Peter-approved): author help content for `annotate`/`note`,
-  `orphaned-notes`, `purge-orphaned-notes`; tag sections with **canonical (English) topic**
-  names mapped from the (possibly localized) verb via `matchLongFlag`→`CliArg`; global help
-  strips tags, `<verb> --help` filters to that section. **MFIC test:** every topic has a
-  well-formed line-anchored `<topic>…</topic>` pair in every locale + stripped global help
-  has zero residual tags. This **replaces** the "Subcommand help not yet supported"
-  placeholder (6.3). Big lift: content + 50 quality translations (consider a focused pass).
+- [x] **6.6 Variant A — per-subcommand help (fully translated ×50)** _(2026-07-21)_.
+  Canonical-tag design shipped: one `Strings.help_subcommands` corpus per locale holding
+  three line-anchored sections `<annotate>`/`<orphaned_notes>`/`<purge_orphaned_notes>`
+  (tags = CliArg `@tagName`, never translated). `i18n.extractSubcommandHelp` slices by
+  topic; `main.zig` maps the (possibly localized) verb → `CliArg` via `subcommandVerb`,
+  returns `ParseResult.help_subcommand`, and `printSubcommandHelp` prints the sliced body.
+  Global help stays lean (Peter's choice) — one-liners under Options, detail via
+  `<verb> --help`; the placeholder from 6.3 is deleted. **MFIC Test F** sweeps every topic ×
+  every locale: exactly-one line-anchored pair, non-empty sliceable body, no residual
+  markers, **and command tokens (`dirtree annotate`, `.dirtree-state`, …) verbatim**; plus a
+  "global help carries zero topic tags" guard and 4 bash CLI tests. Translations produced by
+  10 parallel Opus agents grouped by family, each **grounded in that locale's own existing
+  in-file terminology**; structurally verified + spot-checked. **Confidence tiers (honest):**
+  high — most European + CJK + ar/he/ru/uk/pl/sr/…; **needs native review** — `ps yo ig am km`
+  (low), `ha az is pa ta ko bg mk ro` (light). Verified via bare `zig build test` +
+  `test/dirtree_test` (nix daemon was down; canonical `./test`/`nix build` still TODO).
 - [ ] **6.7 G3 — platform locale adapters** — macOS `CFLocaleCopyPreferredLanguages`,
   Windows `GetUserPreferredUILanguages`, as a fallback when the Unix env gives no signal.
   Unit-test the pure selection logic; the actual platform calls are only exercisable on the
   mac/Windows CI runners (can't integration-test on Linux).
 - [ ] (noted, not scoped) `ar/he/fa` ship an **untranslated English**
   `err_annotate_requires_description` — a translation-completeness gap surfaced during G2.
+- [ ] (noted, not scoped — surfaced during 6.6) **`help_opt_annotate` is untranslated English
+  in 21 locales** (`ar az de el es fa fr he hu it ja km ko pl pt_br ro ru tr uk vi zh_hans`) —
+  the one-line Options entry still reads "Persist a one-line note about a file or directory
+  (alias: note; empty DESC clears)". Pre-existing (the original ~22-locale batch); NOT from
+  6.6. A future translation pass should fold these in alongside the ar/he/fa gap above.
+- [ ] (noted, not scoped — surfaced during 6.6) **`km.zig` has pre-existing corruption**: its
+  `help_examples_header` is `ដំបូង:` ("first/beginning", not "Examples"), its directory/file
+  terms look non-standard vs. `ថត`/`ឯកសារ`, and `help_example_1` contains a replacement-char
+  glitch. The 6.6 Khmer translation reused these for internal consistency but they are likely
+  wrong fleet-wide — needs a native Khmer pass.
 
 ---
 

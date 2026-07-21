@@ -111,6 +111,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] 존재하지 않는 경로의 주석 나열",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] 존재하지 않는 경로의 주석 제거",
+    .help_subcommands =
+    \\<annotate>
+    \\사용법: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (별칭)
+    \\
+    \\파일이나 디렉토리에 대한 한 줄 주석을 저장합니다. 주석은 .dirtree-state에
+    \\저장되며, 다음번에 트리를 렌더링할 때 PATH 옆에 표시됩니다.
+    \\
+    \\인수:
+    \\  PATH   현재 디렉토리를 기준으로 한 파일 또는 디렉토리
+    \\  DESC   주석 텍스트; 기존 주석을 지우려면 빈 문자열 ""을 전달하세요
+    \\
+    \\사용 예:
+    \\  dirtree annotate src/main.zig "CLI 진입점"
+    \\  dirtree note docs "설계 노트는 여기에 있습니다"
+    \\  dirtree annotate README.md ""        # README.md의 주석 지우기
+    \\</annotate>
+    \\<orphaned_notes>
+    \\사용법: dirtree orphaned-notes [DIR]
+    \\
+    \\대상 경로가 더 이상 존재하지 않는 주석을 나열합니다 — 예를 들어 파일의
+    \\이름을 바꾸거나, 옮기거나, 삭제한 후입니다. DIR의 기본값은 현재 디렉토리입니다.
+    \\이 작업은 읽기 전용으로 아무것도 변경하지 않습니다. 제거하려면 purge-orphaned-notes를 사용하세요.
+    \\
+    \\사용 예:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\사용법: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\대상 경로가 더 이상 존재하지 않는 주석을 제거합니다. DIR의 기본값은
+    \\현재 디렉토리입니다. 무엇이 제거될지 정확히 미리 보려면 먼저
+    \\orphaned-notes를 실행하세요.
+    \\
+    \\사용 예:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "고아 주석 (존재하지 않는 경로):",
     .orphaned_none = "고아 주석이 없습니다.",
     .purge_header = "고아 주석을 제거했습니다:",

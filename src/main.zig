@@ -155,6 +155,9 @@ pub const ParseResult = union(enum) {
 	orphaned_notes: OrphanArgs,
 	purge_orphaned_notes: OrphanArgs,
 	help,
+	/// `dirtree <verb> --help`: print the detailed help section for this verb
+	/// subcommand (sliced from the localized `help_subcommands` corpus).
+	help_subcommand: i18n.CliArg,
 	about,
 	version,
 	version_check,
@@ -358,21 +361,22 @@ fn helpRequested(args: []const [:0]const u8) bool {
 	return false;
 }
 
-/// True if any token (before `--`) resolves to a verb subcommand
-/// (annotate/note, orphaned-notes, purge-orphaned-notes, or a localized alias).
-/// A token immediately following `--lang` is skipped so a locale code is never
-/// misread as a verb. Used to tell "bare --help" (global help) apart from
-/// "subcommand + --help" (subcommand-help intent).
-fn containsSubcommandVerb(args: []const [:0]const u8) bool {
+/// The verb subcommand (before `--`) if any token resolves to one
+/// (annotate/note, orphaned-notes, purge-orphaned-notes, or a localized alias),
+/// else null. A token immediately following `--lang` is skipped so a locale
+/// code is never misread as a verb. Used to tell "bare --help" (global help)
+/// apart from "subcommand + --help" (subcommand-help intent) and to pick which
+/// subcommand's help section to print.
+fn subcommandVerb(args: []const [:0]const u8) ?i18n.CliArg {
 	for (args, 0..) |arg, idx| {
 		if (std.mem.eql(u8, arg, "--")) break;
 		if (idx > 0 and (std.mem.eql(u8, args[idx - 1], "--lang") or i18n.isFlag(args[idx - 1], .lang))) continue;
 		if (i18n.matchLongFlag(arg)) |a| switch (a) {
-			.annotate, .orphaned_notes, .purge_orphaned_notes => return true,
+			.annotate, .orphaned_notes, .purge_orphaned_notes => return a,
 			else => {},
 		};
 	}
-	return false;
+	return null;
 }
 
 /// Index of the subcommand candidate: normally 0, but a single leading
@@ -428,13 +432,10 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 
 	// Help intent short-circuits before subcommand dispatch. A lone help flag
 	// (any position) shows the global help; a help flag together with a verb
-	// subcommand looks like a request for subcommand-specific help, which is not
-	// implemented yet -- emit a pointed (intentionally untranslated, temporary)
-	// error rather than the confusing "annotate requires a description". This
-	// placeholder is removed when per-subcommand help lands.
+	// subcommand shows that subcommand's detailed help section (Variant A).
 	if (helpRequested(args)) {
-		if (containsSubcommandVerb(args)) {
-			return .{ .err = "Subcommand help not yet supported" };
+		if (subcommandVerb(args)) |verb| {
+			return .{ .help_subcommand = verb };
 		}
 		return .help;
 	}
@@ -1303,6 +1304,19 @@ pub fn printHelp(writer: anytype) !void {
 	}
 }
 
+/// Print the detailed help section for one verb subcommand (`dirtree <verb>
+/// --help`, Variant A). Slices `verb`'s section out of the localized
+/// `help_subcommands` corpus by its canonical @tagName, marker lines removed.
+/// Falls back to global help if the section is somehow absent (the MFIC
+/// well-formedness test guarantees it is present for every locale).
+pub fn printSubcommandHelp(writer: anytype, verb: i18n.CliArg) !void {
+	const s = i18n.tr();
+	const body = i18n.extractSubcommandHelp(s.help_subcommands, @tagName(verb)) orelse {
+		return printHelp(writer);
+	};
+	try writer.writeAll(body);
+}
+
 /// Write `bytes` to `path` (create/truncate). Works for absolute or relative
 /// paths via the cwd handle.
 fn writeHtmlFile(io: std.Io, path: []const u8, bytes: []const u8) !void {
@@ -1378,6 +1392,11 @@ pub fn main(init: std.process.Init) !u8 {
 	switch (result) {
 		.help => {
 			try printHelp(stdout);
+			try stdout.flush();
+			return 0;
+		},
+		.help_subcommand => |verb| {
+			try printSubcommandHelp(stdout, verb);
 			try stdout.flush();
 			return 0;
 		},
@@ -2781,33 +2800,81 @@ test "parseArgs: annotate path normalization" {
 	}
 }
 
-test "parseArgs: 'note --help' => pointed 'not yet supported' error" {
-	// Looks like a request for subcommand help (unimplemented). Must NOT fall
+test "parseArgs: 'note --help' => subcommand help for annotate" {
+	// A verb + help flag requests that subcommand's detailed help. Must NOT fall
 	// through to annotate's 'requires a description' error, nor show global help.
 	const args = &[_][:0]const u8{ "dirtree", "note", "--help" };
 	const result = parseArgs(std.testing.allocator, args);
 	switch (result) {
-		.err => |m| try std.testing.expectEqualStrings("Subcommand help not yet supported", m),
-		else => return error.TestExpectedSubcommandHelpError,
+		.help_subcommand => |v| try std.testing.expectEqual(i18n.CliArg.annotate, v),
+		else => return error.TestExpectedSubcommandHelp,
 	}
 }
 
-test "parseArgs: '--lang en note --help' => pointed error (subcommand after --lang)" {
+test "parseArgs: '--lang en note --help' => subcommand help (verb after --lang)" {
 	const args = &[_][:0]const u8{ "dirtree", "--lang", "en", "note", "--help" };
 	const result = parseArgs(std.testing.allocator, args);
 	switch (result) {
-		.err => |m| try std.testing.expectEqualStrings("Subcommand help not yet supported", m),
-		else => return error.TestExpectedSubcommandHelpError,
+		.help_subcommand => |v| try std.testing.expectEqual(i18n.CliArg.annotate, v),
+		else => return error.TestExpectedSubcommandHelp,
 	}
 }
 
-test "parseArgs: '--help note' => pointed error (verb after the flag)" {
+test "parseArgs: '--help note' => subcommand help (verb after the flag)" {
 	const args = &[_][:0]const u8{ "dirtree", "--help", "note" };
 	const result = parseArgs(std.testing.allocator, args);
 	switch (result) {
-		.err => |m| try std.testing.expectEqualStrings("Subcommand help not yet supported", m),
-		else => return error.TestExpectedSubcommandHelpError,
+		.help_subcommand => |v| try std.testing.expectEqual(i18n.CliArg.annotate, v),
+		else => return error.TestExpectedSubcommandHelp,
 	}
+}
+
+test "parseArgs: 'orphaned-notes --help' and 'purge-orphaned-notes --help' => their sections" {
+	const oa = &[_][:0]const u8{ "dirtree", "orphaned-notes", "--help" };
+	switch (parseArgs(std.testing.allocator, oa)) {
+		.help_subcommand => |v| try std.testing.expectEqual(i18n.CliArg.orphaned_notes, v),
+		else => return error.TestExpectedSubcommandHelp,
+	}
+	const pa = &[_][:0]const u8{ "dirtree", "purge-orphaned-notes", "--help" };
+	switch (parseArgs(std.testing.allocator, pa)) {
+		.help_subcommand => |v| try std.testing.expectEqual(i18n.CliArg.purge_orphaned_notes, v),
+		else => return error.TestExpectedSubcommandHelp,
+	}
+}
+
+test "printSubcommandHelp: renders the annotate section, no residual tags" {
+	i18n.setLocale(.en);
+	var buf: [8192]u8 = undefined;
+	var fbs = std.Io.Writer.fixed(&buf);
+	try printSubcommandHelp(&fbs, .annotate);
+	const out = fbs.buffered();
+	// Contains the annotate usage line and the clear-note example...
+	try std.testing.expect(std.mem.indexOf(u8, out, "Usage: dirtree annotate PATH DESC") != null);
+	try std.testing.expect(std.mem.indexOf(u8, out, "empty string") != null);
+	// ...and none of the in-band topic markers leaked through.
+	try std.testing.expect(!i18n.hasMarkerLine(out, "<annotate>"));
+	try std.testing.expect(!i18n.hasMarkerLine(out, "</annotate>"));
+	try std.testing.expect(std.mem.indexOf(u8, out, "orphaned_notes") == null);
+}
+
+test "global help carries zero subcommand-topic tags (any locale)" {
+	// The stripped global help must never leak an in-band topic marker. Global
+	// help does not render the corpus at all, so this also guards against a
+	// future change that folds the corpus in without stripping its tags.
+	const check = [_]i18n.Locale{ .en, .de, .ar, .ja, .ur };
+	for (check) |loc| {
+		i18n.setLocale(loc);
+		var buf: [16384]u8 = undefined;
+		var fbs = std.Io.Writer.fixed(&buf);
+		try printHelp(&fbs);
+		const out = fbs.buffered();
+		inline for (i18n.subcommand_help_topics) |topic| {
+			const name = @tagName(topic);
+			try std.testing.expect(!i18n.hasMarkerLine(out, "<" ++ name ++ ">"));
+			try std.testing.expect(!i18n.hasMarkerLine(out, "</" ++ name ++ ">"));
+		}
+	}
+	i18n.setLocale(.en);
 }
 
 test "parseArgs: '--help' with a plain path operand => global help" {

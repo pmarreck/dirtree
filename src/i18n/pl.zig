@@ -111,6 +111,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Wypisz notatki, których ścieżki już nie istnieją",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Usuń notatki, których ścieżki już nie istnieją",
+    .help_subcommands =
+    \\<annotate>
+    \\Użycie: dirtree annotate PATH DESC
+    \\        dirtree note PATH DESC          (alias)
+    \\
+    \\Zapisuje jednowierszową notatkę o pliku lub katalogu. Notatka jest zapisywana w
+    \\.dirtree-state i wyświetlana obok PATH przy następnym renderowaniu drzewa.
+    \\
+    \\Argumenty:
+    \\  PATH   plik lub katalog, względem bieżącego katalogu
+    \\  DESC   tekst notatki; podaj pusty ciąg "", aby usunąć istniejącą notatkę
+    \\
+    \\Przykłady:
+    \\  dirtree annotate src/main.zig "punkt wejścia CLI"
+    \\  dirtree note docs "tutaj są notatki projektowe"
+    \\  dirtree annotate README.md ""        # usuń notatkę dla README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Użycie: dirtree orphaned-notes [DIR]
+    \\
+    \\Wypisuje notatki, których ścieżka docelowa już nie istnieje — na przykład po
+    \\zmianie nazwy, przeniesieniu lub usunięciu pliku. DIR domyślnie to bieżący katalog.
+    \\Tryb tylko do odczytu: nic nie jest zmieniane. Aby je usunąć, użyj purge-orphaned-notes.
+    \\
+    \\Przykłady:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Użycie: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Usuwa notatki, których ścieżka docelowa już nie istnieje. DIR domyślnie to
+    \\bieżący katalog. Najpierw uruchom orphaned-notes, aby dokładnie zobaczyć, co
+    \\zostanie usunięte.
+    \\
+    \\Przykłady:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Osierocone notatki (ścieżki, które już nie istnieją):",
     .orphaned_none = "Brak osieroconych notatek.",
     .purge_header = "Usunięto osierocone notatki:",

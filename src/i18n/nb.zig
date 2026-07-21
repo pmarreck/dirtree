@@ -115,6 +115,45 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Lagre et énlinjes notat om en fil eller katalog (alias: note; tom DESC tømmer)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] List notater hvis målstier ikke lenger finnes",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Fjern notater hvis målstier ikke lenger finnes",
+    .help_subcommands =
+    \\<annotate>
+    \\Bruk: dirtree annotate PATH DESC
+    \\      dirtree note PATH DESC          (alias)
+    \\
+    \\Lagre et énlinjes notat om en fil eller katalog. Notatet lagres i
+    \\.dirtree-state og vises ved siden av PATH neste gang treet tegnes.
+    \\
+    \\Argumenter:
+    \\  PATH   fil eller katalog, relativ til gjeldende katalog
+    \\  DESC   notatteksten; oppgi en tom streng "" for å tømme et eksisterende notat
+    \\
+    \\Eksempler:
+    \\  dirtree annotate src/main.zig "CLI-inngangspunkt"
+    \\  dirtree note docs "designnotater finnes her"
+    \\  dirtree annotate README.md ""        # tøm notatet for README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Bruk: dirtree orphaned-notes [DIR]
+    \\
+    \\List notater hvis målsti ikke lenger finnes — for eksempel etter at en fil
+    \\har blitt omdøpt, flyttet eller slettet. DIR er som standard gjeldende katalog.
+    \\Kun lesing: ingenting endres. Bruk purge-orphaned-notes for å fjerne dem.
+    \\
+    \\Eksempler:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Bruk: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Fjern notater hvis målsti ikke lenger finnes. DIR er som standard gjeldende
+    \\katalog. Kjør orphaned-notes først for å se nøyaktig hva som blir fjernet.
+    \\
+    \\Eksempler:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Foreldreløse notater (stier som ikke lenger finnes):",
     .orphaned_none = "Ingen foreldreløse notater.",
     .purge_header = "Fjernet foreldreløse notater:",

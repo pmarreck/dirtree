@@ -111,6 +111,47 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC Persist a one-line note about a file or directory (alias: note; empty DESC clears)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] Listează notele ale căror căi nu mai există",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] Elimină notele ale căror căi nu mai există",
+    .help_subcommands =
+    \\<annotate>
+    \\Utilizare: dirtree annotate PATH DESC
+    \\           dirtree note PATH DESC          (alias)
+    \\
+    \\Salvează o notă de o linie despre un fișier sau un director. Nota este
+    \\salvată în .dirtree-state și afișată lângă PATH data următoare când
+    \\arborele este redat.
+    \\
+    \\Argumente:
+    \\  PATH   fișier sau director, relativ la directorul curent
+    \\  DESC   textul notei; transmite un șir gol "" pentru a șterge o notă existentă
+    \\
+    \\Exemple:
+    \\  dirtree annotate src/main.zig "Punct de intrare CLI"
+    \\  dirtree note docs "aici stau notele de design"
+    \\  dirtree annotate README.md ""        # șterge nota de pe README.md
+    \\</annotate>
+    \\<orphaned_notes>
+    \\Utilizare: dirtree orphaned-notes [DIR]
+    \\
+    \\Listează notele ale căror căi țintă nu mai există — de exemplu după ce un
+    \\fișier a fost redenumit, mutat sau șters. DIR are ca valoare implicită directorul curent.
+    \\Este doar pentru citire: nu se modifică nimic. Folosește purge-orphaned-notes pentru a le elimina.
+    \\
+    \\Exemple:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\Utilizare: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\Elimină notele ale căror căi țintă nu mai există. DIR are ca valoare
+    \\implicită directorul curent. Rulează mai întâi orphaned-notes pentru a
+    \\vedea exact ce va fi eliminat.
+    \\
+    \\Exemple:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "Note orfane (căi care nu mai există):",
     .orphaned_none = "Nu există note orfane.",
     .purge_header = "Note orfane eliminate:",

@@ -114,6 +114,12 @@ pub const Strings = struct {
     help_opt_annotate: []const u8,
     help_opt_orphaned_notes: [:0]const u8,
     help_opt_purge_orphaned_notes: [:0]const u8,
+    /// Per-subcommand `--help` corpus: one detailed section per verb
+    /// (annotate/orphaned-notes/purge-orphaned-notes), delimited by canonical
+    /// line-anchored in-band tags (`<annotate>…</annotate>`, etc.) whose names
+    /// are the CliArg @tagName and are NOT translated. Sliced by
+    /// i18n.extractSubcommandHelp for `dirtree <verb> --help` (PLAN §6.6).
+    help_subcommands: []const u8,
     orphaned_header: [:0]const u8,
     orphaned_none: [:0]const u8,
     purge_header: [:0]const u8,

@@ -115,6 +115,46 @@ pub const strings = Strings{
     .help_opt_annotate = "  annotate PATH DESC किसी फ़ाइल या निर्देशिका के बारे में एक-पंक्ति टिप्पणी सहेजें (उपनाम: note; खाली DESC उसे साफ़ कर देता है)",
     .help_opt_orphaned_notes = "  orphaned-notes [DIR] ऐसी टिप्पणियाँ सूचीबद्ध करें जिनके लक्ष्य पथ अब मौजूद नहीं हैं",
     .help_opt_purge_orphaned_notes = "  purge-orphaned-notes [DIR] ऐसी टिप्पणियाँ हटाएँ जिनके लक्ष्य पथ अब मौजूद नहीं हैं",
+    .help_subcommands =
+    \\<annotate>
+    \\उपयोग: dirtree annotate PATH DESC
+    \\       dirtree note PATH DESC          (उपनाम)
+    \\
+    \\किसी फ़ाइल या निर्देशिका के बारे में एक-पंक्ति टिप्पणी सहेजें। टिप्पणी
+    \\.dirtree-state में सहेजी जाती है और अगली बार वृक्ष प्रदर्शित होने पर PATH के पास दिखाई जाती है।
+    \\
+    \\तर्क:
+    \\  PATH   फ़ाइल या निर्देशिका, वर्तमान निर्देशिका के सापेक्ष
+    \\  DESC   टिप्पणी का पाठ; मौजूदा टिप्पणी साफ़ करने हेतु एक खाली स्ट्रिंग "" दें
+    \\
+    \\उदाहरण:
+    \\  dirtree annotate src/main.zig "CLI प्रवेश बिंदु"
+    \\  dirtree note docs "डिज़ाइन नोट्स यहाँ रहते हैं"
+    \\  dirtree annotate README.md ""        # README.md की टिप्पणी साफ़ करें
+    \\</annotate>
+    \\<orphaned_notes>
+    \\उपयोग: dirtree orphaned-notes [DIR]
+    \\
+    \\ऐसी टिप्पणियाँ सूचीबद्ध करें जिनका लक्ष्य पथ अब मौजूद नहीं है — उदाहरण के लिए किसी फ़ाइल का
+    \\नाम बदलने, स्थानांतरित करने या हटाने के बाद। DIR डिफ़ॉल्ट रूप से वर्तमान निर्देशिका है।
+    \\यह केवल-पठन है: कुछ भी नहीं बदला जाता। इन्हें हटाने हेतु purge-orphaned-notes का उपयोग करें।
+    \\
+    \\उदाहरण:
+    \\  dirtree orphaned-notes
+    \\  dirtree orphaned-notes src
+    \\</orphaned_notes>
+    \\<purge_orphaned_notes>
+    \\उपयोग: dirtree purge-orphaned-notes [DIR]
+    \\
+    \\ऐसी टिप्पणियाँ हटाएँ जिनका लक्ष्य पथ अब मौजूद नहीं है। DIR डिफ़ॉल्ट रूप से
+    \\वर्तमान निर्देशिका है। ठीक-ठीक क्या हटाया जाएगा उसका पूर्वावलोकन करने हेतु पहले
+    \\orphaned-notes चलाएँ।
+    \\
+    \\उदाहरण:
+    \\  dirtree purge-orphaned-notes
+    \\  dirtree purge-orphaned-notes src
+    \\</purge_orphaned_notes>
+    ,
     .orphaned_header = "अनाथ टिप्पणियाँ (ऐसे पथ जो अब मौजूद नहीं हैं):",
     .orphaned_none = "कोई अनाथ टिप्पणी नहीं।",
     .purge_header = "अनाथ टिप्पणियाँ हटाई गईं:",
