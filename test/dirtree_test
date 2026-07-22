@@ -4246,11 +4246,10 @@ test_notes_align_to_gutter() {
 	(cd "$target" && "$DIRTREE_BIN" annotate a.txt "note-A") >/dev/null 2>&1
 	(cd "$target" && "$DIRTREE_BIN" annotate longername.txt "note-B") >/dev/null 2>&1
 	"$DIRTREE_BIN" --simple --no-icons --no-color "$target" > "$target/out.txt" 2>/dev/null
-	if ! python3 -c '
-import sys
-cols=[len(l[:l.index("# note")]) for l in open(sys.argv[1],encoding="utf-8") if "# note" in l]
-sys.exit(0 if len(cols)>=2 and len(set(cols))==1 else 1)
-' "$target/out.txt"; then
+	if ! LC_ALL=C.UTF-8 gawk '
+		{ i = index($0, "# note"); if (i > 0) cols[++n] = i - 1 }
+		END { if (n < 2) exit 1; for (k = 2; k <= n; k++) if (cols[k] != cols[1]) exit 1; exit 0 }
+	' "$target/out.txt"; then
 		echo "expected note # to align to a common column; got:" >&2
 		cat "$target/out.txt" >&2
 		return 1
@@ -4264,12 +4263,11 @@ test_notes_inline_mode_not_aligned() {
 	(cd "$target" && "$DIRTREE_BIN" annotate a.txt "note-A") >/dev/null 2>&1
 	(cd "$target" && "$DIRTREE_BIN" annotate longername.txt "note-B") >/dev/null 2>&1
 	"$DIRTREE_BIN" --notes inline --simple --no-icons --no-color "$target" > "$target/out.txt" 2>/dev/null
-	if ! python3 -c '
-import sys
-cols=[len(l[:l.index("# note")]) for l in open(sys.argv[1],encoding="utf-8") if "# note" in l]
-# inline (ragged): the two note columns must differ
-sys.exit(0 if len(cols)>=2 and len(set(cols))>1 else 1)
-' "$target/out.txt"; then
+	if ! LC_ALL=C.UTF-8 gawk '
+		# inline (ragged): the two note columns must differ
+		{ i = index($0, "# note"); if (i > 0) cols[++n] = i - 1 }
+		END { if (n < 2) exit 1; for (k = 2; k <= n; k++) if (cols[k] != cols[1]) exit 0; exit 1 }
+	' "$target/out.txt"; then
 		echo "--notes inline should NOT align (columns should differ); got:" >&2
 		cat "$target/out.txt" >&2
 		return 1
@@ -4286,11 +4284,10 @@ test_notes_min_margin_for_long_name() {
 	"$DIRTREE_BIN" --simple --no-icons --no-color "$target" > "$target/out.txt" 2>/dev/null
 	# short note padded to the cap (40); long name exceeds the cap so its note
 	# gets a single-space margin and lands beyond 40.
-	if ! python3 -c '
-import sys
-cols=[len(l[:l.index("# note")]) for l in open(sys.argv[1],encoding="utf-8") if "# note" in l]
-sys.exit(0 if (40 in cols) and any(c>40 for c in cols) else 1)
-' "$target/out.txt"; then
+	if ! LC_ALL=C.UTF-8 gawk '
+		{ i = index($0, "# note"); if (i > 0) { c = i - 1; if (c == 40) h40 = 1; if (c > 40) hgt = 1 } }
+		END { exit (h40 && hgt) ? 0 : 1 }
+	' "$target/out.txt"; then
 		echo "expected short note at col 40 and long-name note beyond 40; got:" >&2
 		cat "$target/out.txt" >&2
 		return 1
@@ -4306,11 +4303,10 @@ test_note_column_cap_from_state() {
 	printf 'ver=1.2\nnote_column=20\nannotate=[\n\ta.txt = note-A\n\t%s = note-B\n]\n' "$long" > "$target/.dirtree-state"
 	"$DIRTREE_BIN" --simple --no-icons --no-color "$target" > "$target/out.txt" 2>/dev/null
 	# With cap 20, the short file's note aligns to column 20 (not the default 40).
-	if ! python3 -c '
-import sys
-cols=[len(l[:l.index("# note-A")]) for l in open(sys.argv[1],encoding="utf-8") if "# note-A" in l]
-sys.exit(0 if cols==[20] else 1)
-' "$target/out.txt"; then
+	if ! LC_ALL=C.UTF-8 gawk '
+		{ i = index($0, "# note-A"); if (i > 0) cols[++n] = i - 1 }
+		END { exit (n == 1 && cols[1] == 20) ? 0 : 1 }
+	' "$target/out.txt"; then
 		echo "expected note_column=20 cap to place short note at column 20; got:" >&2
 		cat "$target/out.txt" >&2
 		return 1

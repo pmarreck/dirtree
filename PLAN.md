@@ -47,21 +47,33 @@ emitted an **Urdu** error under an English environment.
   markers, **and command tokens (`dirtree annotate`, `.dirtree-state`, …) verbatim**; plus a
   "global help carries zero topic tags" guard and 4 bash CLI tests. Translations produced by
   10 parallel Opus agents grouped by family, each **grounded in that locale's own existing
-  in-file terminology**; structurally verified + spot-checked. **Confidence tiers (honest):**
-  high — most European + CJK + ar/he/ru/uk/pl/sr/…; **needs native review** — `ps yo ig am km`
-  (low), `ha az is pa ta ko bg mk ro` (light). Verified via bare `zig build test` +
-  `test/dirtree_test` (nix daemon was down; canonical `./test`/`nix build` still TODO).
+  in-file terminology**; structurally verified + spot-checked. **Independent back-translation
+  check (2026-07-21):** a LOCAL model (gemma4:12b / qwen3:8b via ollama — MFIC maker≠checker,
+  saves cloud tokens) back-translated the flagged mid-resource set — `am bg mk ro is az ta pa
+  ko` all preserve meaning (ha reads fine once you know Hausa "share"=erase, a gemma
+  false-friend). So those flags were over-cautious; they're GOOD. **Genuinely needs native
+  review (no available tool can faithfully do them — gemma mangles Yoruba, proven):** `yo ig
+  ps km`. Verified via `zig build test` + `test/dirtree_test`.
 - [ ] **6.7 G3 — platform locale adapters** — macOS `CFLocaleCopyPreferredLanguages`,
   Windows `GetUserPreferredUILanguages`, as a fallback when the Unix env gives no signal.
   Unit-test the pure selection logic; the actual platform calls are only exercisable on the
   mac/Windows CI runners (can't integration-test on Linux).
-- [ ] (noted, not scoped) `ar/he/fa` ship an **untranslated English**
-  `err_annotate_requires_description` — a translation-completeness gap surfaced during G2.
+- [x] **6.8 known-bug fix: note-alignment tests were Python-dependent** _(2026-07-21)_. The 4
+  note-alignment tests (`notes align to a common gutter`, `--notes inline is not aligned`,
+  `notes min-margin for long names`, `note_column cap read from state`) shelled out to
+  `python3`, which isn't installed (fleet no-Python stance — `build_staleness_test` even
+  enforces it). Rewrote their column checks in `LC_ALL=C.UTF-8 gawk` (code-point-accurate,
+  matches Python's `str.index`). The note-alignment feature itself was always correct. Full
+  suite now 196/196 + all unit tests green.
+- [ ] (noted, not scoped — **broader than first thought**) the **annotate error strings are
+  untranslated English across many locales**, not just `ar/he/fa`: `err_annotate_requires_description`
+  is English in `de/fr/ar/he/fa` (at least). A future pass should translate the annotate
+  error family (with the bilingual-error format per the i18n skill).
 - [ ] (noted, not scoped — surfaced during 6.6) **`help_opt_annotate` is untranslated English
-  in 21 locales** (`ar az de el es fa fr he hu it ja km ko pl pt_br ro ru tr uk vi zh_hans`) —
-  the one-line Options entry still reads "Persist a one-line note about a file or directory
-  (alias: note; empty DESC clears)". Pre-existing (the original ~22-locale batch); NOT from
-  6.6. A future translation pass should fold these in alongside the ar/he/fa gap above.
+  in ~21 locales** (`ar az de el es fa fr he hu it ja km ko pl pt_br ro ru tr uk vi zh_hans`) —
+  the one-line Options entry still reads the English "Persist a one-line note…". `nl/sw/…`
+  (the newer locale batch) already translate it. Fixable with the validated local-model
+  pipeline (mid/high-resource) + verification; a bounded backfill.
 - [ ] (noted, not scoped — surfaced during 6.6) **`km.zig` has pre-existing corruption**: its
   `help_examples_header` is `ដំបូង:` ("first/beginning", not "Examples"), its directory/file
   terms look non-standard vs. `ថត`/`ឯកសារ`, and `help_example_1` contains a replacement-char
