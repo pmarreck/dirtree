@@ -69,11 +69,14 @@ emitted an **Urdu** error under an English environment.
   untranslated English across many locales**, not just `ar/he/fa`: `err_annotate_requires_description`
   is English in `de/fr/ar/he/fa` (at least). A future pass should translate the annotate
   error family (with the bilingual-error format per the i18n skill).
-- [ ] (noted, not scoped — surfaced during 6.6) **`help_opt_annotate` is untranslated English
-  in ~21 locales** (`ar az de el es fa fr he hu it ja km ko pl pt_br ro ru tr uk vi zh_hans`) —
-  the one-line Options entry still reads the English "Persist a one-line note…". `nl/sw/…`
-  (the newer locale batch) already translate it. Fixable with the validated local-model
-  pipeline (mid/high-resource) + verification; a bounded backfill.
+- [x] **6.9 `help_opt_annotate` backfill — 20 of 21 locales** _(2026-07-21)_. Translated the
+  one-line Options entry (was English) via the LOCAL model (gemma4:12b / qwen3:8b, token
+  savings) grounded in each locale's validated 6.6 `<annotate>` phrasing, **every line
+  reviewed** — the model made semantic errors even in high-resource langs (ro: "empty DESC
+  *saves*" ✗→ fixed to "clears"; hu nonword "egyrésztű"→"egysoros"; ko/qwen returned the
+  *orphaned-notes* text ✗; ja "一ライン"✗; uk drifted "коментар"→"нотатка"), all corrected
+  from the 6.6 oracle. Lesson: local model saves cloud tokens but its output MUST be
+  line-reviewed. **`km` deferred** — its file is corrupted (see below); left English + flagged.
 - [ ] (noted, not scoped — surfaced during 6.6) **`km.zig` has pre-existing corruption**: its
   `help_examples_header` is `ដំបូង:` ("first/beginning", not "Examples"), its directory/file
   terms look non-standard vs. `ថត`/`ឯកសារ`, and `help_example_1` contains a replacement-char
