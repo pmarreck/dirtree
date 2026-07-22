@@ -1,0 +1,4 @@
+# Mechatron Prime CI targets for dirtree (Thelio x86_64-linux worker).
+# One valid Nix flake attribute per line; verified green 2026-07-21.
+packages.x86_64-linux.default
+checks.x86_64-linux.test
