@@ -82,6 +82,12 @@ emitted an **Urdu** error under an English environment.
   terms look non-standard vs. `ថត`/`ឯកសារ`, and `help_example_1` contains a replacement-char
   glitch. The 6.6 Khmer translation reused these for internal consistency but they are likely
   wrong fleet-wide — needs a native Khmer pass.
+- [ ] (noted — cross-project, from `fsearch` inbox 2026-07-10, processed 2026-07-23) **dirtree
+  is the source-of-truth for the shared glob→PCRE2 grammar** that fsearch is adopting for its
+  `glob:` modifier: `*` `**/` `?`, char classes + ranges `[a-c]`, brace alternatives
+  `{png,jpg}`, inclusive zero-padded numeric ranges `{01..12}`, and `\` escaping. Any future
+  change to dirtree's glob grammar must keep deterministic tests green **and coordinate with
+  fsearch** so behavior stays matched. (dirtree already has glob tests in `test/dirtree_test`.)
 
 ---
 
