@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        ਵਿਸਤ੍ਰਿਤ ਵੇਰਵਾ ਵਿਖਾਓ",
     .help_opt_depth = "  -d, --depth N      ਵੱਧ ਤੋਂ ਵੱਧ ਡੂੰਘਾਈ ਸੈੱਟ ਕਰੋ (ਮੂਲ: 4)",
     .help_opt_temp = "  -t, --temp         ਸਿਰਫ਼ ਇਸ ਰਨ ਲਈ ਤਬਦੀਲੀਆਂ ਲਾਗੂ ਕਰੋ (ਸੰਭਾਲਿਆ ਨਹੀਂ ਜਾਂਦਾ)",
+    .help_opt_persist = "  --persist, --save  ਇਹਨਾਂ ਸੈਟਿੰਗਾਂ ਨੂੰ ਵੀ ਸੁਰੱਖਿਅਤ ਕਰੋ (non-TTY ਅਤੇ DIRTREE_TEMP ਨੂੰ ਓਵਰਰਾਈਡ ਕਰਦਾ ਹੈ)",
     .help_opt_path = "  -p, --path PATH    PATH ਨੂੰ ਰੈਂਡਰ ਕਰੋ ਭਾਵੇਂ ਇਹ ਫਲੈਗ ਜਾਂ ਉਪ-ਕਮਾਂਡ ਵਰਗਾ ਲੱਗੇ",
     .help_opt_simple = "  --simple           ਸਧਾਰਨ, LLM-ਅਨੁਕੂਲ ਸਥਿਤੀ-ਯੁਕਤ ਰੁੱਖ ਆਉਟਪੁੱਟ ਕਰੋ",
     .help_opt_decorated = "  --decorated        ਸਜਾਇਆ ਆਉਟਪੁੱਟ ਮਜਬੂਰ ਕਰੋ (ਪਾਈਪ ਹੋਣ 'ਤੇ ਵੀ)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "regex ਨਿਯਮ ਜੋੜਨ ਲਈ --open/--close/--show/--hide ਨਾਲ /pattern/ ਜਾਂ !/pattern/ ਵਰਤੋ; ਹੋਰ ਆਰਗੂਮੈਂਟਾਂ ਨੂੰ ਸ਼ਾਬਦਿਕ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ।",
     .help_relative_note = "--show/--hide ਨੂੰ ਦਿੱਤੇ ਮਾਰਗ ਸੰਬੰਧਿਤ ਹੋਣੇ ਚਾਹੀਦੇ ਹਨ (ਅਗਲੀ '/' ਤੋਂ ਬਿਨਾਂ)।",
     .help_behavior_header = "ਵਿਹਾਰ:",
-    .help_behavior_text = "ਮੂਲ ਰੂਪ ਵਿੱਚ, ਜਦੋਂ stdout TTY ਨਹੀਂ ਹੁੰਦਾ (ਪਾਈਪ ਹੁੰਦਾ ਹੈ), ਤਾਂ ਰੰਗ/ਆਈਕਨ/ਹਾਈਪਰਲਿੰਕ ਬੰਦ ਹੁੰਦੇ ਹਨ ਜਦੋਂ ਤੱਕ --decorated ਨਾ ਦਿੱਤਾ ਜਾਵੇ।",
+    .help_behavior_text = "ਜਦੋਂ stdout ਇੱਕ ਟਰਮੀਨਲ ਹੁੰਦਾ ਹੈ ਤਾਂ ਪ੍ਰਸਤੁਤੀ ਸੈਟਿੰਗਾਂ ਨੂੰ ਸੁਰੱਖਿਅਤ ਕੀਤਾ ਜਾਂਦਾ ਹੈ; ਨਹੀਂ ਤਾਂ ਉਹ ਸਿਰਫ਼ ਮੌਜੂਦਾ ਮੰਗ 'ਤੇ ਲਾਗੂ ਹੁੰਦੇ ਹਨ। ਮੂਲ ਰੂਪ ਵਿੱਚ, --open/--close/--show/--hide ਤਬਦੀਲੀਆਂ ਹਮੇਸ਼ਾ ਰੱਖਿਅਤ ਕੀਤੀਆਂ ਜਾਂਦੀਆਂ ਹਨ। ਰੰਗ ਟਰਮੀਨਲ ਆਉਟਪੁੱਟ ਲਈ ਮੂਲ ਰੂਪ ਵਿੱਚ ਚਾਲੂ ਹੈ ਅਤੇ ਹੋਰ ਆਉਟਪੁੱਟ ਲਈ ਬੰਦ ਹੈ। --temp ਜਾਂ --persist/--save ਇਹਨਾਂ ਬਚਤ ਨਿਯਮਾਂ ਨੂੰ ਸਪਸ਼ਟ ਤੌਰ 'ਤੇ ਓਵਰਰਾਈਡ ਕਰਦਾ ਹੈ।",
+    .persistence_note_tty = "ਸੁਨੇਹਾ: {s}: ਸੁਰੱਖਿਅਤ ਕੀਤਾ ਗਿਆ ਕਿਉਂਕਿ stdout ਇੱਕ ਟਰਮੀਨਲ ਹੈ; ਇਸ ਨੂੰ ਸਿਰਫ਼ ਇਸ ਮੰਗ 'ਤੇ ਲਾਗੂ ਕਰਨ ਲਈ --temp ਦੀ ਵਰਤੋਂ ਕਰੋ।",
+    .persistence_note_non_tty = "ਸੁਨੇਹਾ: {s}: ਸੁਰੱਖਿਅਤ ਨਹੀਂ ਕੀਤਾ ਗਿਆ ਕਿਉਂਕਿ stdout ਇੱਕ ਟਰਮੀਨਲ ਨਹੀਂ ਹੈ; ਓਵਰਰਾਈਡ ਕਰਨ ਲਈ --persist/--save ਦੀ ਵਰਤੋਂ ਕਰੋ।",
+    .persistence_note_semantic = "ਸੁਨੇਹਾ: {s}: ਸੁਰੱਖਿਅਤ ਕੀਤਾ ਗਿਆ ਕਿਉਂਕਿ ਸਾਂਝੇ ਪ੍ਰੋਜੈਕਟ ਦ੍ਰਿਸ਼ ਵਿੱਚ ਤਬਦੀਲੀਆਂ ਮੂਲ ਰੂਪ ਵਿੱਚ ਸੁਰੱਖਿਅਤ ਕੀਤੀਆਂ ਜਾਂਦੀਆਂ ਹਨ; ਉਹਨਾਂ ਨੂੰ ਸਿਰਫ਼ ਇਸ ਮੰਗ 'ਤੇ ਲਾਗੂ ਕਰਨ ਲਈ --temp ਦੀ ਵਰਤੋਂ ਕਰੋ।",
+    .persistence_note_env = "ਸੁਨੇਹਾ: {s}: ਸੰਭਾਲਿਆ ਨਹੀਂ ਗਿਆ ਕਿਉਂਕਿ DIRTREE_TEMP=1; ਓਵਰਰਾਈਡ ਕਰਨ ਲਈ --persist/--save ਦੀ ਵਰਤੋਂ ਕਰੋ।",
+    .persistence_note_mute = "ਇਸ ਜਾਣਕਾਰੀ ਵਾਲੇ ਸੰਦੇਸ਼ ਨੂੰ ਦਬਾਉਣ ਲਈ DIRTREE_MUTE_PERSISTENCE_REASON=1 ਸੈੱਟ ਕਰੋ।",
     .help_examples_header = "ਉਦਾਹਰਨਾਂ:",
     .help_example_1 = "  dirtree                       # ਮੌਜੂਦਾ ਡਾਇਰੈਕਟਰੀ ਦਾ ਰੁੱਖ ਵਿਖਾਓ",
     .help_example_2 = "  dirtree -d 3                  # ਡੂੰਘਾਈ 3 ਪੱਧਰਾਂ 'ਤੇ ਸੈੱਟ ਕਰੋ",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        ਇੱਕ ਉਪ-ਰੁੱਖ 'ਤੇ ਧਿਆਨ ਕੇਂਦਰਿਤ ਕਰੋ, ਭੈਣ-ਭਰਾ ਡਾਇਰੈਕਟਰੀਆਂ ਨੂੰ ਸਮੇਟੋ (ਦੁਹਰਾਉਣਯੋਗ)",
     .help_opt_html = "  --html [FILE]      ਸਵੈ-ਨਿਰਭਰ HTML ਟ੍ਰੀ ਨੂੰ FILE ਵਿੱਚ ਲਿਖੋ (- = stdout; ਛੱਡੋ = ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਖੋਲ੍ਹੋ)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  ਸਿਮਲਿੰਕ ਟੀਚੇ ਲੁਕਾਓ; --no-targets ਹਾਈਪਰਲਿੰਕ ਵੀ ਹਟਾਉਂਦਾ ਹੈ (ਪੋਰਟੇਬਲ ਆਉਟਪੁੱਟ)",
-
 
     // ── ਚੇਤਾਵਨੀ ਸੁਨੇਹੇ (ਵੱਡੀ ਆਉਟਪੁੱਟ) ──────────────────────────
     .warn_large_output_prefix = "ਚੇਤਾਵਨੀ: ਆਉਟਪੁੱਟ ਲਗਭਗ ~",

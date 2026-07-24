@@ -10,6 +10,8 @@ pub const Strings = struct {
     help_opt_depth: [:0]const u8,
     /// -t/--temp: apply this run only, don't persist (item: temporary mode).
     help_opt_temp: [:0]const u8,
+    /// --persist/--save: explicitly write accompanying settings to view state.
+    help_opt_persist: [:0]const u8,
     help_opt_path: [:0]const u8,
     help_opt_simple: [:0]const u8,
     help_opt_decorated: [:0]const u8,
@@ -39,6 +41,11 @@ pub const Strings = struct {
     help_relative_note: [:0]const u8,
     help_behavior_header: [:0]const u8,
     help_behavior_text: [:0]const u8,
+    persistence_note_tty: [:0]const u8,
+    persistence_note_non_tty: [:0]const u8,
+    persistence_note_semantic: [:0]const u8,
+    persistence_note_env: [:0]const u8,
+    persistence_note_mute: [:0]const u8,
     help_examples_header: [:0]const u8,
     help_example_1: [:0]const u8,
     help_example_2: [:0]const u8,

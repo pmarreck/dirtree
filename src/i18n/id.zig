@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Tampilkan deskripsi terperinci",
     .help_opt_depth = "  -d, --depth N      Atur kedalaman maksimum (bawaan: 4)",
     .help_opt_temp = "  -t, --temp         Terapkan perubahan untuk proses ini saja (tidak disimpan)",
+    .help_opt_persist = "  --persist, --save  Simpan juga pengaturan ini (mengganti non-TTY dan DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Render PATH meskipun tampak seperti flag atau subperintah",
     .help_opt_simple = "  --simple           Keluarkan pohon berstatus yang sederhana dan ramah-LLM",
     .help_opt_decorated = "  --decorated        Paksa keluaran berdekorasi (bahkan saat di-pipe)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Gunakan /pola/ atau !/pola/ dengan --open/--close/--show/--hide untuk menambah aturan regex; argumen lain diperlakukan sebagai literal.",
     .help_relative_note = "Jalur yang diberikan ke --show/--hide harus relatif (tanpa '/' di depan).",
     .help_behavior_header = "Perilaku:",
-    .help_behavior_text = "Secara bawaan, ketika stdout bukan TTY (di-pipe), warna/ikon/hyperlink dinonaktifkan kecuali --decorated diberikan.",
+    .help_behavior_text = "Pengaturan presentasi disimpan ketika stdout adalah terminal; jika tidak, mereka hanya berlaku untuk pemanggilan saat ini. Secara default, perubahan --open/--close/--show/--hide selalu disimpan. Warna aktif secara default untuk keluaran terminal dan mati untuk keluaran lainnya. --temp atau --persist/--save secara eksplisit mengesampingkan aturan penyimpanan ini.",
+    .persistence_note_tty = "Pesan: {s}: disimpan karena stdout adalah terminal; gunakan --temp untuk menerapkannya hanya pada pemanggilan ini.",
+    .persistence_note_non_tty = "Pesan: {s}: tidak disimpan karena stdout bukan terminal; gunakan --persist/--save untuk mengganti.",
+    .persistence_note_semantic = "Pesan: {s}: disimpan karena perubahan pada tampilan proyek bersama disimpan secara default; gunakan --temp untuk menerapkannya hanya pada pemanggilan ini.",
+    .persistence_note_env = "Pesan: {s}: tidak disimpan karena DIRTREE_TEMP=1; gunakan --persist/--save untuk mengganti.",
+    .persistence_note_mute = "Atur DIRTREE_MUTE_PERSISTENCE_REASON=1 untuk menyembunyikan pesan informasi ini.",
     .help_examples_header = "Contoh:",
     .help_example_1 = "  dirtree                       # Tampilkan pohon direktori saat ini",
     .help_example_2 = "  dirtree -d 3                  # Atur kedalaman ke 3 tingkat",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Berfokus pada satu subpohon, menciutkan direktori saudara (dapat diulang)",
     .help_opt_html = "  --html [FILE]      Tulis pohon HTML mandiri ke FILE (- = stdout; kosongkan = buka di peramban)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Sembunyikan target symlink; --no-targets juga menghapus hyperlink (keluaran portabel)",
-
 
     // ── Pesan peringatan (keluaran besar) ──────────────────────
     .warn_large_output_prefix = "Peringatan: keluaran sekitar ~",

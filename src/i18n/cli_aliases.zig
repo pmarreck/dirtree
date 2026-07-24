@@ -20,6 +20,7 @@ pub const CliArg = enum {
     no_targets,
     hyperlinks,
     temporary,
+    persistent,
     default,
     open,
     close,
@@ -60,6 +61,7 @@ pub const EnvVar = enum {
     dirtree_hide_notes,
     dirtree_scm_changes_stay_hidden_or_closed,
     dirtree_temp,
+    dirtree_mute_persistence_reason,
 };
 
 /// Per-locale environment variable alias: (string, EnvVar) pair.

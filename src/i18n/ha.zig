@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Nuna cikakken bayani",
     .help_opt_depth = "  -d, --depth N      Saita matsakaicin zurfi (tsoho: 4)",
     .help_opt_temp = "  -t, --temp         Yi amfani da canje-canje don wannan gudu kawai (ba a ajiye ba)",
+    .help_opt_persist = "  --persist, --save  Ajiye waɗannan saitunan kuma (ya soke non-TTY da DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Nuna hanya ko da ta yi kama da tuta ko karamin umarni",
     .help_opt_simple = "  --simple           Fitar da bishiya mai sauki, mai dacewa da LLM",
     .help_opt_decorated = "  --decorated        Tilasta fitarwa mai ado (ko da an yi pipe)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Yi amfani da /pattern/ ko !/pattern/ tare da --open/--close/--show/--hide don kara dokokin regex; sauran muhawara ana daukar su a matsayin na zahiri.",
     .help_relative_note = "Hanyoyin da aka bayar wa --show/--hide dole ne su kasance masu dangantaka (babu '/' a gaba).",
     .help_behavior_header = "Hali:",
-    .help_behavior_text = "Ta tsoho, idan stdout ba TTY ba ne (an yi pipe), ana kashe launuka/alamomi/hyperlink sai dai an bayar da --decorated.",
+    .help_behavior_text = "Ana adana saitunan gabatarwa lokacin da stdout ta kasance tasha; in ba haka ba suna aiki ne kawai ga kiran da ake yi yanzu. Ta hanyar tsoho, canje-canjen --open/--close/--show/--hide ana adana su koyaushe. Launi yana kunne ta tsohuwa don fitowar tasha kuma a kashe don sauran fitarwa. --temp ko --persist/--save sun soke waɗannan dokokin ceto a sarari.",
+    .persistence_note_tty = "Saƙo: {s}: an adana shi saboda stdout tasha ce; yi amfani da --temp don amfani da shi kawai ga wannan kiran.",
+    .persistence_note_non_tty = "Saƙo: {s}: ba a ajiye shi ba saboda stdout ba tashar tashar ba ce; yi amfani da --persist/--save don sokewa.",
+    .persistence_note_semantic = "Saƙo: {s}: an adana shi saboda an ajiye canje-canje ga kallon aikin da aka raba ta tsohuwa; yi amfani da --temp don amfani da su kawai ga wannan kiran.",
+    .persistence_note_env = "Saƙo: {s}: ba a ajiye shi ba saboda DIRTREE_TEMP=1; yi amfani da --persist/--save don sokewa.",
+    .persistence_note_mute = "Saita DIRTREE_MUTE_PERSISTENCE_REASON=1 don murkushe wannan saƙon bayanin.",
     .help_examples_header = "Misalai:",
     .help_example_1 = "  dirtree                       # Nuna bishiyar manyan-fayil na yanzu",
     .help_example_2 = "  dirtree -d 3                  # Saita zurfi zuwa matakai 3",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Mai da hankali kan reshe, nade manyan-fayil na 'yan'uwa (maimaitawa)",
     .help_opt_html = "  --html [FILE]      Rubuta itacen HTML mai zaman kansa zuwa FILE (- = stdout; bar = buɗe a mai bincike)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Ɓoye hariri na symlink; --no-targets yana cire hyperlinks ma (fitarwa mai ɗaukuwa)",
-
 
     // ── Sakonnin gargadi (fitarwa mai yawa) ────────────────────
     .warn_large_output_prefix = "Gargadi: fitarwa kusan ~",

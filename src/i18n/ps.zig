@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        تفصيلي تشریح وښایه",
     .help_opt_depth = "  -d, --depth N      اعظمي ژوروالی وټاکه (تلواله: 4)",
     .help_opt_temp = "  -t, --temp         بدلونونه یوازې د دې ځل لپاره پلي کړئ (نه خوندي کیږي)",
+    .help_opt_persist = "  --persist, --save  دا تنظیمات هم خوندي کړئ (non-TTY او DIRTREE_TEMP بیرته راګرځوي)",
     .help_opt_path = "  -p, --path PATH    PATH رنډر کړه که څه هم لکه بیرغ یا فرعي کمانډ ښکاري",
     .help_opt_simple = "  --simple           یوه ساده، د LLM ملګرې حالت لرونکې ونه وباسه",
     .help_opt_decorated = "  --decorated        سینګار شوې وتلون اړ کړه (حتی کله چې پایپ شوی وي)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "د regex قواعدو ورزیاتولو لپاره د --open/--close/--show/--hide سره /pattern/ یا !/pattern/ وکاروه؛ نور دلیلونه د لفظي ګڼل کیږي.",
     .help_relative_note = "هغه لارې چې --show/--hide ته ورکول کیږي باید نسبي وي (مخکښ '/' نه لري).",
     .help_behavior_header = "چلند:",
-    .help_behavior_text = "د تلوالې له مخې، کله چې stdout یوه TTY نه وي (پایپ شوی)، رنګونه/آیکونونه/هایپرلینکونه غیر فعال وي، خو که --decorated ورکړل شي.",
+    .help_behavior_text = "د پریزنټشن ترتیبات خوندي کیږي کله چې stdout یو ټرمینل وي؛ که نه نو دوی یوازې په اوسني غوښتنه کې پلي کیږي. په ډیفالټ، --open/--close/--show/--hide بدلونونه تل خوندي کیږي. رنګ په ډیفالټ ډول د ترمینل محصول لپاره او د نورو محصول لپاره بند دی. --temp یا --persist/--save په واضح ډول د دې سپمولو مقررات له پامه غورځوي.",
+    .persistence_note_tty = "پیغام: {s}: خوندي شوی ځکه چې stdout یو ټرمینل دی؛ --temp وکاروئ یوازې دې غوښتنې ته یې پلي کړئ.",
+    .persistence_note_non_tty = "پیغام: {s}: خوندي شوی نه دی ځکه چې stdout ټرمینل ندی؛ د پورته کولو لپاره --persist/--save وکاروئ.",
+    .persistence_note_semantic = "پیغام: {s}: خوندي شوی ځکه چې د شریکې پروژې لید کې بدلونونه د ډیفالټ لخوا خوندي شوي؛ --temp وکاروئ یوازې دې غوښتنې ته یې پلي کړئ.",
+    .persistence_note_env = "پیغام: {s}: خوندي شوی نه دی ځکه چې DIRTREE_TEMP=1؛ د پورته کولو لپاره --persist/--save وکاروئ.",
+    .persistence_note_mute = "DIRTREE_MUTE_PERSISTENCE_REASON=1 ترتیب کړئ ترڅو دا معلوماتي پیغام ودروي.",
     .help_examples_header = "بیلګې:",
     .help_example_1 = "  dirtree                       # د اوسني لارښود ونه وښایه",
     .help_example_2 = "  dirtree -d 3                  # ژوروالی په 3 کچو وټاکه",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        په یوه فرعي ونه تمرکز وکړه، خویندوسره لارښودونه راجمع کړه (تکراریدونکی)",
     .help_opt_html = "  --html [FILE]      خپلواک HTML ونه FILE ته ولیکئ (- = stdout؛ پرېښودل = په براوزر کې پرانیستل)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  د symlink موخې پټ کړئ؛ ‏--no-targets هایپرلینکونه هم لرې کوي (د لیږد وړ محصول)",
-
 
     // ── د خبرتیا پیغامونه (لوی وتلون) ──────────────────────────
     .warn_large_output_prefix = "خبرتیا: وتلون نږدې ~",

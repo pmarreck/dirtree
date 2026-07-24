@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        ዝርዝር መግለጫ አሳይ",
     .help_opt_depth = "  -d, --depth N      ከፍተኛ ጥልቀት አስቀምጥ (ነባሪ: 4)",
     .help_opt_temp = "  -t, --temp         ለዚህ ሩጫ ብቻ ለውጦችን ተግብር (አይቀመጥም)",
+    .help_opt_persist = "  --persist, --save  እነዚህን ቅንብሮችም ያስቀምጡ (non-TTY እና DIRTREE_TEMPን ይሽረዋል)",
     .help_opt_path = "  -p, --path PATH    PATH ን አሳይ፣ እንደ flag ወይም ንዑስ-ትዕዛዝ ቢመስልም",
     .help_opt_simple = "  --simple           ቀላል፣ ለLLM ምቹ የሆነ የሁኔታ ዛፍ አውጣ",
     .help_opt_decorated = "  --decorated        ያጌጠ ውጤት አስገድድ (ሲጣራም እንኳ)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "ከ --open/--close/--show/--hide ጋር /pattern/ ወይም !/pattern/ ተጠቅመህ regex ሕጎች ጨምር፤ ሌሎች መከራከሪያዎች እንደ ቀጥተኛ ይቆጠራሉ።",
     .help_relative_note = "ለ --show/--hide የሚሰጡ መንገዶች አንጻራዊ መሆን አለባቸው (ቀዳሚ '/' የለም)።",
     .help_behavior_header = "ባህሪ:",
-    .help_behavior_text = "በነባሪ፣ stdout TTY ካልሆነ (ሲጣራ)፣ --decorated ካልተሰጠ በስተቀር ቀለሞች/አዶዎች/hyperlinks ይሰናከላሉ።",
+    .help_behavior_text = "የዝግጅት አቀራረብ ቅንጅቶች የሚቀመጡት stdout ተርሚናል ሲሆን; አለበለዚያ እነሱ የሚተገበሩት ለአሁኑ ጥሪ ብቻ ነው. በነባሪ የ--open/--close/--show/--hide ለውጦች ሁልጊዜ ይቀመጣሉ። ቀለም በነባሪነት ለተርሚናል ውፅዓት እና ለሌላ ውፅዓት ጠፍቷል። --temp ወይም --persist/--save እነዚህን የቁጠባ ህጎች በግልጽ ይሽራል።",
+    .persistence_note_tty = "መልእክት: {s}: ተቀምጧል ምክንያቱም stdout ተርሚናል ነው; ለዚህ ጥሪ ብቻ ተግባራዊ ለማድረግ --temp ይጠቀሙ።",
+    .persistence_note_non_tty = "መልእክት፡ {s}፡ አልተቀመጠም ምክንያቱም stdout ተርሚናል አይደለም፤ ለመሻር --persist/--save ይጠቀሙ።",
+    .persistence_note_semantic = "መልእክት፡ {s}፡ ተቀምጧል ምክንያቱም በጋራ የፕሮጀክት እይታ ላይ የተደረጉ ለውጦች በነባሪነት ይቀመጣሉ፤ ለዚህ ጥሪ ብቻ ተግባራዊ ለማድረግ --temp ይጠቀሙ።",
+    .persistence_note_env = "መልእክት፡ {s}፡ አልተቀመጠም ምክንያቱም DIRTREE_TEMP=1; ለመሻር --persist/--save ይጠቀሙ።",
+    .persistence_note_mute = "ይህን መረጃ ሰጪ መልእክት ለማፈን DIRTREE_MUTE_PERSISTENCE_REASON=1 አዘጋጅ።",
     .help_examples_header = "ምሳሌዎች:",
     .help_example_1 = "  dirtree                       # የአሁኑን ማውጫ ዛፍ አሳይ",
     .help_example_2 = "  dirtree -d 3                  # ጥልቀትን ወደ 3 ደረጃዎች አስቀምጥ",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        በንዑስ-ዛፍ ላይ አተኩር፣ የእኩዮች ማውጫዎችን አጥፋ (ሊደገም ይችላል)",
     .help_opt_html = "  --html [FILE]      ራሱን የቻለ የHTML ዛፍ ወደ FILE ጻፍ (- = stdout፤ ካልገለጹ = በአሳሽ ክፈት)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  የsymlink ዒላማዎችን ደብቅ፤ --no-targets ሃይፐርሊንኮችንም ያስወግዳል (ተንቀሳቃሽ ውጤት)",
-
 
     // ── የማስጠንቀቂያ መልእክቶች (ትልቅ ውጤት) ───────────────────────────
     .warn_large_output_prefix = "ማስጠንቀቂያ: ውጤቱ ~",

@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Visa detaljerad beskrivning",
     .help_opt_depth = "  -d, --depth N      Ange maximalt djup (standard: 4)",
     .help_opt_temp = "  -t, --temp         Tillämpa ändringar endast för denna körning (sparas inte)",
+    .help_opt_persist = "  --persist, --save  Spara dessa inställningar också (åsidosätter non-TTY och DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Rendera PATH även om det ser ut som en flagga eller ett underkommando",
     .help_opt_simple = "  --simple           Skriv ut ett enkelt, LLM-vänligt tillståndsbaserat träd",
     .help_opt_decorated = "  --decorated        Tvinga dekorerad utdata (även vid pipe)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Använd /mönster/ eller !/mönster/ med --open/--close/--show/--hide för att lägga till regex-regler; andra argument behandlas som literaler.",
     .help_relative_note = "Sökvägar till --show/--hide måste vara relativa (inget inledande '/').",
     .help_behavior_header = "Beteende:",
-    .help_behavior_text = "Som standard inaktiveras färger/ikoner/hyperlänkar när stdout inte är en TTY (vid pipe), om inte --decorated anges.",
+    .help_behavior_text = "Presentationsinställningar sparas när stdout är en terminal; annars gäller de endast den aktuella åkallan. Som standard sparas --open/--close/--show/--hide ändringar alltid. Färg är på som standard för terminalutgång och av för annan utgång. --temp eller --persist/--save åsidosätter uttryckligen dessa sparregler.",
+    .persistence_note_tty = "Meddelande: {s}: sparat eftersom stdout är en terminal; använd --temp för att tillämpa den endast på denna anrop.",
+    .persistence_note_non_tty = "Meddelande: {s}: inte sparat eftersom stdout inte är en terminal; använd --persist/--save för att åsidosätta.",
+    .persistence_note_semantic = "Meddelande: {s}: sparas eftersom ändringar i den delade projektvyn sparas som standard; använd --temp för att tillämpa dem endast på detta anrop.",
+    .persistence_note_env = "Meddelande: {s}: inte sparat eftersom DIRTREE_TEMP=1; använd --persist/--save för att åsidosätta.",
+    .persistence_note_mute = "Ställ in DIRTREE_MUTE_PERSISTENCE_REASON=1 för att dölja detta informationsmeddelande.",
     .help_examples_header = "Exempel:",
     .help_example_1 = "  dirtree                       # Visa träd för aktuell katalog",
     .help_example_2 = "  dirtree -d 3                  # Sätt djup till 3 nivåer",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Fokusera på ett underträd och fäll ihop syskonkataloger (upprepningsbar)",
     .help_opt_html = "  --html [FILE]      Skriv ett fristående HTML-träd till FILE (- = stdout; utelämna = öppna i webbläsare)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Dölj symlänkmål; --no-targets tar även bort hyperlänkar (portabel utdata)",
-
 
     // ── Varningsmeddelanden (stor utdata) ──────────────────────
     .warn_large_output_prefix = "Varning: utdata är ~",

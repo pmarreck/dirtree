@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Vis detaljeret beskrivelse",
     .help_opt_depth = "  -d, --depth N      Angiv maksimal dybde (standard: 4)",
     .help_opt_temp = "  -t, --temp         Anvend ændringer kun for denne kørsel (ikke gemt)",
+    .help_opt_persist = "  --persist, --save  Gem også disse indstillinger (tilsidesætter non-TTY og DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Gengiv PATH, selv hvis det ligner et flag eller en underkommando",
     .help_opt_simple = "  --simple           Udskriv et enkelt, LLM-venligt tilstandstræ",
     .help_opt_decorated = "  --decorated        Tving dekoreret udskrift (selv ved pipe)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Brug /mønster/ eller !/mønster/ med --open/--close/--show/--hide for at tilføje regex-regler; andre argumenter behandles som bogstavelige.",
     .help_relative_note = "Stier angivet til --show/--hide skal være relative (uden indledende '/').",
     .help_behavior_header = "Adfærd:",
-    .help_behavior_text = "Som standard, når stdout ikke er en TTY (piped), deaktiveres farver/ikoner/hyperlinks, medmindre --decorated er angivet.",
+    .help_behavior_text = "Præsentationsindstillinger gemmes, når stdout er en terminal; ellers gælder de kun for den aktuelle påkaldelse. Som standard gemmes --open/--close/--show/--hide ændringer altid. Farve er som standard slået til for terminaloutput og slukket for andet output. --temp eller --persist/--save tilsidesætter eksplicit disse lagringsregler.",
+    .persistence_note_tty = "Meddelelse: {s}: gemt, fordi stdout er en terminal; brug --temp til kun at anvende det på denne påkaldelse.",
+    .persistence_note_non_tty = "Meddelelse: {s}: ikke gemt, fordi stdout ikke er en terminal; brug --persist/--save til at tilsidesætte.",
+    .persistence_note_semantic = "Meddelelse: {s}: gemt, fordi ændringer til den delte projektvisning gemmes som standard; brug --temp til kun at anvende dem på denne påkaldelse.",
+    .persistence_note_env = "Meddelelse: {s}: ikke gemt, fordi DIRTREE_TEMP=1; brug --persist/--save til at tilsidesætte.",
+    .persistence_note_mute = "Indstil DIRTREE_MUTE_PERSISTENCE_REASON=1 for at undertrykke denne informationsmeddelelse.",
     .help_examples_header = "Eksempler:",
     .help_example_1 = "  dirtree                       # Vis træ for den aktuelle mappe",
     .help_example_2 = "  dirtree -d 3                  # Sæt dybde til 3 niveauer",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Fokusér på et undertræ og klap søskendemapper sammen (gentagelig)",
     .help_opt_html = "  --html [FILE]      Skriv et selvstændigt HTML-træ til FILE (- = stdout; udelad = åbn i browser)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Skjul symlink-mål; --no-targets fjerner også hyperlinks (portabelt output)",
-
 
     // ── Advarsler (stor udskrift) ──────────────────────────────
     .warn_large_output_prefix = "Advarsel: udskriften er ~",

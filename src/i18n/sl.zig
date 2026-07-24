@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Prikaži podroben opis",
     .help_opt_depth = "  -d, --depth N      Nastavi največjo globino (privzeto: 4)",
     .help_opt_temp = "  -t, --temp         Uporabi spremembe samo za ta zagon (ni shranjeno)",
+    .help_opt_persist = "  --persist, --save  Shranite tudi te nastavitve (preglasi non-TTY in DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Izriši POT, tudi če je videti kot zastavica ali podukaz",
     .help_opt_simple = "  --simple           Izpiši preprosto, LLM-prijazno stanjsko drevo",
     .help_opt_decorated = "  --decorated        Vsili okrašen izpis (tudi pri preusmeritvi)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Uporabi /vzorec/ ali !/vzorec/ z --open/--close/--show/--hide za dodajanje pravil regex; drugi argumenti se obravnavajo kot dobesedni.",
     .help_relative_note = "Poti, podane v --show/--hide, morajo biti relativne (brez vodilnega '/').",
     .help_behavior_header = "Vedenje:",
-    .help_behavior_text = "Privzeto so, kadar stdout ni TTY (preusmerjen), barve/ikone/hiperpovezave onemogočene, razen če je podan --decorated.",
+    .help_behavior_text = "Nastavitve predstavitve so shranjene, ko je stdout terminal; drugače veljajo le za trenutni priklic. Privzeto se spremembe --open/--close/--show/--hide vedno shranijo. Barva je privzeto vklopljena za izhod terminala in izklopljena za druge izhode. --temp ali --persist/--save izrecno preglasita ta pravila shranjevanja.",
+    .persistence_note_tty = "Sporočilo: {s}: shranjeno, ker je stdout terminal; uporabite --temp, da ga uporabite samo za ta poziv.",
+    .persistence_note_non_tty = "Sporočilo: {s}: ni shranjeno, ker stdout ni terminal; uporabite --persist/--save za preglasitev.",
+    .persistence_note_semantic = "Sporočilo: {s}: shranjeno, ker so spremembe skupnega pogleda projekta privzeto shranjene; uporabite --temp, da jih uporabite samo za ta poziv.",
+    .persistence_note_env = "Sporočilo: {s}: ni shranjeno, ker DIRTREE_TEMP=1; uporabite --persist/--save za preglasitev.",
+    .persistence_note_mute = "Nastavite DIRTREE_MUTE_PERSISTENCE_REASON=1, da prepreči to informativno sporočilo.",
     .help_examples_header = "Primeri:",
     .help_example_1 = "  dirtree                       # Prikaži drevo trenutnega imenika",
     .help_example_2 = "  dirtree -d 3                  # Nastavi globino na 3 ravni",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Osredotoči se na poddrevo in strni sorojenske imenike (ponovljivo)",
     .help_opt_html = "  --html [FILE]      Zapiši samostojno drevo HTML v FILE (- = stdout; izpusti = odpri v brskalniku)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Skrij cilje simbolskih povezav; --no-targets odstrani tudi hiperpovezave (prenosljiv izpis)",
-
 
     // ── Opozorilna sporočila (velik izpis) ─────────────────────
     .warn_large_output_prefix = "Opozorilo: izpis obsega ~",

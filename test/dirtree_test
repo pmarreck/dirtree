@@ -93,6 +93,7 @@ set -uo pipefail
 
 export DIRTREE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 export TEST_SCRIPT_DIR="$DIRTREE_ROOT/test"
+export DIRTREE_MUTE_PERSISTENCE_REASON=1
 
 export DIRTREE_BIN="${DIRTREE_BIN:-$DIRTREE_ROOT/zig-out/bin/dirtree}"
 
@@ -1200,16 +1201,17 @@ Options:
   -a, --about        Show detailed description
   -d, --depth N      Set maximum depth (default: 4)
   -t, --temp         Apply changes for this run only (not saved)
+  --persist, --save  Save accompanying settings (overrides non-TTY and DIRTREE_TEMP)
   -p, --path PATH    Render PATH even if it looks like a flag or subcommand
   --simple           Output a simple, LLM-friendly stateful tree
   --decorated        Force decorated output (even when piped)
   --no-icons         Disable icons (simple mode + decorated header)
-  --no-color/--color Enable/disable ANSI colors (persisted)
+  --no-color/--color Enable/disable ANSI colors (presentation setting)
   --no-orphan-warning Suppress the orphaned-notes warning
   --no-notes/--show-notes Hide or show inline notes (DIRTREE_HIDE_NOTES=1 to hide by default)
   --notes MODE       Note layout: aligned (default) or inline
   --notes-leader     Draw dim leader dots from names to aligned notes
-  --no-hyperlinks/--hyperlinks Enable/disable OSC8 hyperlinks (persisted)
+  --no-hyperlinks/--hyperlinks Enable/disable OSC8 hyperlinks (presentation setting)
   --default X        Persist default state: opened|closed
   -o, --open DIR...  Open one or more subdirs (repeat flag to add more)
   -c, --close DIR... Close one or more subdirs (repeat flag to add more)
@@ -1238,7 +1240,8 @@ Options:
 Use /pattern/ or !/pattern/ with --open/--close/--show/--hide to add regex rules; other arguments are treated as literals.
 Paths supplied to --show/--hide must be relative (no leading '/').
 
-Behavior: By default, when stdout is not a TTY (piped), colors/icons/hyperlinks are disabled unless --decorated is given.
+Behavior: Presentation settings persist when stdout is a terminal and are run-only otherwise; --open/--close/--show/--hide persist by default. Color defaults on for terminal output and off otherwise. Explicit --temp or --persist/--save overrides persistence.
+Set DIRTREE_MUTE_PERSISTENCE_REASON=1 to mute this note.
 
 Examples:
   dirtree                       # Show tree of current directory
@@ -1387,7 +1390,7 @@ test_depth_flag_persists_and_applies() {
 	target="$workspace/depth-persist"
 	mkdir -p "$target/sub/deep"
 	state_file="$target/.dirtree-state"
-	if ! run_quiet "$DIRTREE_BIN" -d 1 "$target"; then
+	if ! run_quiet "$DIRTREE_BIN" -d 1 --persist "$target"; then
 		echo "dirtree -d 1 failed" >&2
 		return 1
 	fi
@@ -1507,7 +1510,7 @@ test_sort_flags_persist_and_apply() {
 	target="$workspace/sort-persist"
 	mkdir -p "$target/zzz" "$target/aaa"
 	state_file="$target/.dirtree-state"
-	if ! run_quiet "$DIRTREE_BIN" --sort alpha --asc "$target"; then
+	if ! run_quiet "$DIRTREE_BIN" --sort alpha --asc --persist "$target"; then
 		echo "dirtree --sort alpha --asc failed" >&2
 		return 1
 	fi
@@ -2412,7 +2415,7 @@ test_git_modified_file_bypasses_hide() {
 		printf 'ver=1.2\nhide=[\n\ttracked.txt\n]\n' > .dirtree-state && \
 		echo changed > tracked.txt
 	)
-	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 1 "$repo"; then
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 1 --persist "$repo"; then
 		echo "capture helper failed for git modified run" >&2
 		return 1
 	fi
@@ -2434,7 +2437,7 @@ test_git_untracked_file_opens_hidden_parents() {
 	init_git_repo "$repo"
 	printf 'ver=1.2\nhide=[\n\thidden\n\t/.git\n]\nclose=[\n\thidden\n]\n' > "$repo/.dirtree-state"
 	touch "$repo/hidden/new.txt"
-	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 "$repo"; then
+	if ! capture_dirtree_printable stdout_pb stderr_pb rc --simple -d 2 --persist "$repo"; then
 		echo "capture helper failed for git untracked run" >&2
 		return 1
 	fi
@@ -2506,7 +2509,7 @@ show_regex=^docs/.*/index$
 hide=temp
 hide_regex=\.log$
 STATE
-	run_quiet "$DIRTREE_BIN" "$target"
+	run_quiet "$DIRTREE_BIN" --persist "$target"
 	encode_file_printable actual_pb "$state_file"
 	expected_plain=$'# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree\nver=1.2\ndefault=opened\n\nopen=[\n\t/^docs/\n\tlib\n\tsrc\n]\n\nclose=[\n\t/temp$/\n\tlogs\n]\n\nshow=[\n\tREADME.md\n\tdocs/**/index\n\tdocs/index.md\n]\n\nhide=[\n\t/\\.log$/\n\ttemp\n]\n'
 	encode_printable expected_pb "$expected_plain"
@@ -3705,7 +3708,7 @@ test_max_lines_persists_to_state() {
 	target="$workspace/max-lines-persist"
 	mkdir -p "$target/sub"
 	state_file="$target/.dirtree-state"
-	if ! run_quiet "$DIRTREE_BIN" --max-lines 100 "$target"; then
+	if ! run_quiet "$DIRTREE_BIN" --max-lines 100 --persist "$target"; then
 		echo "dirtree --max-lines 100 failed" >&2
 		return 1
 	fi
@@ -4645,11 +4648,11 @@ test_no_color_then_color_restores() {
 	# Regression: --no-color persists color=false; there must be a --color flag
 	# to restore it (one-way door otherwise).
 	local workspace target; workspace=$(new_tmpdir); target="$workspace/colorpref"; mkdir -p "$target/sub"
-	"$DIRTREE_BIN" --no-color "$target" >/dev/null 2>&1
+	"$DIRTREE_BIN" --no-color --persist "$target" >/dev/null 2>&1
 	if ! grep -q '^color=false' "$target/.dirtree-state" 2>/dev/null; then
 		echo "--no-color should persist color=false" >&2; cat "$target/.dirtree-state" 2>/dev/null >&2; return 1
 	fi
-	"$DIRTREE_BIN" --color "$target" >/dev/null 2>&1
+	"$DIRTREE_BIN" --color --persist "$target" >/dev/null 2>&1
 	if grep -q '^color=false' "$target/.dirtree-state" 2>/dev/null; then
 		echo "--color should overwrite color=false" >&2; return 1
 	fi
@@ -4660,11 +4663,11 @@ test_no_color_then_color_restores() {
 
 test_no_hyperlinks_then_hyperlinks_restores() {
 	local workspace target; workspace=$(new_tmpdir); target="$workspace/hlpref"; mkdir -p "$target/sub"
-	"$DIRTREE_BIN" --no-hyperlinks "$target" >/dev/null 2>&1
+	"$DIRTREE_BIN" --no-hyperlinks --persist "$target" >/dev/null 2>&1
 	if ! grep -q '^hyperlink=false' "$target/.dirtree-state" 2>/dev/null; then
 		echo "--no-hyperlinks should persist hyperlink=false" >&2; cat "$target/.dirtree-state" 2>/dev/null >&2; return 1
 	fi
-	"$DIRTREE_BIN" --hyperlinks "$target" >/dev/null 2>&1
+	"$DIRTREE_BIN" --hyperlinks --persist "$target" >/dev/null 2>&1
 	if ! grep -q '^hyperlink=true' "$target/.dirtree-state" 2>/dev/null; then
 		echo "--hyperlinks should persist hyperlink=true" >&2; cat "$target/.dirtree-state" 2>/dev/null >&2; return 1
 	fi
@@ -4690,23 +4693,186 @@ test_temp_applies_without_persisting() {
 	if [ -f "$target/.dirtree-state" ]; then
 		echo "DIRTREE_TEMP=1 must not persist .dirtree-state" >&2; return 1
 	fi
-	# Control: without temp, it DOES persist.
+	# Control: an explicit persistent policy does persist.
 	workspace=$(new_tmpdir); target="$workspace/ctrl"; mkdir -p "$target/sub"
-	"$DIRTREE_BIN" --no-color "$target" >/dev/null 2>&1
-	if [ ! -f "$target/.dirtree-state" ]; then echo "--no-color alone should persist (control)" >&2; return 1; fi
+	"$DIRTREE_BIN" --no-color --persist "$target" >/dev/null 2>&1
+	if [ ! -f "$target/.dirtree-state" ]; then echo "--no-color --persist should write state (control)" >&2; return 1; fi
+}
+
+test_non_tty_settings_are_temporary_by_default() {
+	# Ordinary agent/captured output has a real non-TTY stdout. Presentation
+	# settings must apply to that invocation without contaminating project state.
+	local workspace target
+	workspace=$(new_tmpdir); target="$workspace/non-tty"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --depth 1 --sort alpha --asc --no-color "$target" >/dev/null 2>&1
+	if [[ -e "$target/.dirtree-state" ]]; then
+		echo "non-TTY presentation settings must be temporary by default" >&2
+		cat "$target/.dirtree-state" >&2
+		return 1
+	fi
+}
+
+test_persist_save_and_temp_precedence() {
+	# Explicit CLI policy beats DIRTREE_TEMP and the actual TTY default. Opposing
+	# CLI policy flags resolve left-to-right, so the last one wins.
+	local workspace target
+
+	workspace=$(new_tmpdir); target="$workspace/persist"; mkdir -p "$target/sub"
+	DIRTREE_TEMP=1 "$DIRTREE_BIN" --depth 1 --persist "$target" >/dev/null 2>&1
+	if ! grep -q '^depth=1$' "$target/.dirtree-state" 2>/dev/null; then
+		echo "--persist must override DIRTREE_TEMP=1" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/save"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --depth 2 --save "$target" >/dev/null 2>&1
+	if ! grep -q '^depth=2$' "$target/.dirtree-state" 2>/dev/null; then
+		echo "--save must alias --persist" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/last-temp"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --depth 1 --persist --temp "$target" >/dev/null 2>&1
+	if [[ -e "$target/.dirtree-state" ]]; then
+		echo "later --temp must override earlier --persist" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/last-persist"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --depth 1 --temp --persist "$target" >/dev/null 2>&1
+	if ! grep -q '^depth=1$' "$target/.dirtree-state" 2>/dev/null; then
+		echo "later --persist must override earlier --temp" >&2
+		return 1
+	fi
+}
+
+test_semantic_view_mutations_persist_unless_temp() {
+	# show/hide/open/close edit shared semantic view state, so they persist under
+	# automatic non-TTY policy. An explicit temporary policy still wins.
+	local workspace target
+	workspace=$(new_tmpdir); target="$workspace/semantic"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --hide hidden.tmp --show visible.tmp --open sub --close vendor "$target" >/dev/null 2>&1
+	if [[ ! -e "$target/.dirtree-state" ]]; then
+		echo "semantic view mutations must persist even with non-TTY stdout" >&2
+		return 1
+	fi
+	for expected in $'\thidden.tmp' $'\tvisible.tmp' $'\tsub' $'\tvendor'; do
+		if ! grep -Fq "$expected" "$target/.dirtree-state"; then
+			echo "semantic state missing expected entry: $expected" >&2
+			cat "$target/.dirtree-state" >&2
+			return 1
+		fi
+	done
+
+	workspace=$(new_tmpdir); target="$workspace/semantic-temp"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --hide hidden.tmp --temp "$target" >/dev/null 2>&1
+	if [[ -e "$target/.dirtree-state" ]]; then
+		echo "explicit --temp must make semantic view mutations one-shot" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/semantic-mixed"; mkdir -p "$target/sub"
+	"$DIRTREE_BIN" --hide hidden.tmp --depth 1 "$target" >/dev/null 2>&1
+	if ! grep -Fq $'\thidden.tmp' "$target/.dirtree-state" 2>/dev/null; then
+		echo "mixed automatic policy must persist its semantic mutation" >&2
+		return 1
+	fi
+	if grep -q '^depth=' "$target/.dirtree-state"; then
+		echo "semantic mutation must not drag non-TTY presentation settings into state" >&2
+		cat "$target/.dirtree-state" >&2
+		return 1
+	fi
+}
+
+test_color_flag_forces_color_when_piped_without_persisting() {
+	# Non-TTY output defaults color off, but an explicit --color is stronger than
+	# that contextual default. Automatic non-TTY policy must still avoid a write.
+	local workspace target out
+	workspace=$(new_tmpdir); target="$workspace/color-pipe"; mkdir -p "$target"; touch "$target/file.txt"
+	out=$("$DIRTREE_BIN" --color "$target" 2>/dev/null)
+	if [[ "$out" != *$'\x1b['* ]]; then
+		echo "--color must force ANSI color on non-TTY output" >&2
+		return 1
+	fi
+	if [[ -e "$target/.dirtree-state" ]]; then
+		echo "piped --color must remain temporary by default" >&2
+		cat "$target/.dirtree-state" >&2
+		return 1
+	fi
+}
+
+test_implicit_persistence_reason_and_mute() {
+	local workspace target stderr_text expected
+
+	workspace=$(new_tmpdir); target="$workspace/reason-non-tty"; mkdir -p "$target/sub"
+	stderr_text=$(DIRTREE_MUTE_PERSISTENCE_REASON=0 "$DIRTREE_BIN" --depth 1 "$target" 2>&1 >/dev/null)
+	expected="Note: --depth: not persisted because stdout is not a terminal; use --persist/--save to override. Set DIRTREE_MUTE_PERSISTENCE_REASON=1 to mute this note."
+	if [[ "$stderr_text" != "$expected" ]]; then
+		echo "implicit non-TTY persistence note lacks exact provenance: $stderr_text" >&2
+		return 1
+	fi
+	if [[ "$stderr_text" == *$'\x1b['* ]]; then
+		echo "non-TTY persistence note must not contain ANSI styling" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/reason-semantic"; mkdir -p "$target/sub"
+	stderr_text=$(DIRTREE_MUTE_PERSISTENCE_REASON=0 "$DIRTREE_BIN" --hide hidden.tmp "$target" 2>&1 >/dev/null)
+	expected="Note: --hide: persisted because shared project view edits are saved by default; use --temp to make this run-only. Set DIRTREE_MUTE_PERSISTENCE_REASON=1 to mute this note."
+	if [[ "$stderr_text" != "$expected" ]]; then
+		echo "semantic persistence note lacks exact provenance: $stderr_text" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/reason-mixed"; mkdir -p "$target/sub"
+	stderr_text=$(DIRTREE_MUTE_PERSISTENCE_REASON=0 "$DIRTREE_BIN" --hide hidden.tmp --depth 1 "$target" 2>&1 >/dev/null)
+	expected=$'Note: --hide: persisted because shared project view edits are saved by default; use --temp to make this run-only. Set DIRTREE_MUTE_PERSISTENCE_REASON=1 to mute this note.\nNote: --depth: not persisted because stdout is not a terminal; use --persist/--save to override. Set DIRTREE_MUTE_PERSISTENCE_REASON=1 to mute this note.'
+	if [[ "$stderr_text" != "$expected" ]]; then
+		echo "mixed persistence note must explain each category independently: $stderr_text" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/reason-env"; mkdir -p "$target/sub"
+	stderr_text=$(DIRTREE_TEMP=1 DIRTREE_MUTE_PERSISTENCE_REASON=0 "$DIRTREE_BIN" --depth 1 "$target" 2>&1 >/dev/null)
+	expected="Note: --depth: not persisted because DIRTREE_TEMP=1; use --persist/--save to override. Set DIRTREE_MUTE_PERSISTENCE_REASON=1 to mute this note."
+	if [[ "$stderr_text" != "$expected" ]]; then
+		echo "DIRTREE_TEMP persistence note lacks exact provenance: $stderr_text" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/reason-muted"; mkdir -p "$target/sub"
+	stderr_text=$(DIRTREE_MUTE_PERSISTENCE_REASON=1 "$DIRTREE_BIN" --depth 1 "$target" 2>&1 >/dev/null)
+	if [[ -n "$stderr_text" ]]; then
+		echo "DIRTREE_MUTE_PERSISTENCE_REASON=1 must suppress the note: $stderr_text" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/reason-explicit"; mkdir -p "$target/sub"
+	stderr_text=$(DIRTREE_MUTE_PERSISTENCE_REASON=0 "$DIRTREE_BIN" --depth 1 --persist "$target" 2>&1 >/dev/null)
+	if [[ -n "$stderr_text" ]]; then
+		echo "explicit persistence policy should not emit a provenance note: $stderr_text" >&2
+		return 1
+	fi
+
+	workspace=$(new_tmpdir); target="$workspace/reason-plain"; mkdir -p "$target/sub"
+	stderr_text=$(DIRTREE_MUTE_PERSISTENCE_REASON=0 "$DIRTREE_BIN" "$target" 2>&1 >/dev/null)
+	if [[ -n "$stderr_text" ]]; then
+		echo "plain dirtree invocation must not emit a persistence note: $stderr_text" >&2
+		return 1
+	fi
 }
 
 test_localized_color_hyperlink_affirmative() {
 	# Localized affirmative aliases (work globally via the merged alias map):
 	# de --farbe restores color, de --verknuepfungen restores hyperlinks.
 	local t; t=$(mktemp -d)/clr; mkdir -p "$t/sub"
-	"$DIRTREE_BIN" --no-color "$t" >/dev/null 2>&1
-	"$DIRTREE_BIN" --farbe "$t" >/dev/null 2>&1
+	"$DIRTREE_BIN" --no-color --persist "$t" >/dev/null 2>&1
+	"$DIRTREE_BIN" --farbe --persist "$t" >/dev/null 2>&1
 	if ! grep -q '^color=true' "$t/.dirtree-state" 2>/dev/null; then
 		echo "de --farbe should restore color=true" >&2; cat "$t/.dirtree-state" 2>/dev/null >&2; return 1
 	fi
-	"$DIRTREE_BIN" --no-hyperlinks "$t" >/dev/null 2>&1
-	"$DIRTREE_BIN" --verknuepfungen "$t" >/dev/null 2>&1
+	"$DIRTREE_BIN" --no-hyperlinks --persist "$t" >/dev/null 2>&1
+	"$DIRTREE_BIN" --verknuepfungen --persist "$t" >/dev/null 2>&1
 	if ! grep -q '^hyperlink=true' "$t/.dirtree-state" 2>/dev/null; then
 		echo "de --verknuepfungen should restore hyperlink=true" >&2; cat "$t/.dirtree-state" 2>/dev/null >&2; return 1
 	fi
@@ -4756,7 +4922,7 @@ test_temp_leaves_existing_state_untouched() {
 	# With a pre-existing state file, --temp must not modify it.
 	local workspace target before after
 	workspace=$(new_tmpdir); target="$workspace/temp2"; mkdir -p "$target/sub"
-	"$DIRTREE_BIN" --depth 3 "$target" >/dev/null 2>&1
+	"$DIRTREE_BIN" --depth 3 --persist "$target" >/dev/null 2>&1
 	before=$(cat "$target/.dirtree-state")
 	"$DIRTREE_BIN" --depth 1 --temp "$target" >/dev/null 2>&1
 	after=$(cat "$target/.dirtree-state")
@@ -5283,6 +5449,16 @@ run_all_tests() {
 		test_no_hyperlinks_then_hyperlinks_restores
 	run_test "--temp/-t/--temporary/DIRTREE_TEMP apply without persisting" \
 		test_temp_applies_without_persisting
+	run_test "non-TTY presentation settings are temporary by default" \
+		test_non_tty_settings_are_temporary_by_default
+	run_test "--persist/--save and temporary-policy precedence" \
+		test_persist_save_and_temp_precedence
+	run_test "semantic view mutations persist unless explicitly temporary" \
+		test_semantic_view_mutations_persist_unless_temp
+	run_test "--color forces piped color without implicit persistence" \
+		test_color_flag_forces_color_when_piped_without_persisting
+	run_test "implicit persistence reason provenance and mute control" \
+		test_implicit_persistence_reason_and_mute
 	run_test "localized affirmative --color/--hyperlinks aliases" \
 		test_localized_color_hyperlink_affirmative
 	run_test "short single-letter flags cluster (-ta)" \

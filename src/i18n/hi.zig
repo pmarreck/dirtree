@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        विस्तृत विवरण दिखाएँ",
     .help_opt_depth = "  -d, --depth N      अधिकतम गहराई निर्धारित करें (डिफ़ॉल्ट: 4)",
     .help_opt_temp = "  -t, --temp         केवल इस रन के लिए परिवर्तन लागू करें (सहेजा नहीं जाता)",
+    .help_opt_persist = "  --persist, --save  इन सेटिंग्स को भी सहेजें (non-TTY और DIRTREE_TEMP को ओवरराइड करता है)",
     .help_opt_path = "  -p, --path PATH    PATH को रेंडर करें भले ही वह किसी फ़्लैग या उपकमांड जैसा दिखे",
     .help_opt_simple = "  --simple           सरल, LLM-अनुकूल स्थिति-संरक्षी वृक्ष आउटपुट करें",
     .help_opt_decorated = "  --decorated        सज्जित आउटपुट को बाध्य करें (पाइप होने पर भी)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "regex नियम जोड़ने हेतु --open/--close/--show/--hide के साथ /pattern/ या !/pattern/ का उपयोग करें; अन्य तर्कों को अक्षरशः माना जाता है।",
     .help_relative_note = "--show/--hide को दिए गए पथ सापेक्ष होने चाहिए (कोई अग्रणी '/' नहीं)।",
     .help_behavior_header = "व्यवहार:",
-    .help_behavior_text = "डिफ़ॉल्ट रूप से, जब stdout कोई TTY नहीं होता (पाइप किया गया), तब रंग/आइकन/हाइपरलिंक अक्षम रहते हैं जब तक --decorated न दिया जाए।",
+    .help_behavior_text = "stdout एक टर्मिनल होने पर प्रस्तुति सेटिंग्स सहेजी जाती हैं; अन्यथा वे केवल वर्तमान आह्वान पर ही लागू होते हैं। डिफ़ॉल्ट रूप से, --open/--close/--show/--hide परिवर्तन हमेशा सहेजे जाते हैं। टर्मिनल आउटपुट के लिए रंग डिफ़ॉल्ट रूप से चालू है और अन्य आउटपुट के लिए बंद है। --temp या --persist/--save स्पष्ट रूप से इन बचत नियमों को ओवरराइड करता है।",
+    .persistence_note_tty = "संदेश: {s}: सहेजा गया क्योंकि stdout एक टर्मिनल है; इसे केवल इस आह्वान पर लागू करने के लिए --temp का उपयोग करें।",
+    .persistence_note_non_tty = "संदेश: {s}: सहेजा नहीं गया क्योंकि stdout एक टर्मिनल नहीं है; ओवरराइड करने के लिए --persist/--save का उपयोग करें।",
+    .persistence_note_semantic = "संदेश: {s}: सहेजा गया क्योंकि साझा प्रोजेक्ट दृश्य में परिवर्तन डिफ़ॉल्ट रूप से सहेजे जाते हैं; उन्हें केवल इस आह्वान पर लागू करने के लिए --temp का उपयोग करें।",
+    .persistence_note_env = "संदेश: {s}: सहेजा नहीं गया क्योंकि DIRTREE_TEMP=1; ओवरराइड करने के लिए --persist/--save का उपयोग करें।",
+    .persistence_note_mute = "इस सूचनात्मक संदेश को दबाने के लिए DIRTREE_MUTE_PERSISTENCE_REASON=1 सेट करें।",
     .help_examples_header = "उदाहरण:",
     .help_example_1 = "  dirtree                       # वर्तमान निर्देशिका का वृक्ष दिखाएँ",
     .help_example_2 = "  dirtree -d 3                  # गहराई 3 स्तरों पर निर्धारित करें",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        किसी उपवृक्ष पर ध्यान केंद्रित करें, सहोदर निर्देशिकाओं को संकुचित करें (दोहराने योग्य)",
     .help_opt_html = "  --html [FILE]      स्वतंत्र HTML ट्री को FILE में लिखें (- = stdout; छोड़ें = ब्राउज़र में खोलें)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  सिमलिंक लक्ष्य छिपाएँ; --no-targets हाइपरलिंक भी हटाता है (पोर्टेबल आउटपुट)",
-
 
     // ── चेतावनी संदेश (बड़ा आउटपुट) ────────────────────────
     .warn_large_output_prefix = "चेतावनी: आउटपुट लगभग ~",

@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        顯示詳細說明",
     .help_opt_depth = "  -d, --depth N      設定最大深度 (預設: 4)",
     .help_opt_temp = "  -t, --temp         僅本次執行套用變更（不儲存）",
+    .help_opt_persist = "  --persist, --save  也儲存這些設定（覆蓋 non-TTY 和 DIRTREE_TEMP）",
     .help_opt_path = "  -p, --path PATH    即使 PATH 看起來像選項或子命令也將其作為目錄渲染",
     .help_opt_simple = "  --simple           輸出簡潔的LLM友善型有狀態樹",
     .help_opt_decorated = "  --decorated        強制裝飾輸出 (管道時也生效)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "在 --open/--close/--show/--hide 中使用 /pattern/ 或 !/pattern/ 加入正規表示式規則；其他參數視為字面值。",
     .help_relative_note = "傳遞給 --show/--hide 的路徑必須是相對路徑 (不能以 '/' 開頭)。",
     .help_behavior_header = "行為:",
-    .help_behavior_text = "預設情況下，當stdout不是TTY時 (管道)，除非指定 --decorated，否則顏色/圖示/超連結將被停用。",
+    .help_behavior_text = "stdout為終端機時儲存示範設定；否則它們僅適用於目前呼叫。預設情況下，始終儲存 --open/--close/--show/--hide 變更。預設情況下，終端輸出的顏色打開，其他輸出的顏色預設為關閉。 --temp 或 --persist/--save 明確覆寫這些保存規則。",
+    .persistence_note_tty = "訊息：{s}：已儲存，因為 stdout 是終端；使用 --temp 僅將其套用至此呼叫。",
+    .persistence_note_non_tty = "訊息：{s}：未儲存，因為 stdout 不是終端機；使用 --persist/--save 覆蓋。",
+    .persistence_note_semantic = "訊息：{s}：已儲存，因為預設會儲存對共享項目視圖的變更；使用 --temp 將它們僅套用於此呼叫。",
+    .persistence_note_env = "訊息：{s}：未儲存，因為 DIRTREE_TEMP=1；使用 --persist/--save 覆蓋。",
+    .persistence_note_mute = "設定 DIRTREE_MUTE_PERSISTENCE_REASON=1 以抑制此資訊性訊息。",
     .help_examples_header = "範例:",
     .help_example_1 = "  dirtree                       # 顯示目前目錄的樹",
     .help_example_2 = "  dirtree -d 3                  # 設定深度為3層",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        聚焦某個子樹，折疊同層目錄 (可重複)",
     .help_opt_html = "  --html [FILE]      將獨立的 HTML 樹寫入 FILE (- = stdout；省略 = 在瀏覽器中開啟)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  隱藏符號連結目標；--no-targets 也會移除超連結（可攜式輸出）",
-
 
     // ── 警告訊息 (大量輸出) ────────────────────────────────────
     .warn_large_output_prefix = "警告: 輸出約 ~",

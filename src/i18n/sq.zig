@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Shfaq përshkrimin e detajuar",
     .help_opt_depth = "  -d, --depth N      Cakto thellësinë maksimale (parazgjedhja: 4)",
     .help_opt_temp = "  -t, --temp         Zbato ndryshimet vetëm për këtë ekzekutim (nuk ruhet)",
+    .help_opt_persist = "  --persist, --save  Ruajini edhe këto cilësime (shfuqizon non-TTY dhe DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Vizato shtegun edhe nëse duket si flamur ose nënkomandë",
     .help_opt_simple = "  --simple           Prodho një pemë të thjeshtë me gjendje, miqësore për LLM-të",
     .help_opt_decorated = "  --decorated        Detyro dalje të zbukuruar (edhe kur kanalizohet)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Përdor /motiv/ ose !/motiv/ me --open/--close/--show/--hide për të shtuar rregulla regjisti; argumentet e tjera trajtohen si literale.",
     .help_relative_note = "Shtigjet e dhëna te --show/--hide duhet të jenë relative (pa '/' në krye).",
     .help_behavior_header = "Sjellja:",
-    .help_behavior_text = "Si parazgjedhje, kur stdout nuk është TTY (i kanalizuar), ngjyrat/ikonat/hiperlidhjet çaktivizohen përveçse kur jepet --decorated.",
+    .help_behavior_text = "Cilësimet e prezantimit ruhen kur stdout është një terminal; përndryshe ato zbatohen vetëm për thirrjen aktuale. Si parazgjedhje, ndryshimet --open/--close/--show/--hide ruhen gjithmonë. Ngjyra është e ndezur si parazgjedhje për daljen e terminalit dhe joaktive për daljet e tjera. --temp ose --persist/--save i anulon në mënyrë eksplicite këto rregulla kursimi.",
+    .persistence_note_tty = "Mesazhi: {s}: ruhet sepse stdout është një terminal; përdorni --temp për ta zbatuar atë vetëm në këtë thirrje.",
+    .persistence_note_non_tty = "Mesazhi: {s}: nuk u ruajt sepse stdout nuk është terminal; përdorni --persist/--save për të anashkaluar.",
+    .persistence_note_semantic = "Mesazhi: {s}: ruhet sepse ndryshimet në pamjen e përbashkët të projektit ruhen si parazgjedhje; përdorni --temp për t'i zbatuar ato vetëm në këtë thirrje.",
+    .persistence_note_env = "Mesazhi: {s}: nuk u ruajt sepse DIRTREE_TEMP=1; përdorni --persist/--save për të anashkaluar.",
+    .persistence_note_mute = "Cakto DIRTREE_MUTE_PERSISTENCE_REASON=1 për të shtypur këtë mesazh informues.",
     .help_examples_header = "Shembuj:",
     .help_example_1 = "  dirtree                       # Shfaq pemën e drejtorisë aktuale",
     .help_example_2 = "  dirtree -d 3                  # Cakto thellësinë në 3 nivele",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Fokusohu te një nënpemë, duke palosur drejtoritë motra (i përsëritshëm)",
     .help_opt_html = "  --html [FILE]      Shkruaj një pemë HTML të pavarur në FILE (- = stdout; hiq = hap në shfletues)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Fshih objektivat e lidhjeve simbolike; --no-targets heq edhe hiperlidhjet (dalje e transportueshme)",
-
 
     // ── Mesazhe paralajmërimi (dalje e madhe) ──────────────────
     .warn_large_output_prefix = "Paralajmërim: dalja është ~",

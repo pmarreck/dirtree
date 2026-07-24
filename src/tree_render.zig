@@ -364,9 +364,9 @@ fn renderDir(
 /// this also makes the precedence rules directly unit-testable with a mock cfg.
 pub fn resolveRenderConfig(cfg: anytype, effective: *const path_eval.EffectiveState) RenderConfig {
 	const use_simple = cfg.simple_mode;
-	const use_color = !use_simple and !cfg.no_color and
-		(cfg.force_decorated or cfg.stdout_is_tty) and
+	const contextual_color = (cfg.force_decorated or cfg.stdout_is_tty) and
 		(effective.color_preference orelse true);
+	const use_color = !use_simple and (cfg.color_override orelse contextual_color);
 	const use_hyperlinks = !use_simple and !cfg.no_hyperlinks and
 		!cfg.hide_hyperlinks_run and
 		(cfg.force_decorated or cfg.stdout_is_tty) and
@@ -1154,7 +1154,7 @@ test "renderFileEntry: annotation has no ANSI when use_color=false" {
 test "resolveRenderConfig: CLI > state-file > default precedence" {
 	const MockCfg = struct {
 		simple_mode: bool = false,
-		no_color: bool = false,
+		color_override: ?bool = null,
 		force_decorated: bool = true,
 		stdout_is_tty: bool = false,
 		no_hyperlinks: bool = false,
@@ -1184,14 +1184,18 @@ test "resolveRenderConfig: CLI > state-file > default precedence" {
 		try std.testing.expectEqual(DEFAULT_DEPTH, resolveRenderConfig(MockCfg{}, &eff).max_depth);
 	}
 
-	// color: requires !simple AND (force_decorated|tty) AND color_preference(default true).
+	// Color defaults to TTY/decorated context; explicit CLI color wins over
+	// context and saved preference, while simple mode remains a hard veto.
 	{
 		var eff = path_eval.EffectiveState{ .allocator = A };
 		try std.testing.expect(resolveRenderConfig(MockCfg{ .force_decorated = true }, &eff).use_color);
 		try std.testing.expect(!resolveRenderConfig(MockCfg{ .simple_mode = true, .force_decorated = true }, &eff).use_color);
 		try std.testing.expect(!resolveRenderConfig(MockCfg{ .force_decorated = false, .stdout_is_tty = false }, &eff).use_color);
+		try std.testing.expect(resolveRenderConfig(MockCfg{ .color_override = true, .force_decorated = false, .stdout_is_tty = false }, &eff).use_color);
+		try std.testing.expect(!resolveRenderConfig(MockCfg{ .color_override = false, .force_decorated = true, .stdout_is_tty = true }, &eff).use_color);
 		eff.color_preference = false; // state can veto color
 		try std.testing.expect(!resolveRenderConfig(MockCfg{ .force_decorated = true }, &eff).use_color);
+		try std.testing.expect(resolveRenderConfig(MockCfg{ .color_override = true }, &eff).use_color);
 	}
 
 	// sort: state used when CLI null; CLI overrides; default when both null.

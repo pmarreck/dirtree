@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Прикажи детаљан опис",
     .help_opt_depth = "  -d, --depth N      Постави максималну дубину (подразумевано: 4)",
     .help_opt_temp = "  -t, --temp         Примени промене само за ово покретање (не чува се)",
+    .help_opt_persist = "  --persist, --save  Сачувајте и ова подешавања (замењује non-TTY и DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Прикажи PATH чак и ако личи на заставицу или подкоманду",
     .help_opt_simple = "  --simple           Једноставан, LLM-приjатан испис стабла са стањем",
     .help_opt_decorated = "  --decorated        Принуди декорисани испис (чак и кроз цев)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Користи /шаблон/ или !/шаблон/ са --open/--close/--show/--hide за додавање regex правила; остали аргументи се третирају као дословни.",
     .help_relative_note = "Путање прослеђене у --show/--hide морају бити релативне (без водеће '/').",
     .help_behavior_header = "Понашање:",
-    .help_behavior_text = "Подразумевано, када stdout није TTY (кроз цев), боје/иконице/хипервезе су онемогућене осим ако је дато --decorated.",
+    .help_behavior_text = "Подешавања презентације се чувају када је stdout терминал; иначе се примењују само на тренутну инвокацију. Подразумевано, --open/--close/--show/--hide промене се увек чувају. Боја је подразумевано укључена за терминалски излаз и искључена за други излаз. --temp или --persist/--save експлицитно замењује ова правила чувања.",
+    .persistence_note_tty = "Порука: {s}: сачувано јер је stdout терминал; користите --temp да га примените само на ову инвокацију.",
+    .persistence_note_non_tty = "Порука: {s}: није сачувано јер stdout није терминал; користите --persist/--save да заобиђете.",
+    .persistence_note_semantic = "Порука: {s}: сачувано јер се промене у дељеном приказу пројекта чувају подразумевано; користите --temp да их примените само на ову инвокацију.",
+    .persistence_note_env = "Порука: {s}: није сачувано јер DIRTREE_TEMP=1; користите --persist/--save да заобиђете.",
+    .persistence_note_mute = "Подесите DIRTREE_MUTE_PERSISTENCE_REASON=1 да потисне ову информативну поруку.",
     .help_examples_header = "Примери:",
     .help_example_1 = "  dirtree                       # Прикажи стабло тренутног директоријума",
     .help_example_2 = "  dirtree -d 3                  # Постави дубину на 3 нивоа",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Фокусирај се на подстабло, скупљајући суседне директоријуме (понављиво)",
     .help_opt_html = "  --html [FILE]      Упиши самостално HTML стабло у FILE (- = stdout; изостави = отвори у прегледачу)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Сакриј циљеве симболичких веза; --no-targets уклања и хипервезе (преносиви излаз)",
-
 
     // ── Упозорења (велики испис) ───────────────────────────────
     .warn_large_output_prefix = "Упозорење: испис је ~",

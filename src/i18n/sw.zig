@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Onyesha maelezo ya kina",
     .help_opt_depth = "  -d, --depth N      Weka kina cha juu zaidi (chaguo-msingi: 4)",
     .help_opt_temp = "  -t, --temp         Tumia mabadiliko kwa mhutuko huu pekee (haihifadhiwi)",
+    .help_opt_persist = "  --persist, --save  Hifadhi mipangilio hii pia (inabatilisha non-TTY na DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Onyesha PATH hata kama inaonekana kama bendera au amri ndogo",
     .help_opt_simple = "  --simple           Toa mti rahisi wenye hali unaofaa kwa LLM",
     .help_opt_decorated = "  --decorated        Lazimisha matokeo yaliyopambwa (hata yanapopitishwa)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Tumia /pattern/ au !/pattern/ pamoja na --open/--close/--show/--hide kuongeza kanuni za regex; hoja nyingine huchukuliwa kama herufi halisi.",
     .help_relative_note = "Njia zinazotolewa kwa --show/--hide lazima ziwe za jamaa (bila '/' ya kuanzia).",
     .help_behavior_header = "Tabia:",
-    .help_behavior_text = "Kwa chaguo-msingi, wakati stdout si TTY (imepitishwa), rangi/ikoni/viungo huzimwa isipokuwa --decorated kitatolewa.",
+    .help_behavior_text = "Mipangilio ya wasilisho huhifadhiwa wakati stdout ni terminal; vinginevyo yanatumika tu kwa ombi la sasa. Kwa chaguo-msingi, mabadiliko ya --open/--close/--show/--hide huhifadhiwa kila wakati. Rangi huwashwa kwa chaguo-msingi kwa pato la mwisho na kuzima kwa pato lingine. --temp au --persist/--save inabatilisha kwa uwazi sheria hizi za kuokoa.",
+    .persistence_note_tty = "Ujumbe: {s}: imehifadhiwa kwa sababu stdout ni terminal; tumia --temp kuitumia kwa ombi hili pekee.",
+    .persistence_note_non_tty = "Ujumbe: {s}: haijahifadhiwa kwa sababu stdout sio terminal; tumia --persist/--save kubatilisha.",
+    .persistence_note_semantic = "Ujumbe: {s}: imehifadhiwa kwa sababu mabadiliko kwenye mwonekano wa mradi ulioshirikiwa yanahifadhiwa kwa chaguo-msingi; tumia --temp kuzitumia kwa ombi hili pekee.",
+    .persistence_note_env = "Ujumbe: {s}: haijahifadhiwa kwa sababu DIRTREE_TEMP=1; tumia --persist/--save kubatilisha.",
+    .persistence_note_mute = "Weka DIRTREE_MUTE_PERSISTENCE_REASON=1 ili kukandamiza ujumbe huu wa habari.",
     .help_examples_header = "Mifano:",
     .help_example_1 = "  dirtree                       # Onyesha mti wa saraka ya sasa",
     .help_example_2 = "  dirtree -d 3                  # Weka kina kuwa viwango 3",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Zingatia mti mdogo, ukikunja saraka za ndugu (inarudiwa)",
     .help_opt_html = "  --html [FILE]      Andika mti wa HTML unaojitegemea kwenye FILE (- = stdout; acha = fungua kwenye kivinjari)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Ficha shabaha za symlink; --no-targets huondoa pia viungo (matokeo yanayobebeka)",
-
 
     // ── Ujumbe wa onyo (matokeo makubwa) ───────────────────────
     .warn_large_output_prefix = "Onyo: matokeo ni takriban ",

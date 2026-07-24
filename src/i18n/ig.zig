@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Gosi nkọwa zuru ezu",
     .help_opt_depth = "  -d, --depth N      Tọọ omimi kachasị (ndabara: 4)",
     .help_opt_temp = "  -t, --temp         Tinye mgbanwe maka ọsọ a naanị (echekwabeghị)",
+    .help_opt_persist = "  --persist, --save  Chekwaa ntọala ndị a (na-ewepụ non-TTY na DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Gosi PATH ọ bụrụgodị na ọ dị ka ọkọlọtọ ma ọ bụ iwu obere",
     .help_opt_simple = "  --simple           Wepụta osisi dị mfe nke LLMs na-aghọta",
     .help_opt_decorated = "  --decorated        Manye mmepụta achọrọ mma (ọbụnadị mgbe ọ bụ pipe)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Jiri /pattern/ ma ọ bụ !/pattern/ na --open/--close/--show/--hide iji tinye iwu regex; a na-emeso arụmụka ndị ọzọ dị ka mkpụrụokwu.",
     .help_relative_note = "Ụzọ enyere --show/--hide ga-abụrịrị nke metụtara (na-enweghị '/' n'ihu).",
     .help_behavior_header = "Omume:",
-    .help_behavior_text = "Site na ndabara, mgbe stdout abụghị TTY (pipe), a na-agbanyụ agba/akara/njikọ ọ gwụla ma e nyere --decorated.",
+    .help_behavior_text = "A na-echekwa ntọala ngosi mgbe stdout bụ ọnụ; ma ọ bụghị ya, ha na-emetụta naanị maka oku ugbu a. Site na ndabara, a na-echekwa mgbanwe --open/--close/--show/--hide mgbe niile. Agba agbanyere na ndabara maka mmepụta ọnụ yana gbanyụọ maka mmepụta ọzọ. --temp ma ọ bụ --persist/--save na-emebi iwu nchekwa ndị a n'ụzọ doro anya.",
+    .persistence_note_tty = "Ozi: {s}: echekwara n'ihi na stdout bụ ọnụ; jiri --temp tinye ya naanị na oku a.",
+    .persistence_note_non_tty = "Ozi: {s}: echekwaghị ya n'ihi na stdout abụghị ọnụ; jiri --persist/--save kagbuo.",
+    .persistence_note_semantic = "Ozi: {s}: echekwara n'ihi na a na-echekwa mgbanwe na nleba anya oru ngo na ndabara; jiri --temp tinye ha naanị na oku a.",
+    .persistence_note_env = "Ozi: {s}: echekwaghị ya n'ihi na DIRTREE_TEMP=1; jiri --persist/--save kagbuo.",
+    .persistence_note_mute = "Tọọ DIRTREE_MUTE_PERSISTENCE_REASON=1 ka ọ kwụsị ozi ozi a.",
     .help_examples_header = "Ihe atụ:",
     .help_example_1 = "  dirtree                       # Gosi osisi nke ndaka ugbu a",
     .help_example_2 = "  dirtree -d 3                  # Tọọ omimi na ọkwa 3",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Lekwasị anya n'otu subtree, na-emechi ndaka ụmụnne (a ga-emegharị ya)",
     .help_opt_html = "  --html [FILE]      Dee osisi HTML kwụ onwe ya na FILE (- = stdout; hapụ = mepee na ihe nchọgharị)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Zoo ebumnuche symlink; --no-targets na-ewepụkwa njikọ (mmepụta enwere ike ibu)",
-
 
     // ── Ozi ịdọ aka na ntị (nnukwu mmepụta) ────────────────────
     .warn_large_output_prefix = "Ịdọ aka na ntị: mmepụta dị ihe dịka ~",

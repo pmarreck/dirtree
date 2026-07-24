@@ -7,6 +7,53 @@ Grades: 🔥 behavioral/correctness · ‼️ important · ⚠️ advisory.
 
 ---
 
+## Queued CLI design decisions
+
+- [x] **Persistence policy for invocation overrides** — decide whether presentation flags
+  such as `--no-color`, `--depth`, and `--sort` should be one-shot or persistent by
+  default, and name explicit one-shot/persistent policy flags. Required precedence:
+  `DIRTREE_TEMP=1` selects a one-shot default, but explicit `--persist`/`--save` must
+  override it; if opposing CLI policy flags are both supplied, the later flag wins.
+  **Approved policy:** persist implicitly only when actual stdout is a TTY; remain
+  temporary for pipes, redirections, ordinary agent capture, and CI. Explicit CLI policy
+  overrides `DIRTREE_TEMP`, which overrides the TTY-derived default; the later of opposing
+  CLI policy flags wins. Use the real OS TTY result, not `PIPED_STDOUT` or decoration-test
+  overrides. Add explicit `--persist` with `--save` as an equivalent, friendlier alias;
+  retain `-t`/`--temp`/`--temporary`.
+  **Color:** default ON for TTY output and OFF for non-TTY output. `--color`/`--no-color`
+  use the same persistence policy and explicit-argument precedence. Explicit `--color`
+  forces color for that invocation even on non-TTY output (fixing the current discrepancy
+  where it requires `--decorated`); a persisted `color=true` remains an interactive
+  preference and does not, by itself, color ordinary piped/agent output.
+  **Semantic view mutations:** `--show`, `--hide`, `--open`, and `--close` persist
+  by default regardless of TTY because they edit the shared project view rather than
+  presentation for one invocation. An explicit `--temp`/`--temporary` still makes them
+  one-shot; explicit `--persist`/`--save` remains accepted and is idempotent here.
+  **Persistence provenance note:** when persistable settings were supplied and no explicit
+  CLI policy chose the result, emit a concise stderr note naming the changed settings,
+  whether they persisted, and why (TTY/non-TTY, semantic shared-view edit, or
+  `DIRTREE_TEMP=1`), plus the relevant override. Do not emit for a plain listing or for
+  explicit `--temp`/`--temporary`/`--persist`/`--save`. Style dim italic only when stderr
+  is actually a TTY. `DIRTREE_MUTE_PERSISTENCE_REASON=1` suppresses it. Render sample
+  messages for Peter's visual approval before encoding visual assertions.
+  Document the context-sensitive persistence and color defaults, precedence, and examples
+  in CLI help and the README.
+  Preserve the distinction between caller-specific rendering preferences and the shared,
+  semantic project view. _(Design discussion started 2026-07-24.)_
+  **Completed 2026-07-24 13:01 EDT:** implemented category-specific persistence, real-TTY
+  defaults, explicit `--persist`/`--save`, last-argument precedence, non-TTY color behavior,
+  exact provenance notes, mute control, and silent plain listings. Peter visually approved
+  the English note wording and mixed two-line rendering before exact assertions were locked.
+  Help/provenance fields are structurally complete across all 50 locales; technical tokens
+  and `{s}` placeholders were mechanically swept. Translation drafts used dedicated MT with
+  protected CLI/env tokens after the local structured-output model stalled/truncated.
+  As with the existing catalog, `yo ig ps km` prose still warrants native review; typed
+  completeness is not represented as proof of linguistic quality. Final verification:
+  218/218 Zig tests, 201/201 CLI tests, 11/11 build-tooling tests, sandboxed `./build`,
+  help/plain-listing/provenance smoke checks, and clean `git diff --check`.
+
+---
+
 ## Phase 6 — i18n locale-selection bug + skill alignment (2026-07-19/20)
 
 Trigger: inbox note `inbox/2026-07-19-note-help-uses-urdu.md` — `dirtree note --help`

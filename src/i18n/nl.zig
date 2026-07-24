@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Toon gedetailleerde beschrijving",
     .help_opt_depth = "  -d, --depth N      Maximale diepte instellen (standaard: 4)",
     .help_opt_temp = "  -t, --temp         Wijzigingen alleen voor deze run toepassen (niet opgeslagen)",
+    .help_opt_persist = "  --persist, --save  Sla deze instellingen ook op (overschrijft non-TTY en DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Render PATH zelfs als het op een vlag of subcommando lijkt",
     .help_opt_simple = "  --simple           Geef een eenvoudige, LLM-vriendelijke toestandsboom",
     .help_opt_decorated = "  --decorated        Gedecoreerde uitvoer forceren (zelfs bij doorsluizen)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Gebruik /patroon/ of !/patroon/ met --open/--close/--show/--hide om regex-regels toe te voegen; andere argumenten worden als letterlijke tekst behandeld.",
     .help_relative_note = "Paden voor --show/--hide moeten relatief zijn (geen voorafgaande '/').",
     .help_behavior_header = "Gedrag:",
-    .help_behavior_text = "Standaard worden kleuren/pictogrammen/hyperlinks uitgeschakeld wanneer stdout geen TTY is (doorgesluisd), tenzij --decorated is opgegeven.",
+    .help_behavior_text = "Presentatie-instellingen worden opgeslagen wanneer stdout een terminal is; anders zijn ze alleen van toepassing op de huidige aanroep. Standaard worden --open/--close/--show/--hide-wijzigingen altijd opgeslagen. Kleur is standaard ingeschakeld voor terminaluitvoer en uitgeschakeld voor andere uitvoer. --temp of --persist/--save overschrijft deze opslagregels expliciet.",
+    .persistence_note_tty = "Bericht: {s}: opgeslagen omdat stdout een terminal is; gebruik --temp om het alleen op deze aanroep toe te passen.",
+    .persistence_note_non_tty = "Bericht: {s}: niet opgeslagen omdat stdout geen terminal is; gebruik --persist/--save om te overschrijven.",
+    .persistence_note_semantic = "Bericht: {s}: opgeslagen omdat wijzigingen in de gedeelde projectweergave standaard worden opgeslagen; gebruik --temp om ze alleen op deze aanroep toe te passen.",
+    .persistence_note_env = "Bericht: {s}: niet opgeslagen omdat DIRTREE_TEMP=1; gebruik --persist/--save om te overschrijven.",
+    .persistence_note_mute = "Stel DIRTREE_MUTE_PERSISTENCE_REASON=1 in om dit informatiebericht te onderdrukken.",
     .help_examples_header = "Voorbeelden:",
     .help_example_1 = "  dirtree                       # Toon boom van huidige map",
     .help_example_2 = "  dirtree -d 3                  # Diepte op 3 niveaus instellen",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Focus op een subboom, broer-mappen inklappen (herhaalbaar)",
     .help_opt_html = "  --html [FILE]      Schrijf een op zichzelf staande HTML-boom naar FILE (- = stdout; weglaten = openen in browser)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Symlink-doelen verbergen; --no-targets verwijdert ook hyperlinks (draagbare uitvoer)",
-
 
     // ── Waarschuwingen (grote uitvoer) ─────────────────────────
     .warn_large_output_prefix = "Waarschuwing: uitvoer is ~",

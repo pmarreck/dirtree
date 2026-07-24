@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Näytä yksityiskohtainen kuvaus",
     .help_opt_depth = "  -d, --depth N      Aseta enimmäissyvyys (oletus: 4)",
     .help_opt_temp = "  -t, --temp         Käytä muutoksia vain tällä ajokerralla (ei tallenneta)",
+    .help_opt_persist = "  --persist, --save  Tallenna myös nämä asetukset (ohittaa non-TTY ja DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Renderöi PATH, vaikka se näyttäisi valitsimelta tai alikomennolta",
     .help_opt_simple = "  --simple           Tulosta yksinkertainen, kielimalleille sopiva tilallinen puu",
     .help_opt_decorated = "  --decorated        Pakota koristeltu tuloste (myös putkitettuna)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Käytä /kuvio/ tai !/kuvio/ valitsimien --open/--close/--show/--hide kanssa lisätäksesi säännöllisiä lausekkeita; muut argumentit käsitellään kirjaimellisina.",
     .help_relative_note = "Valitsimille --show/--hide annettujen polkujen on oltava suhteellisia (ei alkavaa '/').",
     .help_behavior_header = "Toiminta:",
-    .help_behavior_text = "Oletuksena, kun vakiotuloste ei ole pääte (putkitettu), värit/kuvakkeet/hyperlinkit poistetaan käytöstä, ellei --decorated ole annettu.",
+    .help_behavior_text = "Esitysasetukset tallennetaan, kun stdout on pääte; muuten ne koskevat vain nykyistä kutsua. Oletuksena --open/--close/--show/--hide muutokset tallennetaan aina. Väri on oletusarvoisesti päällä liittimen lähdössä ja pois päältä muussa lähdössä. --temp tai --persist/--save ohittaa nämä tallennussäännöt.",
+    .persistence_note_tty = "Viesti: {s}: tallennettu, koska stdout on pääte; käytä --temp:ta soveltaaksesi sitä vain tähän kutsuun.",
+    .persistence_note_non_tty = "Viesti: {s}: ei tallennettu, koska stdout ei ole pääte; käytä --persist/--save ohittamiseen.",
+    .persistence_note_semantic = "Viesti: {s}: tallennettu, koska muutokset jaettuun projektinäkymään tallennetaan oletusarvoisesti; käytä --temp:ta soveltaaksesi niitä vain tähän kutsuun.",
+    .persistence_note_env = "Viesti: {s}: ei tallennettu, koska DIRTREE_TEMP=1; käytä --persist/--save ohittamiseen.",
+    .persistence_note_mute = "Aseta DIRTREE_MUTE_PERSISTENCE_REASON=1 estämään tämä tiedotusviesti.",
     .help_examples_header = "Esimerkit:",
     .help_example_1 = "  dirtree                       # Näytä nykyisen hakemiston puu",
     .help_example_2 = "  dirtree -d 3                  # Aseta syvyydeksi 3 tasoa",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Keskity alipuuhun ja tiivistä sisarhakemistot (toistettava)",
     .help_opt_html = "  --html [FILE]      Kirjoita itsenäinen HTML-puu tiedostoon FILE (- = stdout; jätä pois = avaa selaimessa)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Piilota symlinkkien kohteet; --no-targets poistaa myös hyperlinkit (siirrettävä tuloste)",
-
 
     // ── Varoitusviestit (suuri tuloste) ────────────────────────
     .warn_large_output_prefix = "Varoitus: tuloste on noin ~",

@@ -56,13 +56,13 @@ Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prer
   - `--show-hidden` temporarily reveals everything hidden by config.
   - Hidden directories/files are counted and summarized after each run (decorated mode uses dim italics; simple mode prints plain text).
 - **Decorated vs simple output**
-  - Decorated mode renders Nerd Font icons, ANSI colors, and OSC8 hyperlinks whenever stdout is a TTY or you force it with `--decorated`. When dirtree detects a pipe, it automatically falls back to monochrome icons and no hyperlinks for log-friendly output unless you opt in via `--decorated` or `PIPED_STDOUT=0`.
+  - Decorated mode renders Nerd Font icons, ANSI colors, and OSC8 hyperlinks whenever stdout is a TTY or you force it with `--decorated`. Color defaults **on** for terminal output and **off** otherwise; an explicit `--color` still forces color through a pipe. When dirtree detects a pipe, it automatically falls back to monochrome icons and no hyperlinks for log-friendly output unless you opt in via `--decorated` or `PIPED_STDOUT=0`.
   - When an entry has a note, the OSC8 hyperlink spans the whole entry **including its note**, so hovering anywhere on the line highlights it end-to-end (and clicking opens the file/dir). In **WezTerm** links highlight on plain hover; in **Ghostty** hold **⌘** (Ctrl on Linux) to highlight/click. Symlinks keep their name and ` -> target` as separate links, so their note sits just outside the link.
   - Simple mode keeps the same tree connectors and monochrome icons but strips ANSI color/hyperlink sequences so LLMs or diff tools get a stable, plaintext-friendly listing (toggle glyphs with `--no-icons`).
   - Auto-simple mode can kick in for non-TTY outputs via `DIRTREE_AUTO_SIMPLE`.
   - Prefer decorating or simplifying via environment? Set `DIRTREE_SIMPLE=1` or `DIRTREE_DECORATED=1` to force either mode without changing scripts.
 - **Deterministic decoration toggles**
-  - `--no-color` and `--no-hyperlinks` disable ANSI colors / OSC8 hyperlinks and **persist** that choice (`color=false`, `hyperlink=false`) in `.dirtree-state`; re-enable any time with `--color` / `--hyperlinks` (also persisted), or override with `--decorated`/`PIPED_STDOUT=0`. `--no-icons` disables icons for the **current run only** (not persisted). Handy for diff-friendly logs or reproducible CI artifacts.
+  - `--no-color`/`--color` and `--no-hyperlinks`/`--hyperlinks` are presentation settings: they persist automatically when stdout is a real terminal and remain one-shot when stdout is piped or redirected. Use `--persist` (alias `--save`) or `--temp` to choose explicitly. `--no-icons` always affects only the current run. Handy for diff-friendly logs or reproducible CI artifacts.
 - **SCM awareness**
   - When a Git or Jujutsu repo is detected, paths reported as modified/untracked are forced visible and opened even if state rules would hide them. Because of this, `--hide`-ing a path that's in the current working-copy changeset is a no-op — it stays visible — and the summary reports how many were kept (e.g. `1 file not hidden due to inclusion in the current git/jj changeset`), so the behavior isn't silently surprising. In a colocated repo (both `.git` and `.jj`), **jj's changeset governs**. Set `DIRTREE_SCM_CHANGES_STAY_HIDDEN_OR_CLOSED=1` to opt out.
 - **CLI conveniences**
@@ -70,7 +70,7 @@ Bleeding-edge rolling builds from every push to `yolo` are at the [`latest` prer
   - Regex negation composes in two ways that can surprise you: the `!/pattern/` prefix matches the *inverse*, and a leading `(?!...)` lookahead is itself a negation — stacking both (e.g. `--hide '!/^(?!keep).*/'`) double-negates and does the opposite of what it reads like. dirtree prints a one-line note when a `--hide`/`--show` rule uses either form. For "focus on one path," prefer `--only PATH` (one-shot, nothing persisted) or a positive `--show /pattern/`; remember show rules win over hide. When rules get tangled, `.dirtree-state` is plain text you can hand-edit.
   - `--default` and `--sort` options to tune depth and ordering.
   - `--test` hook to run the bash test suite.
-  - `--no-icons` (current run) and `--no-color` / `--no-hyperlinks` (persisted; restore with `--color` / `--hyperlinks`) disable individual decorations when you truly need plain text.
+  - `--no-icons` (current run) and `--no-color` / `--no-hyperlinks` (context-sensitive presentation settings; restore with `--color` / `--hyperlinks`) disable individual decorations when you truly need plain text.
   - `dirtree annotate PATH "description"` (alias `note`) persists a one-line note about a file or directory; pass an empty string to clear it. Notes display inline next to the entry as a dim `# comment`. Notes are also inherited from parent `.dirtree-state` files, with the closer file overriding.
   - `dirtree orphaned-notes [DIR]` lists notes in the current directory's `.dirtree-state` whose target paths no longer exist; `dirtree purge-orphaned-notes [DIR]` removes them (reporting each one). After any listing, dirtree also prints a one-line stderr warning when such orphaned notes exist — suppress it for a run with `--no-orphan-warning`.
   - Notes are shown by default. Hide them for a run with `--no-notes` (or set `DIRTREE_HIDE_NOTES=1` to hide by default); `--show-notes` forces them back on, overriding the env var. This is display-only and never persisted.
@@ -168,22 +168,27 @@ nix build
 
 `./build` prints a one-line warning (never blocks) if the `nixpkgs` pinned in `flake.lock` is more than 7 days old, with a suggested `nix flake update`. Tune the threshold with `FLAKE_LOCK_STALE_DAYS=N`, or set it to `0` to silence the check.
 
-State lives in `.dirtree-state` at the root of whatever directory you run `dirtree` inside. Commit or share those files if you want collaborators (or your future self) to inherit the same view. `dirtree` never creates or edits a state file unless you explicitly ask it to persist changes (e.g., via `--default`, `--open`, `--hide`, etc.), so you can safely inspect trees without committing to a config.
+State lives in `.dirtree-state` at the root of whatever directory you run `dirtree` inside. Commit or share those files if you want collaborators (or your future self) to inherit the same view. A plain `dirtree [PATH]` listing never creates or edits state. Shared-view edits (`--open`, `--close`, `--show`, `--hide`) persist by default; presentation changes follow the terminal-sensitive policy below.
 
 The repo includes `dirtree-state.suggested-default-home-dir`, a sample config you can copy to `$HOME/.dirtree-state` if you want global defaults that apply to every subdirectory beneath your home directory. Feel free to tweak it to match your own "baseline" structure before adopting it.
 
-### Sorting and depth (persistent)
+### Persistence, sorting, and depth
 
-- `-d/--depth N` changes how deep the tree is rendered (default depth is 4) and writes that depth into `.dirtree-state`, so future runs inherit the same cutoff unless you override it again.
-- `-t/--temp/--temporary` (or `DIRTREE_TEMP=1`) applies **any** settings for the current run only, without persisting them to `.dirtree-state`. Combine with anything: `dirtree --depth 1 --temp` for a one-off shallow peek, `dirtree --no-color -t` for a one-off plain render — nothing is saved. (This replaces the old `--temp-depth`: just use `--depth N --temp`.) Single-letter no-arg short flags also cluster, e.g. `-ta` = `-t -a`.
-- `--sort MODE` accepts `modified` (default, newest-first) or `alpha` (lexicographic). Pair it with `--asc` or `--desc` to flip the direction. Both the mode and direction are persisted per directory so you only have to set them once.
+- Presentation settings—including `--depth`, `--sort`, `--asc`/`--desc`, color, hyperlinks, and `--max-lines`—persist automatically when stdout is a **real terminal**. When stdout is piped, redirected, captured by an agent, or used by CI, those settings affect only that invocation.
+- Shared-view edits (`--open`, `--close`, `--show`, `--hide`) persist by default even without a terminal because they describe the project tree rather than one caller's preferred presentation. `--temp` still makes them one-shot.
+- `--persist` and its alias `--save` explicitly save accompanying settings. `-t`/`--temp`/`--temporary` explicitly keep them run-only. The later CLI flag wins if both appear; an explicit CLI choice overrides `DIRTREE_TEMP=1`, which in turn overrides the terminal-derived default.
+- `-d/--depth N` changes how deep the tree is rendered (default depth is 4). For a durable non-interactive change use `dirtree --depth 3 --save`; for a one-off interactive peek use `dirtree --depth 1 --temp`.
+- `--sort MODE` accepts `modified` (default, newest-first) or `alpha` (lexicographic). Pair it with `--asc` or `--desc` to flip the direction.
+- When a persistable setting is supplied without an explicit CLI policy, dirtree writes a dim-italic note to stderr naming the setting, the decision, and its reason. Plain listings and explicit `--temp`/`--persist`/`--save` calls stay silent. Set `DIRTREE_MUTE_PERSISTENCE_REASON=1` to silence implicit-decision notes.
 
 ### Mode environment variables
 
 - `DIRTREE_SIMPLE=1` forces simple mode without passing `--simple`.
 - `DIRTREE_DECORATED=1` behaves like `--decorated`, keeping colors, hyperlinks, and glyphs even when piping dirtree's output.
 - `DIRTREE_AUTO_SIMPLE=1` automatically switches to simple mode whenever stdout isn't a TTY.
-- `PIPED_STDOUT=0|1` lets you override dirtree's TTY detection in non-interactive contexts (e.g., `PIPED_STDOUT=0` treats a pipe as if it were an interactive terminal, restoring hyperlinks and color for tests or automated runs).
+- `DIRTREE_TEMP=1` makes supplied settings run-only unless a later explicit `--persist`/`--save` overrides it.
+- `DIRTREE_MUTE_PERSISTENCE_REASON=1` suppresses implicit persistence-decision notes.
+- `PIPED_STDOUT=0|1` overrides display decoration detection in non-interactive contexts (e.g., `PIPED_STDOUT=0` restores hyperlinks and contextual color for tests). Persistence deliberately uses the real stdout descriptor instead, so this display-test override cannot accidentally write state.
 
 ### Localization
 

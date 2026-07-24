@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Vis detaljert beskrivelse",
     .help_opt_depth = "  -d, --depth N      Angi maksimal dybde (standard: 4)",
     .help_opt_temp = "  -t, --temp         Bruk endringer kun for denne kjøringen (ikke lagret)",
+    .help_opt_persist = "  --persist, --save  Lagre disse innstillingene også (overstyrer non-TTY og DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Tegn PATH selv om den ligner et flagg eller en underkommando",
     .help_opt_simple = "  --simple           Skriv ut et enkelt, LLM-vennlig tilstandsbevisst tre",
     .help_opt_decorated = "  --decorated        Tving dekorert utdata (selv ved rør)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Bruk /mønster/ eller !/mønster/ med --open/--close/--show/--hide for å legge til regex-regler; andre argumenter behandles som bokstavelige.",
     .help_relative_note = "Stier oppgitt til --show/--hide må være relative (ingen ledende '/').",
     .help_behavior_header = "Oppførsel:",
-    .help_behavior_text = "Som standard, når stdout ikke er en TTY (rør), slås farger/ikoner/hyperlenker av med mindre --decorated er angitt.",
+    .help_behavior_text = "Presentasjonsinnstillinger lagres når stdout er en terminal; ellers gjelder de bare den gjeldende påkallingen. Som standard lagres --open/--close/--show/--hide endringer alltid. Farge er på som standard for terminalutgang og av for annen utgang. --temp eller --persist/--save overstyrer disse lagringsreglene eksplisitt.",
+    .persistence_note_tty = "Melding: {s}: lagret fordi stdout er en terminal; bruk --temp for å bruke det bare på denne påkallingen.",
+    .persistence_note_non_tty = "Melding: {s}: ikke lagret fordi stdout ikke er en terminal; bruk --persist/--save for å overstyre.",
+    .persistence_note_semantic = "Melding: {s}: lagret fordi endringer i den delte prosjektvisningen lagres som standard; bruk --temp for å bruke dem bare på denne påkallelsen.",
+    .persistence_note_env = "Melding: {s}: ikke lagret fordi DIRTREE_TEMP=1; bruk --persist/--save for å overstyre.",
+    .persistence_note_mute = "Still inn DIRTREE_MUTE_PERSISTENCE_REASON=1 for å undertrykke denne informasjonsmeldingen.",
     .help_examples_header = "Eksempler:",
     .help_example_1 = "  dirtree                       # Vis tre over gjeldende katalog",
     .help_example_2 = "  dirtree -d 3                  # Sett dybde til 3 nivåer",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Fokuser på et undertre, klapp sammen søskenkataloger (gjentakbar)",
     .help_opt_html = "  --html [FILE]      Skriv et frittstående HTML-tre til FILE (- = stdout; utelat = åpne i nettleser)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Skjul symlenke-mål; --no-targets fjerner også hyperlenker (portabel utdata)",
-
 
     // ── Advarsler (stor utdata) ────────────────────────────────
     .warn_large_output_prefix = "Advarsel: utdata er ~",

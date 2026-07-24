@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Fi àpèjúwe kíkún hàn",
     .help_opt_depth = "  -d, --depth N      Ṣètò ìjìnlẹ̀ tó pọ̀ jù (àbínibí: 4)",
     .help_opt_temp = "  -t, --temp         Lo awọn ayipada fun ṣiṣe yii nikan (kò ní fipamọ)",
+    .help_opt_persist = "  --persist, --save  Ṣafipamọ awọn eto wọnyi paapaa (daju non-TTY ati DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Ya PATH ní àwòrán bí ó tilẹ̀ dàbí flag tàbí àṣẹ-abẹ́",
     .help_opt_simple = "  --simple           Ìjáde igi tó rọrùn, tó bá LLM mu",
     .help_opt_decorated = "  --decorated        Fipá mú ìjáde tí a ṣe lọ́ṣọ̀ọ́ (kódà nígbà piping)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Lo /pattern/ tàbí !/pattern/ pẹ̀lú --open/--close/--show/--hide láti fi àwọn òfin regex kún; àwọn àríyànjiyàn yòókù ni a kà sí gẹ́gẹ́ bí lítírà.",
     .help_relative_note = "Àwọn ọ̀nà tí a fi fún --show/--hide gbọ́dọ̀ jẹ́ ìbátan (kò sí '/' níwájú).",
     .help_behavior_header = "Ìṣesí:",
-    .help_behavior_text = "Ní àbínibí, nígbà tí stdout kì í ṣe TTY (piped), àwọ̀/àmì/hyperlink ni a pa kúrò àfi tí a bá fún --decorated.",
+    .help_behavior_text = "Awọn eto igbejade ti wa ni fipamọ nigbati stdout jẹ ebute; bibẹkọ ti won waye nikan si awọn ti isiyi epe. Nipa aiyipada, awọn ayipada --open/--close/--show/--hide ti wa ni ipamọ nigbagbogbo. Awọ wa ni titan nipasẹ aiyipada fun iṣẹjade ebute ati pipa fun iṣẹjade miiran. --temp tabi --persist/--save ṣe agbero awọn ofin fifipamọ wọnyi ni gbangba.",
+    .persistence_note_tty = "Ifiranṣẹ: {s}: ti a fipamọ nitori stdout jẹ ebute; lo --temp lati fi kan epe yi nikan.",
+    .persistence_note_non_tty = "Ifiranṣẹ: {s}: ko fipamọ nitori stdout kii ṣe ebute; lo --persist/--save lati danu.",
+    .persistence_note_semantic = "Ifiranṣẹ: {s}: ti a fipamọ nitori awọn iyipada si wiwo ise agbese ti a pin ti wa ni ipamọ nipasẹ aiyipada; lo --temp lati lo won nikan si epe yi.",
+    .persistence_note_env = "Ifiranṣẹ: {s}: ko fipamọ nitori DIRTREE_TEMP=1; lo --persist/--save lati danu.",
+    .persistence_note_mute = "Ṣeto DIRTREE_MUTE_PERSISTENCE_REASON=1 lati dinku ifiranṣẹ alaye yii.",
     .help_examples_header = "Àwọn àpẹẹrẹ:",
     .help_example_1 = "  dirtree                       # Fi igi ìwé-ìpamọ́ lọ́wọ́lọ́wọ́ hàn",
     .help_example_2 = "  dirtree -d 3                  # Ṣètò ìjìnlẹ̀ dé ipele 3",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Dojúkọ igi-abẹ́ kan, ká àwọn ìwé-ìpamọ́ ẹgbẹ́ jọ (a lè tún ṣe)",
     .help_opt_html = "  --html [FILE]      Kọ igi HTML alára-ẹni sí FILE (- = stdout; fọ́ = ṣí nínú aṣàwákiri)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Fi àwọn àfojúsùn symlink pamọ́; --no-targets tún yọ àwọn hyperlink kúrò (ìtújáde tí a lè gbé)",
-
 
     // ── Àwọn ìkìlọ̀ (ìjáde ńlá) ──────────────────────────────────
     .warn_large_output_prefix = "Ìkìlọ̀: ìjáde tó ~",

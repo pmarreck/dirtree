@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Sýna nákvæma lýsingu",
     .help_opt_depth = "  -d, --depth N      Stilla hámarksdýpt (sjálfgefið: 4)",
     .help_opt_temp = "  -t, --temp         Beita breytingum aðeins fyrir þessa keyrslu (ekki vistað)",
+    .help_opt_persist = "  --persist, --save  Vistaðu þessar stillingar líka (hnekkir non-TTY og DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Teikna SLÓÐ jafnvel þótt hún líti út eins og flagg eða undirskipun",
     .help_opt_simple = "  --simple           Skila einföldu, mállíkanvænu stöðubundnu tré",
     .help_opt_decorated = "  --decorated        Þvinga skreytt úttak (jafnvel í pípu)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Notaðu /mynstur/ eða !/mynstur/ með --open/--close/--show/--hide til að bæta við reglusafnsreglum; aðrar viðfangstölur eru meðhöndlaðar sem bókstafleg gildi.",
     .help_relative_note = "Slóðir sem gefnar eru --show/--hide verða að vera afstæðar (ekkert fremsta '/').",
     .help_behavior_header = "Hegðun:",
-    .help_behavior_text = "Sjálfgefið, þegar stdout er ekki TTY (pípað), eru litir/tákn/tenglar óvirkir nema --decorated sé gefið.",
+    .help_behavior_text = "Kynningarstillingar eru vistaðar þegar stdout er flugstöð; annars eiga þau aðeins við um núverandi ákall. Sjálfgefið er að --open/--close/--show/--hide breytingar eru alltaf vistaðar. Sjálfgefið er kveikt á lit fyrir úttak útstöðvar og slökkt fyrir annað úttak. --temp eða --persist/--save hnekkir þessum vistunarreglum beinlínis.",
+    .persistence_note_tty = "Skilaboð: {s}: vistuð vegna þess að stdout er flugstöð; notaðu --temp til að nota það aðeins á þessa ákalli.",
+    .persistence_note_non_tty = "Skilaboð: {s}: ekki vistað vegna þess að stdout er ekki flugstöð; notaðu --persist/--save til að hnekkja.",
+    .persistence_note_semantic = "Skilaboð: {s}: vistuð vegna þess að breytingar á sameiginlegu verkefnayfirliti eru vistaðar sjálfgefið; notaðu --temp til að beita þeim aðeins á þessa ákalli.",
+    .persistence_note_env = "Skilaboð: {s}: ekki vistuð vegna þess að DIRTREE_TEMP=1; notaðu --persist/--save til að hnekkja.",
+    .persistence_note_mute = "Stilltu DIRTREE_MUTE_PERSISTENCE_REASON=1 til að bæla niður þessi upplýsingaskilaboð.",
     .help_examples_header = "Dæmi:",
     .help_example_1 = "  dirtree                       # Sýna tré af núverandi möppu",
     .help_example_2 = "  dirtree -d 3                  # Stilla dýpt á 3 stig",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Einbeita sér að undirtré, fella saman systkinamöppur (endurtekjanlegt)",
     .help_opt_html = "  --html [FILE]      Skrifa sjálfstætt HTML-tré í FILE (- = stdout; sleppa = opna í vafra)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Fela tákntengimarkmið; --no-targets fjarlægir einnig tengla (færanlegt úttak)",
-
 
     // ── Viðvörunarskilaboð (stórt úttak) ───────────────────────
     .warn_large_output_prefix = "Viðvörun: úttak er ~",

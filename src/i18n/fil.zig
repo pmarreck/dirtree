@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Ipakita ang detalyadong paglalarawan",
     .help_opt_depth = "  -d, --depth N      Itakda ang maximum na lalim (default: 4)",
     .help_opt_temp = "  -t, --temp         Ilapat ang mga pagbabago para sa pagtakbong ito lang (hindi nai-save)",
+    .help_opt_persist = "  --persist, --save  I-save din ang mga setting na ito (i-override ang non-TTY at DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    I-render ang PATH kahit mukha itong flag o subcommand",
     .help_opt_simple = "  --simple           Maglabas ng simple, LLM-friendly na stateful tree",
     .help_opt_decorated = "  --decorated        Pilitin ang dekoradong output (kahit naka-pipe)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Gamitin ang /pattern/ o !/pattern/ kasama ang --open/--close/--show/--hide upang magdagdag ng mga regex na patakaran; ang ibang argumento ay itinuturing na literal.",
     .help_relative_note = "Ang mga path na ibinibigay sa --show/--hide ay dapat relative (walang nangungunang '/').",
     .help_behavior_header = "Pag-uugali:",
-    .help_behavior_text = "Bilang default, kapag ang stdout ay hindi TTY (naka-pipe), ang mga kulay/icon/hyperlink ay hindi pinagana maliban kung ibinigay ang --decorated.",
+    .help_behavior_text = "Ang mga setting ng pagtatanghal ay nai-save kapag ang stdout ay isang terminal; kung hindi, nalalapat lamang ang mga ito sa kasalukuyang invocation. Bilang default, palaging naka-save ang mga pagbabago sa --open/--close/--show/--hide. Naka-on ang kulay bilang default para sa terminal na output at naka-off para sa iba pang output. Ang --temp o --persist/--save ay tahasang in-override ang mga panuntunang ito sa pag-save.",
+    .persistence_note_tty = "Mensahe: {s}: na-save dahil ang stdout ay isang terminal; gamitin ang --temp para ilapat lamang ito sa invocation na ito.",
+    .persistence_note_non_tty = "Mensahe: {s}: hindi na-save dahil ang stdout ay hindi isang terminal; gamitin ang --persist/--save para i-override.",
+    .persistence_note_semantic = "Mensahe: {s}: na-save dahil ang mga pagbabago sa nakabahaging view ng proyekto ay nai-save bilang default; gamitin ang --temp upang ilapat lamang ang mga ito sa invocation na ito.",
+    .persistence_note_env = "Mensahe: {s}: hindi na-save dahil DIRTREE_TEMP=1; gamitin ang --persist/--save para i-override.",
+    .persistence_note_mute = "Itakda ang DIRTREE_MUTE_PERSISTENCE_REASON=1 upang sugpuin ang mensaheng ito ng impormasyon.",
     .help_examples_header = "Mga halimbawa:",
     .help_example_1 = "  dirtree                       # Ipakita ang tree ng kasalukuyang directory",
     .help_example_2 = "  dirtree -d 3                  # Itakda ang lalim sa 3 antas",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Magpokus sa isang subtree, tinitiklop ang mga kapatid na directory (maaaring ulitin)",
     .help_opt_html = "  --html [FILE]      Isulat ang standalone na HTML tree sa FILE (- = stdout; laktawan = buksan sa browser)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Itago ang mga target ng symlink; --no-targets nag-aalis din ng hyperlink (portable na output)",
-
 
     // ── Mga mensahe ng babala (malaking output) ────────────────
     .warn_large_output_prefix = "Babala: ang output ay humigit-kumulang ~",

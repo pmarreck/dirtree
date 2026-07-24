@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        Prikaži detaljan opis",
     .help_opt_depth = "  -d, --depth N      Postavi maksimalnu dubinu (zadano: 4)",
     .help_opt_temp = "  -t, --temp         Primijeni promjene samo za ovo pokretanje (nije spremljeno)",
+    .help_opt_persist = "  --persist, --save  Spremite i ove postavke (nadjačava non-TTY i DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    Iscrtaj PATH čak i ako izgleda kao zastavica ili podnaredba",
     .help_opt_simple = "  --simple           Ispiši jednostavno stablo prikladno za LLM-ove",
     .help_opt_decorated = "  --decorated        Prisili ukrašeni ispis (čak i kod cijevi)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "Koristi /uzorak/ ili !/uzorak/ s --open/--close/--show/--hide za dodavanje regex pravila; ostali argumenti tretiraju se kao literali.",
     .help_relative_note = "Putanje predane uz --show/--hide moraju biti relativne (bez vodeće '/').",
     .help_behavior_header = "Ponašanje:",
-    .help_behavior_text = "Po zadanom, kada stdout nije TTY (cijev), boje/ikone/hiperveze su onemogućene osim ako je naveden --decorated.",
+    .help_behavior_text = "Postavke prezentacije spremaju se kada je stdout terminal; inače se primjenjuju samo na trenutno pozivanje. Prema zadanim postavkama, --open/--close/--show/--hide promjene se uvijek spremaju. Boja je prema zadanim postavkama uključena za izlaz terminala i isključena za ostale izlaze. --temp ili --persist/--save izričito nadjačavaju ova pravila spremanja.",
+    .persistence_note_tty = "Poruka: {s}: spremljeno jer je stdout terminal; koristite --temp da ga primijenite samo na ovaj poziv.",
+    .persistence_note_non_tty = "Poruka: {s}: nije spremljeno jer stdout nije terminal; koristite --persist/--save za nadjačavanje.",
+    .persistence_note_semantic = "Poruka: {s}: spremljeno jer su promjene u zajedničkom prikazu projekta spremljene prema zadanim postavkama; koristite --temp da ih primijenite samo na ovaj poziv.",
+    .persistence_note_env = "Poruka: {s}: nije spremljeno jer DIRTREE_TEMP=1; koristite --persist/--save za nadjačavanje.",
+    .persistence_note_mute = "Postavite DIRTREE_MUTE_PERSISTENCE_REASON=1 da potisne ovu informativnu poruku.",
     .help_examples_header = "Primjeri:",
     .help_example_1 = "  dirtree                       # Prikaži stablo trenutnog direktorija",
     .help_example_2 = "  dirtree -d 3                  # Postavi dubinu na 3 razine",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        Usredotoči se na podstablo, sažimajući srodne direktorije (ponovljivo)",
     .help_opt_html = "  --html [FILE]      Zapiši samostalno HTML stablo u FILE (- = stdout; izostavi = otvori u pregledniku)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  Sakrij ciljeve simboličkih poveznica; --no-targets uklanja i hiperveze (prijenosni izlaz)",
-
 
     // ── Poruke upozorenja (velik ispis) ────────────────────────
     .warn_large_output_prefix = "Upozorenje: ispis je ~",

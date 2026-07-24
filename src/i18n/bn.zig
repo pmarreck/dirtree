@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        বিস্তারিত বিবরণ দেখান",
     .help_opt_depth = "  -d, --depth N      সর্বোচ্চ গভীরতা নির্ধারণ করুন (ডিফল্ট: 4)",
     .help_opt_temp = "  -t, --temp         শুধু এই রানের জন্য পরিবর্তন প্রয়োগ করুন (সংরক্ষণ করা হয় না)",
+    .help_opt_persist = "  --persist, --save  এই সেটিংসগুলিও সংরক্ষণ করুন (non-TTY এবং DIRTREE_TEMP ওভাররাইড করে)",
     .help_opt_path = "  -p, --path PATH    PATH রেন্ডার করুন এমনকি যদি এটি ফ্ল্যাগ বা সাবকমান্ডের মতো দেখায়",
     .help_opt_simple = "  --simple           একটি সরল, LLM-বান্ধব অবস্থা-সংরক্ষণকারী ট্রি আউটপুট করুন",
     .help_opt_decorated = "  --decorated        সজ্জিত আউটপুট বাধ্যতামূলক করুন (পাইপ করা হলেও)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "রেজেক্স নিয়ম যোগ করতে --open/--close/--show/--hide-এর সাথে /pattern/ বা !/pattern/ ব্যবহার করুন; অন্যান্য আর্গুমেন্ট আক্ষরিক হিসেবে গণ্য হয়।",
     .help_relative_note = "--show/--hide-এ সরবরাহকৃত পাথ অবশ্যই আপেক্ষিক হতে হবে (অগ্রবর্তী '/' ছাড়া)।",
     .help_behavior_header = "আচরণ:",
-    .help_behavior_text = "ডিফল্টভাবে, যখন stdout একটি TTY নয় (পাইপ করা হয়), তখন --decorated না দেওয়া হলে রঙ/আইকন/হাইপারলিংক নিষ্ক্রিয় থাকে।",
+    .help_behavior_text = "stdout একটি টার্মিনাল হলে উপস্থাপনা সেটিংস সংরক্ষণ করা হয়; অন্যথায় তারা শুধুমাত্র বর্তমান আহবানে প্রযোজ্য। ডিফল্টরূপে, --open/--close/--show/--hide পরিবর্তন সবসময় সংরক্ষিত হয়। টার্মিনাল আউটপুটের জন্য ডিফল্টরূপে রঙ চালু থাকে এবং অন্যান্য আউটপুটের জন্য বন্ধ থাকে। --temp বা --persist/--save স্পষ্টভাবে এই সংরক্ষণের নিয়মগুলিকে ওভাররাইড করে৷",
+    .persistence_note_tty = "বার্তা: {s}: সংরক্ষণ করা হয়েছে কারণ stdout একটি টার্মিনাল; এটি শুধুমাত্র এই আহ্বানে প্রয়োগ করতে --temp ব্যবহার করুন।",
+    .persistence_note_non_tty = "বার্তা: {s}: সংরক্ষণ করা হয়নি কারণ stdout একটি টার্মিনাল নয়; ওভাররাইড করতে --persist/--save ব্যবহার করুন।",
+    .persistence_note_semantic = "বার্তা: {s}: সংরক্ষিত হয়েছে কারণ ভাগ করা প্রকল্প দৃশ্যে পরিবর্তনগুলি ডিফল্টরূপে সংরক্ষিত হয়; শুধুমাত্র এই আহ্বানে প্রয়োগ করতে --temp ব্যবহার করুন।",
+    .persistence_note_env = "বার্তা: {s}: সংরক্ষণ করা হয়নি কারণ DIRTREE_TEMP=1; ওভাররাইড করতে --persist/--save ব্যবহার করুন।",
+    .persistence_note_mute = "এই তথ্যমূলক বার্তাটি দমন করতে DIRTREE_MUTE_PERSISTENCE_REASON=1 সেট করুন।",
     .help_examples_header = "উদাহরণ:",
     .help_example_1 = "  dirtree                       # বর্তমান ডিরেক্টরির ট্রি দেখান",
     .help_example_2 = "  dirtree -d 3                  # গভীরতা 3 স্তরে নির্ধারণ করুন",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        একটি সাবট্রিতে মনোনিবেশ করুন, সহোদর ডিরেক্টরি ভাঁজ করে (পুনরাবৃত্তিযোগ্য)",
     .help_opt_html = "  --html [FILE]      স্বয়ংসম্পূর্ণ HTML ট্রি FILE-এ লিখুন (- = stdout; বাদ দিলে = ব্রাউজারে খুলুন)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  সিমলিংক টার্গেট লুকান; --no-targets হাইপারলিংকও সরায় (পোর্টেবল আউটপুট)",
-
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "সতর্কতা: আউটপুট প্রায় ~",

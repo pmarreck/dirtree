@@ -29,6 +29,26 @@ pub const DefaultState = enum {
 	closed,
 };
 
+/// Controls whether invocation settings are written to `.dirtree-state`.
+/// Automatic mode persists direct-terminal changes and semantic view edits.
+pub const PersistencePolicy = enum {
+    automatic,
+    temporary,
+    persistent,
+};
+
+pub const PersistenceSource = enum {
+    context,
+    environment,
+    cli,
+};
+
+pub const PersistenceDecision = struct {
+    presentation: bool,
+    semantic: bool,
+    migration: bool,
+};
+
 pub const ArgEntry = struct {
 	value: []const u8,
 	kind: state_mod.PatternKind,
@@ -47,9 +67,8 @@ pub const CliConfig = struct {
 	simple_mode: bool = false,
 	force_decorated: bool = false,
 	no_icons: bool = false,
-	no_color: bool = false,
-	// Affirmative inverse of --no-color: re-enable + persist color (escape the one-way door)
-	color: bool = false,
+    // Last explicit --color/--no-color wins; null means use state + TTY default.
+    color_override: ?bool = null,
 	// Suppress the post-listing orphaned-notes warning (this run only, not persisted)
 	no_orphan_warning: bool = false,
 	// Tri-state note visibility: true=--show-notes, false=--no-notes, null=unset
@@ -65,12 +84,18 @@ pub const CliConfig = struct {
 	hide_hyperlinks_run: bool = false,
 	// Affirmative inverse of --no-hyperlinks
 	hyperlinks: bool = false,
-	// Apply CLI overrides for this run only; do NOT persist to .dirtree-state.
-	temporary: bool = false,
+    // Explicit CLI policy overrides DIRTREE_TEMP, which overrides actual TTY context.
+    persistence_policy: PersistencePolicy = .automatic,
+    persistence_source: PersistenceSource = .context,
 	show_hidden: bool = false,
 	rewrite_settings: bool = false,
 	show_config: bool = false,
+    // Decoration/output behavior may be test-overridden via PIPED_STDOUT.
 	stdout_is_tty: bool = true,
+    // Persistence must use the real OS TTY result, never PIPED_STDOUT.
+    actual_stdout_is_tty: bool = true,
+    actual_stderr_is_tty: bool = true,
+    mute_persistence_reason: bool = false,
 
 	// Depth
 	depth: ?u32 = null,
@@ -112,6 +137,9 @@ pub const CliConfig = struct {
 
 	// State mutation flag (any --open/--close/--show/--hide/--default/--sort/--depth)
 	state_modified: bool = false,
+    presentation_modified: bool = false,
+    // Structural edits persist under automatic policy even when stdout is piped.
+    semantic_view_modified: bool = false,
 
 	pub fn deinit(self: *CliConfig, allocator: std.mem.Allocator) void {
 		freeOwnedEntries(allocator, &self.open_regexes);
@@ -401,8 +429,11 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 
 	const s = i18n.tr();
 
-	// Detect TTY
-	config.stdout_is_tty = detectTty();
+    // Keep the actual stdout TTY separate from display-test overrides:
+    // persistence is a state-safety decision and must use the real descriptor.
+    config.actual_stdout_is_tty = detectActualStdoutTty();
+    config.actual_stderr_is_tty = detectActualStderrTty();
+    config.stdout_is_tty = detectDisplayTty(config.actual_stdout_is_tty);
 
 	// Check environment variables
 	applyEnvVars(&config);
@@ -502,7 +533,8 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 			return .about;
 		}
 		if (std.mem.eql(u8, arg, "-t")) {
-			config.temporary = true;
+            config.persistence_policy = .temporary;
+            config.persistence_source = .cli;
 			i += 1;
 			continue;
 		}
@@ -592,6 +624,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						};
 						config.depth = depth;
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
@@ -611,14 +644,16 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						continue;
 					},
 					.no_color => {
-						config.no_color = true;
+                        config.color_override = false;
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
 					.color => {
-						config.color = true;
+                        config.color_override = true;
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
@@ -662,6 +697,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.no_hyperlinks => {
 						config.no_hyperlinks = true;
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
@@ -681,11 +717,19 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.hyperlinks => {
 						config.hyperlinks = true;
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
 					.temporary => {
-						config.temporary = true;
+                        config.persistence_policy = .temporary;
+                        config.persistence_source = .cli;
+                        i += 1;
+                        continue;
+                    },
+                    .persistent => {
+                        config.persistence_policy = .persistent;
+                        config.persistence_source = .cli;
 						i += 1;
 						continue;
 					},
@@ -696,6 +740,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					},
 					.rewrite_settings => {
 						config.rewrite_settings = true;
+                        config.semantic_view_modified = true;
 						i += 1;
 						continue;
 					},
@@ -715,6 +760,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 						};
 						config.max_lines = ml;
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
@@ -773,12 +819,14 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 					.asc => {
 						config.sort_direction = .asc;
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
 					.desc => {
 						config.sort_direction = .desc;
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
@@ -796,6 +844,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 							return .{ .err = s.err_sort_requires_mode };
 						}
 						config.state_modified = true;
+                        config.presentation_modified = true;
 						i += 1;
 						continue;
 					},
@@ -809,6 +858,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								}
 								i += count;
 								config.state_modified = true;
+                                config.semantic_view_modified = true;
 								continue;
 							},
 							.err => |msg| {
@@ -826,6 +876,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								}
 								i += count;
 								config.state_modified = true;
+                                config.semantic_view_modified = true;
 								continue;
 							},
 							.err => |msg| {
@@ -843,6 +894,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								}
 								i += count;
 								config.state_modified = true;
+                                config.semantic_view_modified = true;
 								continue;
 							},
 							.err => |msg| {
@@ -860,6 +912,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								}
 								i += count;
 								config.state_modified = true;
+                                config.semantic_view_modified = true;
 								continue;
 							},
 							.err => |msg| {
@@ -877,6 +930,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, raw_args: []const [:0]const u8) P
 								}
 								i += count;
 								config.state_modified = true;
+                                config.semantic_view_modified = true;
 								continue;
 							},
 							.err => |msg| {
@@ -1035,13 +1089,21 @@ fn collectDefaultArgs(args: []const [:0]const u8, config: *CliConfig) DefaultArg
 	return .{ .ok = count };
 }
 
-fn detectTty() bool {
+fn detectActualStdoutTty() bool {
+    return std.Io.File.stdout().isTty(runtime.io()) catch false;
+}
+
+fn detectActualStderrTty() bool {
+    return std.Io.File.stderr().isTty(runtime.io()) catch false;
+}
+
+fn detectDisplayTty(actual_stdout_is_tty: bool) bool {
 	// Check PIPED_STDOUT env var first (all locale aliases)
 	if (i18n.getEnvLocalized(.piped_stdout)) |val| {
 		// PIPED_STDOUT truthy => treat as piped; falsy => treat as TTY.
 		if (state_mod.parseBool(val)) |piped| return !piped;
 	}
-	return std.Io.File.stdout().isTty(runtime.io()) catch false;
+    return actual_stdout_is_tty;
 }
 
 fn applyEnvVars(config: *CliConfig) void {
@@ -1060,7 +1122,136 @@ fn applyEnvVars(config: *CliConfig) void {
 		if (isTruthyEnv(val)) config.cli_notes = false;
 	}
 	if (i18n.getEnvLocalized(.dirtree_temp)) |val| {
-		if (isTruthyEnv(val)) config.temporary = true;
+        if (isTruthyEnv(val)) {
+            config.persistence_policy = .temporary;
+            config.persistence_source = .environment;
+        }
+    }
+    if (i18n.getEnvLocalized(.dirtree_mute_persistence_reason)) |val| {
+        if (isTruthyEnv(val)) config.mute_persistence_reason = true;
+    }
+}
+
+/// Resolve state-write policy per category so a semantic edit cannot drag a
+/// one-shot presentation override into shared state.
+fn resolvePersistence(
+    policy: PersistencePolicy,
+    actual_stdout_is_tty: bool,
+) PersistenceDecision {
+    return switch (policy) {
+        .temporary => .{ .presentation = false, .semantic = false, .migration = false },
+        .persistent => .{ .presentation = true, .semantic = true, .migration = true },
+        .automatic => .{
+            .presentation = actual_stdout_is_tty,
+            .semantic = true,
+            .migration = actual_stdout_is_tty,
+        },
+    };
+}
+
+const PersistenceSettingCategory = enum {
+    all,
+    presentation,
+    semantic,
+};
+
+fn appendPersistenceSetting(buf: []u8, len: *usize, flag: []const u8) void {
+    const separator = if (len.* == 0) "" else ", ";
+    std.debug.assert(len.* + separator.len + flag.len <= buf.len);
+    @memcpy(buf[len.*..][0..separator.len], separator);
+    len.* += separator.len;
+    @memcpy(buf[len.*..][0..flag.len], flag);
+    len.* += flag.len;
+}
+
+/// Summarize only the CLI settings whose persistence decision is being
+/// explained, keeping mixed semantic/presentation invocations unambiguous.
+fn formatPersistenceSettings(
+    buf: []u8,
+    cfg: *const CliConfig,
+    category: PersistenceSettingCategory,
+) []const u8 {
+    var len: usize = 0;
+    const include_presentation = category != .semantic;
+    const include_semantic = category != .presentation;
+
+    if (include_presentation) {
+        if (cfg.depth != null) appendPersistenceSetting(buf, &len, "--depth");
+        if (cfg.color_override) |enabled| {
+            appendPersistenceSetting(buf, &len, if (enabled) "--color" else "--no-color");
+        }
+        if (cfg.no_hyperlinks) appendPersistenceSetting(buf, &len, "--no-hyperlinks");
+        if (cfg.hyperlinks) appendPersistenceSetting(buf, &len, "--hyperlinks");
+        if (cfg.max_lines != null) appendPersistenceSetting(buf, &len, "--max-lines");
+        if (cfg.sort_mode != null) appendPersistenceSetting(buf, &len, "--sort");
+        if (cfg.sort_direction) |direction| {
+            appendPersistenceSetting(buf, &len, if (direction == .asc) "--asc" else "--desc");
+        }
+    }
+
+    if (include_semantic) {
+        if (cfg.default_state != null) appendPersistenceSetting(buf, &len, "--default");
+        if (cfg.open_literals.items.len != 0 or cfg.open_regexes.items.len != 0)
+            appendPersistenceSetting(buf, &len, "--open");
+        if (cfg.close_literals.items.len != 0 or cfg.close_regexes.items.len != 0)
+            appendPersistenceSetting(buf, &len, "--close");
+        if (cfg.show_literals.items.len != 0 or cfg.show_regexes.items.len != 0)
+            appendPersistenceSetting(buf, &len, "--show");
+        if (cfg.hide_literals.items.len != 0 or cfg.hide_regexes.items.len != 0)
+            appendPersistenceSetting(buf, &len, "--hide");
+        if (cfg.rewrite_settings) appendPersistenceSetting(buf, &len, "--rewrite-settings");
+    }
+
+    return buf[0..len];
+}
+
+fn writePersistenceReasonLine(
+    writer: anytype,
+    cfg: *const CliConfig,
+    s: *const i18n.Strings,
+    settings: []const u8,
+    reason: enum { tty, non_tty, semantic, environment },
+) !void {
+    if (settings.len == 0) return;
+    if (cfg.actual_stderr_is_tty) try writer.writeAll(ansi_mod.dim_italic);
+    const template = switch (reason) {
+        .tty => s.persistence_note_tty,
+        .non_tty => s.persistence_note_non_tty,
+        .semantic => s.persistence_note_semantic,
+        .environment => s.persistence_note_env,
+    };
+    var note_buf: [1024]u8 = undefined;
+    try writer.writeAll(i18n.fmtRuntime(&note_buf, template, &.{settings}));
+    try writer.writeAll(" ");
+    try writer.writeAll(s.persistence_note_mute);
+    if (cfg.actual_stderr_is_tty) try writer.writeAll(ansi_mod.reset);
+    try writer.writeAll("\n");
+}
+
+/// Explain implicit persistence only when settings were supplied. Explicit CLI
+/// policy is self-explanatory, and a plain tree listing remains silent.
+fn writePersistenceReasons(writer: anytype, cfg: *const CliConfig) !void {
+    if (!cfg.state_modified or cfg.mute_persistence_reason or cfg.persistence_source == .cli) return;
+
+    const s = i18n.tr();
+    var settings_buf: [256]u8 = undefined;
+    if (cfg.persistence_source == .environment) {
+        const settings = formatPersistenceSettings(&settings_buf, cfg, .all);
+        return writePersistenceReasonLine(writer, cfg, s, settings, .environment);
+    }
+
+    if (cfg.actual_stdout_is_tty) {
+        const settings = formatPersistenceSettings(&settings_buf, cfg, .all);
+        return writePersistenceReasonLine(writer, cfg, s, settings, .tty);
+    }
+
+    if (cfg.semantic_view_modified) {
+        const settings = formatPersistenceSettings(&settings_buf, cfg, .semantic);
+        try writePersistenceReasonLine(writer, cfg, s, settings, .semantic);
+    }
+    if (cfg.presentation_modified) {
+        const settings = formatPersistenceSettings(&settings_buf, cfg, .presentation);
+        try writePersistenceReasonLine(writer, cfg, s, settings, .non_tty);
 	}
 }
 
@@ -1173,6 +1364,7 @@ fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
 		.{ .flag = "-a, --about", .text = s.help_opt_about, .args = &[_]i18n.CliArg{.about} },
 		.{ .flag = "-d, --depth N", .text = s.help_opt_depth, .args = &[_]i18n.CliArg{.depth} },
 		.{ .flag = "-t, --temp", .text = s.help_opt_temp, .args = &[_]i18n.CliArg{.temporary} },
+        .{ .flag = "--persist, --save", .text = s.help_opt_persist, .args = &[_]i18n.CliArg{.persistent} },
 		.{ .flag = "-p, --path PATH", .text = s.help_opt_path, .args = &[_]i18n.CliArg{.path} },
 		.{ .flag = "--simple", .text = s.help_opt_simple, .args = &[_]i18n.CliArg{.simple} },
 		.{ .flag = "--decorated", .text = s.help_opt_decorated, .args = &[_]i18n.CliArg{.decorated} },
@@ -1265,7 +1457,6 @@ fn writeOptions(writer: anytype, s: *const i18n.Strings) !void {
 	try writer.writeAll("\n");
 }
 
-
 pub fn printHelp(writer: anytype) !void {
 	const s = i18n.tr();
 	try writer.writeAll(s.help_title);
@@ -1282,6 +1473,8 @@ pub fn printHelp(writer: anytype) !void {
 	try writer.writeAll(s.help_behavior_header);
 	try writer.writeAll(" ");
 	try writer.writeAll(s.help_behavior_text);
+    try writer.writeAll("\n");
+    try writer.writeAll(s.persistence_note_mute);
 	try writer.writeAll("\n\n");
 	try writer.writeAll(s.help_examples_header);
 	try writer.writeAll("\n");
@@ -1625,12 +1818,20 @@ pub fn main(init: std.process.Init) !u8 {
 			const use_simple = render_config.simple_mode;
 
 			// Persist state if modified
-			if (!cfg.temporary and (cfg.state_modified or effective.needs_migration or cfg.rewrite_settings)) {
-				persistState(allocator, abs_dir, &cfg, &effective) catch |err| {
+            const persistence = resolvePersistence(cfg.persistence_policy, cfg.actual_stdout_is_tty);
+            const write_state =
+                (persistence.presentation and cfg.presentation_modified) or
+                (persistence.semantic and cfg.semantic_view_modified) or
+                (persistence.migration and effective.needs_migration);
+            var state_write_failed = false;
+            if (write_state) {
+                persistState(allocator, abs_dir, &cfg, &effective, persistence) catch |err| {
+                    state_write_failed = true;
 					try stderr.print("Warning: could not persist state: {}\n", .{err});
 					try stderr.flush();
 				};
 			}
+            if (!state_write_failed) try writePersistenceReasons(stderr, &cfg);
 
 			// HTML output: build the pure node tree (reusing the shared visibility
 			// engine) and emit a single self-contained .html document to stdout.
@@ -1883,11 +2084,8 @@ fn applyCliOverrides(allocator: std.mem.Allocator, cfg: *const CliConfig, effect
 	}
 
 	// Apply CLI color/hyperlink preferences
-	if (cfg.no_color) {
-		effective.color_preference = false;
-	}
-	if (cfg.color) {
-		effective.color_preference = true;
+    if (cfg.color_override) |use_color| {
+        effective.color_preference = use_color;
 	}
 	if (cfg.no_hyperlinks) {
 		effective.hyperlink_preference = false;
@@ -2013,6 +2211,7 @@ fn persistState(
 	abs_dir: []const u8,
 	cfg: *const CliConfig,
 	effective: *const path_eval.EffectiveState,
+    persistence: PersistenceDecision,
 ) !void {
 	// Read the existing local state file (if any)
 	const state_path = try std.fs.path.join(allocator, &.{ abs_dir, ".dirtree-state" });
@@ -2034,13 +2233,7 @@ fn persistState(
 	defer sf.deinit();
 
 	// Apply CLI mutations to the state file
-	if (cfg.default_state) |ds| {
-		sf.default_state = switch (ds) {
-			.opened => .opened,
-			.closed => .closed,
-		};
-		sf.default_state_set = true;
-	}
+    if (persistence.presentation) {
 	if (cfg.depth) |d| {
 		sf.depth = d;
 	}
@@ -2056,11 +2249,8 @@ fn persistState(
 			.desc => .desc,
 		};
 	}
-	if (cfg.no_color) {
-		sf.color_preference = false;
-	}
-	if (cfg.color) {
-		sf.color_preference = true;
+        if (cfg.color_override) |use_color| {
+            sf.color_preference = use_color;
 	}
 	if (cfg.no_hyperlinks) {
 		sf.hyperlink_preference = false;
@@ -2071,7 +2261,16 @@ fn persistState(
 	if (cfg.max_lines) |ml| {
 		sf.max_lines = ml;
 	}
+    }
 
+    if (persistence.semantic) {
+        if (cfg.default_state) |ds| {
+            sf.default_state = switch (ds) {
+                .opened => .opened,
+                .closed => .closed,
+            };
+            sf.default_state_set = true;
+        }
 	// Apply open/close/show/hide from CLI
 	for (cfg.open_literals.items) |lit| {
 		// Remove from close if present
@@ -2134,6 +2333,7 @@ fn persistState(
 			try sf.addEntry(&sf.hide_entries, .{ .value = val, .kind = re.kind, .negated = re.negated });
 		}
 	}
+    }
 
 	// Write to temp file then rename (atomic)
 	const tmp_path = try std.fmt.allocPrint(allocator, "{s}.tmp", .{state_path});
@@ -2451,6 +2651,52 @@ test "parseArgs: depth flag" {
 		},
 		else => return error.TestExpectedConfig,
 	}
+}
+
+test "persistence policy classifies context and semantic mutations as a set" {
+    const Case = struct {
+        policy: PersistencePolicy,
+        actual_stdout_is_tty: bool,
+        expected: PersistenceDecision,
+    };
+    const cases = [_]Case{
+        .{ .policy = .automatic, .actual_stdout_is_tty = true, .expected = .{ .presentation = true, .semantic = true, .migration = true } },
+        .{ .policy = .automatic, .actual_stdout_is_tty = false, .expected = .{ .presentation = false, .semantic = true, .migration = false } },
+        .{ .policy = .temporary, .actual_stdout_is_tty = true, .expected = .{ .presentation = false, .semantic = false, .migration = false } },
+        .{ .policy = .persistent, .actual_stdout_is_tty = false, .expected = .{ .presentation = true, .semantic = true, .migration = true } },
+    };
+    for (cases) |case| {
+        try std.testing.expectEqualDeep(case.expected, resolvePersistence(case.policy, case.actual_stdout_is_tty));
+    }
+}
+
+test "persistence provenance renders approved terminal and captured forms exactly" {
+    i18n.setLocale(.en);
+
+    var cfg = CliConfig{
+        .depth = 2,
+        .state_modified = true,
+        .presentation_modified = true,
+        .actual_stdout_is_tty = false,
+        .actual_stderr_is_tty = false,
+    };
+    var captured: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer captured.deinit();
+    try writePersistenceReasons(&captured.writer, &cfg);
+    try std.testing.expectEqualStrings(
+        "Note: --depth: not persisted because stdout is not a terminal; use --persist/--save to override. Set DIRTREE_MUTE_PERSISTENCE_REASON=1 to mute this note.\n",
+        captured.written(),
+    );
+
+    cfg.actual_stdout_is_tty = true;
+    cfg.actual_stderr_is_tty = true;
+    var terminal: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer terminal.deinit();
+    try writePersistenceReasons(&terminal.writer, &cfg);
+    try std.testing.expectEqualStrings(
+        "\x1b[2;3mNote: --depth: persisted because stdout is a terminal; use --temp to make this run-only. Set DIRTREE_MUTE_PERSISTENCE_REASON=1 to mute this note.\x1b[0m\n",
+        terminal.written(),
+    );
 }
 
 test "parseArgs: depth flag missing value" {

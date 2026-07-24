@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        แสดงคำอธิบายโดยละเอียด",
     .help_opt_depth = "  -d, --depth N      กำหนดความลึกสูงสุด (ค่าเริ่มต้น: 4)",
     .help_opt_temp = "  -t, --temp         ใช้การเปลี่ยนแปลงเฉพาะการรันนี้ (ไม่บันทึก)",
+    .help_opt_persist = "  --persist, --save  บันทึกการตั้งค่าเหล่านี้ด้วย (แทนที่ non-TTY และ DIRTREE_TEMP)",
     .help_opt_path = "  -p, --path PATH    แสดง PATH แม้ว่าจะดูเหมือนแฟล็กหรือคำสั่งย่อย",
     .help_opt_simple = "  --simple           แสดงต้นไม้แบบมีสถานะที่เรียบง่ายเหมาะกับ LLM",
     .help_opt_decorated = "  --decorated        บังคับให้แสดงผลแบบตกแต่ง (แม้เมื่อส่งผ่านไปป์)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "ใช้ /pattern/ หรือ !/pattern/ ร่วมกับ --open/--close/--show/--hide เพื่อเพิ่มกฎ regex; อาร์กิวเมนต์อื่นจะถูกถือเป็นข้อความตามตัวอักษร",
     .help_relative_note = "พาธที่ให้กับ --show/--hide ต้องเป็นพาธสัมพัทธ์ (ห้ามนำหน้าด้วย '/')",
     .help_behavior_header = "พฤติกรรม:",
-    .help_behavior_text = "ตามค่าเริ่มต้น เมื่อ stdout ไม่ใช่ TTY (ถูกส่งผ่านไปป์) สี/ไอคอน/ไฮเปอร์ลิงก์จะถูกปิด เว้นแต่จะระบุ --decorated",
+    .help_behavior_text = "การตั้งค่าการนำเสนอจะถูกบันทึกเมื่อ stdout เป็นเทอร์มินัล มิฉะนั้นจะใช้กับการร้องขอปัจจุบันเท่านั้น ตามค่าเริ่มต้น การเปลี่ยนแปลง --open/--close/--show/--hide จะถูกบันทึกเสมอ สีจะเปิดตามค่าเริ่มต้นสำหรับเอาต์พุตเทอร์มินัล และปิดสำหรับเอาต์พุตอื่น --temp หรือ --persist/--save แทนที่กฎการบันทึกเหล่านี้อย่างชัดเจน",
+    .persistence_note_tty = "ข้อความ: {s}: บันทึกเนื่องจาก stdout เป็นเทอร์มินัล ใช้ --temp เพื่อใช้กับคำขอนี้เท่านั้น",
+    .persistence_note_non_tty = "ข้อความ: {s}: ไม่ได้บันทึกเนื่องจาก stdout ไม่ใช่เทอร์มินัล ใช้ --persist/--save เพื่อแทนที่",
+    .persistence_note_semantic = "ข้อความ: {s}: บันทึกเนื่องจากการเปลี่ยนแปลงมุมมองโครงการที่ใช้ร่วมกันจะถูกบันทึกตามค่าเริ่มต้น ใช้ --temp เพื่อนำไปใช้กับการเรียกใช้นี้เท่านั้น",
+    .persistence_note_env = "ข้อความ: {s}: ไม่ได้บันทึกเนื่องจาก DIRTREE_TEMP=1; ใช้ --persist/--save เพื่อแทนที่",
+    .persistence_note_mute = "ตั้งค่า DIRTREE_MUTE_PERSISTENCE_REASON=1 เพื่อระงับข้อความแสดงข้อมูลนี้",
     .help_examples_header = "ตัวอย่าง:",
     .help_example_1 = "  dirtree                       # แสดงต้นไม้ของไดเรกทอรีปัจจุบัน",
     .help_example_2 = "  dirtree -d 3                  # ตั้งความลึกเป็น 3 ระดับ",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        โฟกัสที่ซับทรี โดยยุบไดเรกทอรีพี่น้อง (ใช้ซ้ำได้)",
     .help_opt_html = "  --html [FILE]      เขียนต้นไม้ HTML แบบครบในตัวไปยัง FILE (- = stdout; ละไว้ = เปิดในเบราว์เซอร์)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  ซ่อนเป้าหมายของ symlink; --no-targets จะลบไฮเปอร์ลิงก์ด้วย (เอาต์พุตพกพาได้)",
-
 
     // ── ข้อความเตือน (เอาต์พุตขนาดใหญ่) ──────────────────────────
     .warn_large_output_prefix = "คำเตือน: เอาต์พุตประมาณ ~",

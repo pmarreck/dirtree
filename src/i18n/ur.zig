@@ -12,6 +12,7 @@ pub const strings = Strings{
     .help_opt_about = "  -a, --about        تفصیلی وضاحت دکھائیں",
     .help_opt_depth = "  -d, --depth N      زیادہ سے زیادہ گہرائی مقرر کریں (طے شدہ: 4)",
     .help_opt_temp = "  -t, --temp         تبدیلیاں صرف اس بار کے لیے لاگو کریں (محفوظ نہیں)",
+    .help_opt_persist = "  --persist, --save  ان ترتیبات کو بھی محفوظ کریں (non-TTY اور DIRTREE_TEMP کو اوور رائیڈ کرتا ہے)",
     .help_opt_path = "  -p, --path PATH    PATH کو رینڈر کریں چاہے وہ فلیگ یا ذیلی کمانڈ کی طرح لگے",
     .help_opt_simple = "  --simple           سادہ، LLM کے لیے موزوں حالت والا ٹری دکھائیں",
     .help_opt_decorated = "  --decorated        سجی ہوئی آؤٹ پٹ پر مجبور کریں (پائپ ہونے پر بھی)",
@@ -43,7 +44,12 @@ pub const strings = Strings{
     .help_regex_note = "ریجیکس قواعد شامل کرنے کے لیے --open/--close/--show/--hide کے ساتھ /pattern/ یا !/pattern/ استعمال کریں؛ دیگر دلائل کو لفظی سمجھا جاتا ہے۔",
     .help_relative_note = "--show/--hide کو دیے گئے راستے متعلقہ ہونے چاہئیں (ابتدا میں '/' نہ ہو)۔",
     .help_behavior_header = "رویہ:",
-    .help_behavior_text = "طے شدہ طور پر، جب stdout TTY نہ ہو (پائپ ہو) تو رنگ/آئیکنز/ہائپر لنکس غیر فعال ہوتے ہیں، جب تک کہ --decorated نہ دیا جائے۔",
+    .help_behavior_text = "جب stdout ایک ٹرمینل ہوتا ہے تو پریزنٹیشن کی ترتیبات محفوظ ہوجاتی ہیں۔ بصورت دیگر وہ صرف موجودہ درخواست پر لاگو ہوتے ہیں۔ بطور ڈیفالٹ، --open/--close/--show/--hide تبدیلیاں ہمیشہ محفوظ رہتی ہیں۔ رنگ ٹرمینل آؤٹ پٹ کے لیے بطور ڈیفالٹ آن ہوتا ہے اور دوسرے آؤٹ پٹ کے لیے آف ہوتا ہے۔ --temp یا --persist/--save واضح طور پر بچت کے ان اصولوں کو اوور رائیڈ کرتا ہے۔",
+    .persistence_note_tty = "پیغام: {s}: محفوظ کیا گیا کیونکہ stdout ایک ٹرمینل ہے۔ اسے صرف اس درخواست پر لاگو کرنے کے لیے --temp استعمال کریں۔",
+    .persistence_note_non_tty = "پیغام: {s}: محفوظ نہیں کیا گیا کیونکہ stdout ٹرمینل نہیں ہے۔ اوور رائیڈ کرنے کے لیے --persist/--save استعمال کریں۔",
+    .persistence_note_semantic = "پیغام: {s}: محفوظ کیا گیا کیونکہ مشترکہ پروجیکٹ ویو میں تبدیلیاں بطور ڈیفالٹ محفوظ ہوتی ہیں۔ صرف اس درخواست پر لاگو کرنے کے لیے --temp کا استعمال کریں۔",
+    .persistence_note_env = "پیغام: {s}: محفوظ نہیں ہوا کیونکہ DIRTREE_TEMP=1؛ اوور رائیڈ کرنے کے لیے --persist/--save استعمال کریں۔",
+    .persistence_note_mute = "اس معلوماتی پیغام کو دبانے کے لیے DIRTREE_MUTE_PERSISTENCE_REASON=1 سیٹ کریں۔",
     .help_examples_header = "مثالیں:",
     .help_example_1 = "  dirtree                       # موجودہ ڈائریکٹری کا ٹری دکھائیں",
     .help_example_2 = "  dirtree -d 3                  # گہرائی 3 سطحوں پر مقرر کریں",
@@ -77,7 +83,6 @@ pub const strings = Strings{
     .help_opt_only = "  --only PATH        ایک ذیلی ٹری پر توجہ مرکوز کریں، ہم پلہ ڈائریکٹریاں سمیٹیں (دہرایا جا سکتا ہے)",
     .help_opt_html = "  --html [FILE]      خود مکمل HTML ٹری کو FILE میں لکھیں (- = stdout؛ چھوڑ دیں = براؤزر میں کھولیں)",
     .help_opt_no_targets = "  --no-symlink-targets/--no-targets  سِملنک اہداف چھپائیں؛ ‏--no-targets ہائپر لنکس بھی ہٹاتا ہے (پورٹیبل آؤٹ پٹ)",
-
 
     // ── Warning messages (large output) ────────────────────────
     .warn_large_output_prefix = "تنبیہ: آؤٹ پٹ تقریباً ~",
